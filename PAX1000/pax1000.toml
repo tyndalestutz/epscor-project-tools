@@ -1,0 +1,6 @@
+[thorlabs-pax1000]
+serial = "M01303584"
+model = "PAX1000IR1"
+autorange = true
+port = 38400
+log_level = "debug"
