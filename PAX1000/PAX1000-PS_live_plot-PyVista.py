@@ -7,7 +7,33 @@ from pyvistaqt import BackgroundPlotter
 import signal
 import sys
 import time
+import subprocess
 
+# =========================
+# START PAX
+# =========================
+
+# Kill any existing daemon
+subprocess.run(
+    ["pkill", "-f", "yaqd-thorlabs-pax1000"],
+    check=False
+)
+
+time.sleep(1)
+
+# Start a fresh daemon
+daemon = subprocess.Popen(
+    [
+        "yaqd-thorlabs-pax1000",
+        "-c",
+        "pax1000.toml",
+    ],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+
+# Give it time to initialize
+time.sleep(3)
 
 # =========================
 # USER SETTINGS
@@ -173,20 +199,61 @@ def circle_points(axis):
         )
 
 
-for axis in ["S1","S2","S3"]:
+gap = np.deg2rad(10)      # gap on each side of each label
+N = 120                   # points per arc
 
-    pts = circle_points(axis)
+gap = np.deg2rad(12)
+N = 80
 
-    line = pv.lines_from_points(
-        pts,
-        close=True
-    )
+def add_arc(axis, t1, t2):
+    t = np.linspace(t1, t2, N)
+
+    if axis == "S1":
+        pts = np.column_stack((
+            np.zeros_like(t),
+            np.cos(t),
+            np.sin(t)
+        ))
+
+    elif axis == "S2":
+        pts = np.column_stack((
+            np.cos(t),
+            np.zeros_like(t),
+            np.sin(t)
+        ))
+
+    elif axis == "S3":
+        pts = np.column_stack((
+            np.cos(t),
+            np.sin(t),
+            np.zeros_like(t)
+        ))
 
     plotter.add_mesh(
-        line,
+        pv.lines_from_points(pts),
         color="black",
         line_width=3
     )
+
+
+def add_circle(axis):
+
+    # gaps at 0°,90°,180°,270°
+    centers = [
+        0,
+        np.pi/2,
+        np.pi,
+        3*np.pi/2,
+        2*np.pi
+    ]
+
+    for a, b in zip(centers[:-1], centers[1:]):
+        add_arc(axis, a + gap, b - gap)
+
+
+for axis in ["S1", "S2", "S3"]:
+    add_circle(axis)
+
 
 
 
@@ -194,30 +261,44 @@ for axis in ["S1","S2","S3"]:
 # LABELS
 # =========================
 
-plotter.add_point_labels(
-    np.array(
-        [
-            [1.15,0,0],
-            [-1.15,0,0],
-            [0,1.15,0],
-            [0,-1.15,0],
-            [0,0,1.15],
-            [0,0,-1.15],
-        ]
-    ),
-    [
-        "S1",
-        "-S1",
-        "S2",
-        "-S2",
-        "S3",
-        "-S3"
-    ],
-    font_size=18,
-    point_size=0,
-    shape=None
-)
 
+def add_label(text, position, rotations=()):
+    label = pv.Text3D(text, depth=0.01)
+
+    # center the text about the origin
+    label.translate(-np.array(label.center), inplace=True)
+
+    # size
+    label.scale(0.08, inplace=True)
+
+    # apply rotations
+    for axis, angle in rotations:
+        if axis == "x":
+            label.rotate_x(angle, inplace=True)
+        elif axis == "y":
+            label.rotate_y(angle, inplace=True)
+        elif axis == "z":
+            label.rotate_z(angle, inplace=True)
+
+    # move to final position
+    label.translate(position, inplace=True)
+
+    plotter.add_mesh(
+        label,
+        color="black",
+        smooth_shading=True,
+    )
+
+r = 1.03
+
+add_label("H",  ( r, 0, 0), rotations=[("y",  90)])
+add_label("V", (-r, 0, 0), rotations=[("y", -90)])
+
+add_label("D",  (0,  r, 0), rotations=[("x", -90)])
+add_label("A", (0, -r, 0), rotations=[("x",  90)])
+
+add_label("L",  (0, 0,  r), rotations=[])
+add_label("R", (0, 0, -r), rotations=[("y", 180)])
 
 
 # =========================
@@ -276,6 +357,7 @@ def update():
     time.sleep(0.06)
 
     data = c.get_measured()
+    
 
 
     theta = data["theta"]
