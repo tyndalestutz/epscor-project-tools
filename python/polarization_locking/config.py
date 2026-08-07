@@ -70,11 +70,19 @@ class PolarizationLockConfig:
     # are an experimental tuning choice to reduce noise chasing, not V_lambda
     # calibration constants.
     pid_fine_error_threshold_rad: tuple[float, float] = (0.50, 0.35)
-    pid_fine_gain: float = 0.35
+    # Test 12: modestly raise local stiffness after test 11 established that
+    # the lock is unbiased but phi1 has the larger residual variance. These
+    # multipliers apply only inside the thresholds above: effective local Kp
+    # becomes (0.090, 0.042), up from (0.070, 0.035).
+    pid_fine_gain: tuple[float, float] = (0.45, 0.42)
     # Desired lower bound between PID iterations. Actual cadence is presently
     # limited by the YAQD PAX driver's own acquisition wait.
     pid_sample_period_s: float = 0.15
     pid_visual_refresh_s: float = 0.10
+    # Test 13: average two successive normalized Stokes measurements before
+    # each PID update. This targets the residual zero-mean PAX-scale scatter
+    # seen in tests 11–12 without increasing feedback gain.
+    pid_pax_average_count: int = 2
     pid_pre_acquisition_settle_s: float = 0.015
     # When an output is pinned at a rail but the remaining phase error is
     # substantial, shift it by one V_lambda (the same ideal sphere point) to

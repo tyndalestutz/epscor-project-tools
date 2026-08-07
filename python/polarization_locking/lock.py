@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import math
 import time
 from pathlib import Path
 from typing import Optional
@@ -10,12 +11,12 @@ import numpy as np
 
 try:
     from .config import DEFAULT_CONFIG, PolarizationLockConfig
-    from .control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error
+    from .control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error, sphere_angles_from_stokes
     from .pax_interface import PAXController, PAXReading
     from .rp_interface import RPController
 except ImportError:  # pragma: no cover - support direct execution
     from config import DEFAULT_CONFIG, PolarizationLockConfig
-    from control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error
+    from control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error, sphere_angles_from_stokes
     from pax_interface import PAXController, PAXReading
     from rp_interface import RPController
 
@@ -77,6 +78,36 @@ class PolarizationLockApp:
 
     def _read_sphere_state(self) -> SphereAngles:
         return self._read_sphere_reading()[0]
+
+    def _read_pid_sphere_reading(self) -> tuple[SphereAngles, PAXReading]:
+        """Return the Stokes-vector average used for a single PID update.
+
+        Averaging Cartesian Stokes vectors, then renormalizing, avoids the
+        azimuth wrap problem that would arise from averaging u directly.
+        """
+        count = self.config.pid_pax_average_count
+        if count < 1:
+            raise ValueError("pid_pax_average_count must be at least one")
+        readings = [self.pax.read_polarization() for _ in range(count)]
+        stokes = np.mean([[item.s1, item.s2, item.s3] for item in readings], axis=0)
+        norm = float(np.linalg.norm(stokes))
+        if norm == 0.0:
+            raise RuntimeError("PAX averaging produced a zero Stokes vector")
+        s1, s2, s3 = (stokes / norm).tolist()
+        state = sphere_angles_from_stokes(s1, s2, s3)
+        # These fields are logged for reference; reconstruct the equivalent
+        # ellipse angles from the averaged Stokes state rather than selecting
+        # one of the individual PAX readings.
+        reading = PAXReading(
+            timestamp=readings[-1].timestamp,
+            theta=0.5 * math.atan2(s2, s1),
+            eta=0.5 * math.asin(float(np.clip(s3, -1.0, 1.0))),
+            s1=s1,
+            s2=s2,
+            s3=s3,
+            dop=float(np.mean([item.dop for item in readings])),
+        )
+        return state, reading
 
     def _require_target(self) -> SphereAngles:
         if self._target is None:
@@ -379,7 +410,7 @@ class PolarizationLockApp:
             print(f"PID seed: out1={seed[0]:.4f} V, out2={seed[1]:.4f} V; settling {self.config.pid_seed_settle_s:.1f} s")
             time.sleep(self.config.pid_seed_settle_s)
 
-            current, reading = self._read_sphere_reading(require_trusted_dop=False)
+            current, reading = self._read_pid_sphere_reading()
             if view is not None:
                 view.update(reading, current)
                 if not view.running:
@@ -419,7 +450,7 @@ class PolarizationLockApp:
                 if view is not None and not view.running:
                     break
                 cycle_started = time.monotonic()
-                current, reading = self._read_sphere_reading(require_trusted_dop=False)
+                current, reading = self._read_pid_sphere_reading()
                 if view is not None:
                     view.update(reading, current)
                     if not view.running:
@@ -434,7 +465,7 @@ class PolarizationLockApp:
                 )
                 fine_scale = np.where(
                     np.abs(error) < np.asarray(self.config.pid_fine_error_threshold_rad),
-                    self.config.pid_fine_gain,
+                    np.asarray(self.config.pid_fine_gain),
                     1.0,
                 )
                 phase_correction = (

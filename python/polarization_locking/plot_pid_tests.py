@@ -70,8 +70,17 @@ def add_page(pdf: PdfPages, input_file: Path) -> None:
     both_small = np.mean((np.abs(error_u) < 0.25) & (np.abs(error_v) < 0.25))
     late = time_s >= time_s[-1] - min(30.0, duration_s / 2.0)
 
-    figure, axes = plt.subplots(3, 2, figsize=(12.5, 9.0), constrained_layout=True)
-    figure.suptitle(f"PID locking report — {input_file.name}", fontsize=16, fontweight="bold")
+    # Keep a dedicated footer panel for the numerical summary.  Using
+    # figure.text together with constrained_layout placed the old footer on
+    # top of the lower plots in some Matplotlib backends.
+    figure, axes = plt.subplots(3, 2, figsize=(12.5, 10.0))
+    figure.subplots_adjust(left=0.075, right=0.975, top=0.89, bottom=0.18, hspace=0.52, wspace=0.25)
+    figure.suptitle(
+        f"PID locking report — {input_file.name} — target (u, v) = ({target_u:.3f}, {target_v:.3f})",
+        y=0.965,
+        fontsize=15,
+        fontweight="bold",
+    )
 
     axes[0, 0].plot(time_s, u_about_target, color="tab:blue", linewidth=1.2, label="measured u (local branch)")
     axes[0, 0].axhline(target_u, color="black", linestyle="--", linewidth=1.0, label=f"target u = {target_u:.3f}")
@@ -113,12 +122,23 @@ def add_page(pdf: PdfPages, input_file: Path) -> None:
         axis.grid(alpha=0.22)
 
     summary = (
-        f"Duration: {duration_s:.1f} s   |   recenter events: {recenter_count}   |   "
-        f"both axes within ±0.25 rad: {both_small:.0%}\n"
-        f"All samples median |error|: φ1={np.median(np.abs(error_u)):.3f} rad, φ2={np.median(np.abs(error_v)):.3f} rad   |   "
-        f"last 30 s: φ1={np.median(np.abs(error_u[late])):.3f} rad, φ2={np.median(np.abs(error_v[late])):.3f} rad"
+        f"Duration: {duration_s:.1f} s     Recenter events: {recenter_count}     "
+        f"Both axes within ±0.25 rad: {both_small:.0%}\n"
+        f"Median |error| — full run: φ1={np.median(np.abs(error_u)):.3f} rad, φ2={np.median(np.abs(error_v)):.3f} rad"
+        f"     last 30 s: φ1={np.median(np.abs(error_u[late])):.3f} rad, φ2={np.median(np.abs(error_v[late])):.3f} rad"
     )
-    figure.text(0.5, 0.005, summary, ha="center", va="bottom", fontsize=9)
+    summary_axis = figure.add_axes((0.075, 0.035, 0.90, 0.095))
+    summary_axis.set_axis_off()
+    summary_axis.text(
+        0.5,
+        0.5,
+        summary,
+        ha="center",
+        va="center",
+        fontsize=10,
+        linespacing=1.55,
+        bbox={"boxstyle": "round,pad=0.55", "facecolor": "#f1f4f8", "edgecolor": "#aeb8c2"},
+    )
     pdf.savefig(figure)
     plt.close(figure)
 
