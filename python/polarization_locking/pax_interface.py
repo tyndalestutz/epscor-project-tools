@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import time
+import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Optional
 
 try:
@@ -12,6 +14,7 @@ except ImportError:  # pragma: no cover - import may be unavailable in some envi
 
 @dataclass
 class PAXReading:
+    timestamp: float
     theta: float
     eta: float
     s1: float
@@ -27,18 +30,70 @@ class PAXController:
         self.config = config
         self.client: Optional[Any] = None
         self._test_mode = False
+        self._daemon_process: Optional[subprocess.Popen[Any]] = None
 
     def connect(self) -> Any:
         if yaqc is None:
             raise RuntimeError("yaqc is not installed in the active Python environment")
 
-        self.client = yaqc.Client(host=self.config.pax_host, port=self.config.pax_port)
+        try:
+            self.client = self._new_client()
+        except ConnectionRefusedError as exc:
+            if not self.config.pax_autostart_daemon:
+                raise RuntimeError(
+                    f"PAX daemon refused the connection at {self.config.pax_host}:{self.config.pax_port}."
+                ) from exc
+            self._start_daemon()
+            self.client = self._wait_for_daemon(exc)
         self._test_mode = False
         return self.client
+
+    def _new_client(self) -> Any:
+        if yaqc is None:
+            raise RuntimeError("yaqc is not installed in the active Python environment")
+        return yaqc.Client(host=self.config.pax_host, port=self.config.pax_port)
 
     def disconnect(self) -> None:
         self.client = None
         self._test_mode = False
+        if self._daemon_process is not None:
+            self._daemon_process.terminate()
+            try:
+                self._daemon_process.wait(timeout=2.0)
+            except subprocess.TimeoutExpired:
+                self._daemon_process.kill()
+                self._daemon_process.wait(timeout=2.0)
+            self._daemon_process = None
+
+    def _start_daemon(self) -> None:
+        config_path = Path(self.config.pax_daemon_config_path)
+        if not config_path.is_file():
+            raise RuntimeError(f"PAX daemon configuration was not found: {config_path}")
+        try:
+            self._daemon_process = subprocess.Popen(
+                ["yaqd-thorlabs-pax1000", "-c", config_path.name],
+                cwd=config_path.parent,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError as exc:
+            raise RuntimeError("yaqd-thorlabs-pax1000 is not available in the active environment") from exc
+
+    def _wait_for_daemon(self, original_error: ConnectionRefusedError) -> Any:
+        deadline = time.monotonic() + self.config.pax_daemon_start_timeout_s
+        while time.monotonic() < deadline:
+            if self._daemon_process is not None and self._daemon_process.poll() is not None:
+                raise RuntimeError(
+                    "The PAX daemon exited while starting; run it manually with '-v' to see its error output."
+                )
+            try:
+                return self._new_client()
+            except ConnectionRefusedError:
+                time.sleep(0.1)
+        raise RuntimeError(
+            f"PAX daemon did not begin listening at {self.config.pax_host}:{self.config.pax_port} within "
+            f"{self.config.pax_daemon_start_timeout_s:.1f} s."
+        ) from original_error
 
     def get_channel_names(self) -> list[str]:
         if self.client is None:
@@ -52,21 +107,36 @@ class PAXController:
     def read_polarization(self) -> PAXReading:
         """Read the current polarization state from the PAX.
 
-        This follows the notebook pattern of calling measure() and then reading
-        the measured values. In environments without the PAX daemon, the test
-        mode can be enabled to return a deterministic placeholder reading.
+        This matches the PAX live-plot acquisition sequence: call measure(),
+        wait 60 ms, then retrieve get_measured(). In environments without the
+        PAX daemon, test mode returns a deterministic placeholder reading.
         """
         if self._test_mode:
             time.sleep(0.05)
-            return PAXReading(theta=0.0, eta=0.0, s1=1.0, s2=0.0, s3=0.0, dop=1.0)
+            return PAXReading(timestamp=0.0, theta=0.0, eta=0.0, s1=1.0, s2=0.0, s3=0.0, dop=1.0)
 
         if self.client is None:
             raise RuntimeError("PAX connection is not established")
 
-        self.client.measure()
-        time.sleep(0.07)
-        data = self.client.get_measured()
+        data = None
+        for attempt in range(self.config.pax_read_retries):
+            self.client.measure()
+            time.sleep(self.config.pax_measurement_wait_s)
+            try:
+                data = self.client.get_measured()
+                break
+            except TimeoutError:
+                if attempt + 1 == self.config.pax_read_retries:
+                    raise
+                # The daemon may have completed the measurement after the
+                # client socket timed out. Start the next trigger on a fresh
+                # YAQC connection rather than reusing a possibly desynced one.
+                self.client = self._new_client()
+                time.sleep(self.config.pax_retry_wait_s)
 
+        assert data is not None  # protected by the retry loop above
+
+        timestamp = float(data["timestamp"])
         theta = float(data["theta"])
         eta = float(data["eta"])
         dop = float(data["dop"])
@@ -77,4 +147,4 @@ class PAXController:
         s2 = float(__import__("math").cos(2 * eta) * __import__("math").sin(2 * theta))
         s3 = float(__import__("math").sin(2 * eta))
 
-        return PAXReading(theta=theta, eta=eta, s1=s1, s2=s2, s3=s3, dop=dop)
+        return PAXReading(timestamp=timestamp, theta=theta, eta=eta, s1=s1, s2=s2, s3=s3, dop=dop)

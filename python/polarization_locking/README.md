@@ -1,75 +1,100 @@
-# Polarization locking framework
+# Polarization rough-alignment test framework
 
-This folder is being structured as a small experimental framework for combining:
+This package tests the open-loop voltage model and a conservative, logged PID
+experiment before any production stabilization is introduced. Its control path is:
 
-- Red Pitaya control via Pyrpl
-- PAX1000 polarization reads
-- real-time visualization
-- a model-based rough alignment from PAX polarization readings to EOM/PZT DC voltages
+`PAX theta/eta -> Stokes -> hybrid-MZ u/v -> phase increment -> RP command`
 
-## Proposed structure
+## Coordinate convention
 
-- `config.py`: central configuration and tuned defaults
-- `rp_interface.py`: Red Pitaya connection and PID helpers
-- `pax_interface.py`: PAX1000 connection and reading helpers
-- `control.py`: PAX-to-Stokes, Poincare-angle, phase, and voltage mapping
-- `lock_app.py`: main loop / CLI entry point
-
-## Plan
-
-1. Keep the connection and device logic in separate modules so each piece can be tested independently.
-2. Implement a clean polarization-state object that can represent current and target coordinates.
-3. Use the hybrid-MZ model for a rough move, then add PID fine stabilization after that move is verified.
-4. Add visualization and logging around the lock loop without coupling it tightly to control logic.
-5. Replace the placeholder mapping with a calibrated model once the actuator response is measured.
-
-## Rough-alignment convention
-
-The PAX reports ellipse angles `(theta, eta)`, not the hybrid-MZ sphere angles.
-The controller first forms the PAX Stokes vector:
+The PAX reports polarization-ellipse angles `(theta, eta)`. They are converted
+to normalized Stokes coordinates:
 
 `S = (cos(2eta) cos(2theta), cos(2eta) sin(2theta), sin(2eta))`.
 
-It then uses the S1-polar sphere convention:
+The hybrid-MZ coordinates use S1 as the polar axis:
 
-`u = atan2(S3, S2)` and `v = acos(S1)`.
+`u = atan2(S3, S2)`
 
-For the present equal-amplitude, zero-static-offset hybrid-MZ model, the
-canonical actuator phases are `phi1 = u - pi` and `phi2 = v`.  The actuator
-voltage increments are therefore:
+`v = acos(S1)`.
 
-`dV_phi1_actuator = phi1_v_lambda * du / (2pi)`
+For the current ideal hybrid-MZ model, `u = phi1 + pi` and `v = phi2`; hence
+the controller uses `d_phi1 = wrap(u_target - u_measured)` and
+`d_phi2 = v_target - v_measured`.
 
-`dV_phi2_actuator = phi2_v_lambda * dv / (2pi)`.
+## Voltage chain
 
-Those are not necessarily the Red Pitaya commands.  With electrical gain
-`G_phi1` or `G_phi2` in actuator-volts per Red-Pitaya-volt, the commands are:
+`phi1_v_lambda = 12.2 V` (current candidate) and `phi2_v_lambda = 30 V` are actuator-side voltages
+for a 2pi phase shift. The RP command increments are:
 
-`dV_phi1_RP = dV_phi1_actuator / G_phi1`
+`dV_RP1 = 12.2 * d_phi1 / (2pi * 16.875)`
 
-`dV_phi2_RP = dV_phi2_actuator / G_phi2`.
+`dV_RP2 = 30 * d_phi2 / (2pi * 150)`.
 
-The RP interface enforces the installed 0–1 V output range.  Rough alignment
-also refuses to run until both gain chains are configured and the physical
-phi1/phi2-to-output mapping is explicitly confirmed.  A negative Vlambda or
-electrical gain represents the observed polarity.  The phi1 azimuthal
-correction is suppressed at the S1 poles because azimuth there is undefined.
+The configured chains are OUT1 -> phi1 with gain `16.875` actuator V/RP command
+V, and OUT2 -> phi2 with gain `150`. RP commands are constrained to 0–1 V.
 
-## Hardware test order
+## Scripts
 
-1. Use `live` to verify PAX stability and DOP at the intended operating point.
-2. Run separate output sweeps to confirm the physical output routing, polarity,
-   and actuator-volts-per-RP-volt gains.
-3. Confirm that a phi1 sweep primarily changes `u` and a phi2 sweep primarily
-   changes `v`; use those data to validate the signed Vlambda values.
-4. Use `rough` for one measure → command → settle → verify move. It is not a
-   repeated feedback loop.
-5. Add PID only after rough moves work over the required target region.
+- `lock.py`: interactive one-shot rough move and live PAX monitor. Targets are
+  entered directly as `u v`; it includes a bounded PID test mode. Use `live` for console-only
+  monitoring or `live <file.csv>` to log raw PAX data and converted `u,v`.
+- `calibration.py`: reusable one-axis sweep collector that writes raw PAX,
+  Stokes, DOP, and converted `u,v` data to CSV. It also supports cross-sweeps
+  and forward/reverse sweeps that hold one phase at a fixed bias.
+- `control.py`: coordinate conversion and voltage-chain math only.
+- `pax_interface.py` and `rp_interface.py`: instrument wrappers with DOP and
+  0–1 V safety checks.
+- `test_control.py`: offline coordinate and voltage-chain tests.
+- `plot_pid_tests.py`: creates a multi-page PDF report from PID-test CSVs,
+  including target tracking, errors, actuator commands, PI state, DOP, and
+  phase-period recenter events.
 
-## Original framework checks
+## Hardware test sequence
 
-The first version should prove three things:
+1. Run `live` and confirm high, stable DOP at the operating point.
+2. Run `sweep phi1 phi1.csv`. A 0.01 V RP command step predicts roughly
+   0.0964 rad of azimuthal (`u`) motion.
+3. Run `sweep phi2 phi2.csv`. A 0.01 V RP command step predicts roughly
+   0.3142 rad of polar (`v`) motion while staying on one canonical branch.
+4. Run `cross-sweep phi1 phi1-cross.csv` and `cross-sweep phi2 phi2-cross.csv`.
+   Each scan covers one V_lambda of the selected phase axis: 0–0.6519 V RP
+   command for phi1 and 0–0.2000 V for phi2. The other output is held at each
+   configured cross-sweep bias (0, 0.1, and 0.2 V by default).
+5. Inspect the CSVs for the dominant predicted axis and cross-coupling. Confirm
+   polarity and effective Vlambda before attempting a target move.
+6. Run `bidirectional-sweep phi1 phi1-hysteresis.csv` and
+   `bidirectional-sweep phi2 phi2-hysteresis.csv`. They cover one V_lambda in
+   both directions with a 0.5 s dwell, holding phi2=0.1 V for phi1 and
+   phi1=0.2 V for phi2. The CSV `direction` column identifies the branch.
+7. Run `diagnostic-suite static-diagnostic.csv` to record 60-second PAX holds
+   at baseline and at 0, 1/4, 1/2, 3/4, and 1 V_lambda for each phase. It
+   records the commanded RP outputs alongside every PAX reading, so stable
+   state-dependent DOP can be separated from motion artifacts. The default
+   suite takes about 11.5 minutes including 3-second settling at each state.
+8. Set a target with `set <u> <v>` (or create one with `capture`), then issue
+   `rough`. It performs one measure -> move -> settle -> verify operation.
+9. For a bounded feedback experiment, set a target and run
+   `pid-test 120 pid-test.csv`. It seeds both outputs at mid-range, performs
+   one 70%-scaled rough correction, then applies conservative incremental PI
+   corrections for 120 seconds. The CSV includes every error, integral,
+   correction, output, saturation flag, and raw PAX reading for gain tuning.
+   If an actuator is rail-limited with a substantial remaining error, the test
+   can recenter it by one V_lambda (recorded as `pid-recenter`) to regain
+   headroom without changing the ideal phase state.
+   With the current raw-DOP issue, use `capture-unchecked` to capture the
+   present angular target for this diagnostic experiment; ordinary `capture`
+   and `rough` still retain their DOP safety gate.
+10. Use `pid-live 600 pid-live.csv` for the same PID test with the PyVista
+    Poincare sphere. The visualizer receives the PID loop's PAX readings—it
+    never opens a second PAX client. Cyan marks the target, red marks the live
+    state and trace; move the `u`/`v` sliders or use J/L and I/K while locking
+    to change the target, R to clear the trace, and Q to stop.
+    Fine PID corrections are slewed in small RP-voltage substeps; the live
+    renderer is decoupled from control sampling so rendering cannot throttle
+    the feedback loop. The PAX daemon configuration uses a 90 Hz waveplate
+    velocity (USB-safe); restart the daemon after changing `pax1000.toml`.
 
-- the PAX can be read
-- the Red Pitaya can be connected through Pyrpl
-- a basic loop can convert a polarization error into an actuator command without crashing
+Avoid using a target at an S1 pole during the first test: phi1 azimuth is
+unobservable there, so a PAX reading alone cannot identify the absolute phi1
+phase required to leave that pole.
