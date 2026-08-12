@@ -14,12 +14,12 @@ import numpy as np
 
 try:
     from .config import DEFAULT_CONFIG, PolarizationLockConfig
-    from .control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error, sphere_angles_from_stokes
+    from .control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error, sphere_angles_from_stokes, wrap_angle
     from .pax_interface import PAXController, PAXReading
     from .rp_interface import RPController
 except ImportError:  # pragma: no cover - support direct execution
     from config import DEFAULT_CONFIG, PolarizationLockConfig
-    from control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error, sphere_angles_from_stokes
+    from control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error, sphere_angles_from_stokes, wrap_angle
     from pax_interface import PAXController, PAXReading
     from rp_interface import RPController
 
@@ -320,6 +320,13 @@ class PolarizationLockApp:
                 from plot_pid_tests import PdfPages, add_page
             with PdfPages(output_file) as pdf:
                 add_page(pdf, csv_path)
+        elif kind == "single-axis-pid":
+            try:
+                from .plot_single_axis_pid import PdfPages, add_page
+            except ImportError:  # pragma: no cover - support direct execution
+                from plot_single_axis_pid import PdfPages, add_page
+            with PdfPages(output_file) as pdf:
+                add_page(pdf, csv_path)
         elif kind == "cross":
             try:
                 from .plot_cross_tests import PdfPages, add_report
@@ -546,6 +553,183 @@ class PolarizationLockApp:
                 print(f"PAX path-hold saved to {output_file}")
             else:
                 print("PAX path-hold aborted; outputs were returned to zero.")
+
+    def _run_phi2_power_balance(self, duration_s: float, output_file: str) -> None:
+        """Guided sine-driven comparison of final-port PD and PAX power."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+        phi2_lambda = self._one_lambda_rp_voltage("phi2")
+        frequency = self.config.power_balance_phi2_frequency_hz
+        instructions = {
+            "path_a_only": "PATH A ONLY: leave path A open and block path B.",
+            "path_b_only": "PATH B ONLY: block path A and leave path B open.",
+            "both_paths": "BOTH PATHS: unblock both paths.",
+        }
+        print(
+            f"Guided phi2 power-balance: {duration_s:.1f} s per condition; "
+            f"OUT2 sine = {phi2_lambda / 2:.4f} ± {phi2_lambda / 2:.4f} V at {frequency:.2f} Hz.\n"
+            "It spans 0..one phi2 V_lambda while OUT1/phi1 remains at 0 V. "
+            "Set the blocks at whichever physical plane you want to characterize."
+        )
+
+        def prepare(condition: str) -> None:
+            print(f"\n--- {instructions[condition]} ---")
+            input("When stable, press Enter to begin the sine measurement. ")
+
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            sweep.run_phi2_power_balance(
+                duration_s=duration_s,
+                frequency_hz=frequency,
+                phi2_v_lambda_rp=phi2_lambda,
+                sample_period_s=self.config.power_balance_sample_period_s,
+                prepare_condition=prepare,
+                output_file=output_file,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(f"Phi2 power-balance saved to {output_file}")
+            else:
+                print("Phi2 power-balance aborted; outputs were returned to zero.")
+
+    def _run_single_axis_pid_test(self, axis: str, duration_s: float, output_file: str) -> None:
+        """Characterize and PI-hold one actuator with the other output fixed at zero."""
+        if axis not in {"phi1", "phi2"}:
+            raise ValueError("single-axis-pid axis must be 'phi1' or 'phi2'")
+        if duration_s <= 0.0:
+            raise ValueError("single-axis-pid duration must be positive")
+        count = self.config.single_axis_pid_sweep_points
+        if count < 3 or count % 2 == 0:
+            raise ValueError("single_axis_pid_sweep_points must be an odd integer of at least 3")
+
+        controlled_index = 0 if axis == "phi1" else 1
+        coordinate_name = "u" if axis == "phi1" else "v"
+        other_coordinate = "v" if axis == "phi1" else "u"
+        command_values = np.linspace(0.0, self._one_lambda_rp_voltage(axis), count)
+        midpoint = count // 2
+        # u is undefined at the S1 poles. An isolated phi1 test must therefore
+        # hold phi2 at a *static* equatorial bias (phi2 = pi/2 = Vlambda/4),
+        # rather than at zero. Phi2's isolated v test can correctly hold phi1
+        # at zero.
+        fixed_other_command = self._one_lambda_rp_voltage("phi2") / 4.0 if axis == "phi1" else 0.0
+
+        def setpoint_for(command: float) -> np.ndarray:
+            return np.asarray((command, fixed_other_command), dtype=float) if axis == "phi1" else np.asarray((0.0, command), dtype=float)
+        output = Path(output_file).open("w", newline="")
+        writer = csv.writer(output)
+        writer.writerow([
+            "test_type", "axis", "coordinate", "elapsed_s", "stage", "sweep_index", "pax_timestamp",
+            "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
+            "target_coordinate", "controlled_error_rad", "orthogonal_coordinate", "integral_rad_s",
+            "delta_rp_v", "rp_out1_v", "rp_out2_v", "saturated",
+        ])
+        output.flush()
+        started = time.monotonic()
+        calibration: list[tuple[float, SphereAngles, PAXReading]] = []
+        completed = False
+        try:
+            print(
+                f"Single-axis {axis} test: {count}-point 0..V_lambda characterization; "
+                f"the other actuator is static at {fixed_other_command:.4f} V RP. Target will be the measured {coordinate_name} at "
+                f"{command_values[midpoint]:.4f} V RP (half V_lambda)."
+            )
+            for index, command in enumerate(command_values):
+                setpoint = setpoint_for(command)
+                self._apply_pid_output(setpoint)
+                self._applied_rp_voltages = setpoint
+                time.sleep(self.config.single_axis_pid_settle_s)
+                state, reading = self._read_pid_sphere_reading()
+                calibration.append((command, state, reading))
+                writer.writerow([
+                    "single-axis-pid", axis, coordinate_name, time.monotonic() - started, "calibration", index,
+                    reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2, reading.s3,
+                    reading.dop, reading.ptotal, state.u, state.v, "", "", getattr(state, other_coordinate), "", "",
+                    setpoint[0], setpoint[1], 0,
+                ])
+                output.flush()
+
+            target_coordinate = float(getattr(calibration[midpoint][1], coordinate_name))
+            target_other = float(getattr(calibration[midpoint][1], other_coordinate))
+            target_command = command_values[midpoint]
+            print(
+                f"Single-axis target: {coordinate_name}={target_coordinate:+.4f} rad from midpoint "
+                f"command {target_command:.4f} V RP; settling {self.config.single_axis_pid_target_settle_s:.2f} s"
+            )
+            time.sleep(self.config.single_axis_pid_target_settle_s)
+
+            integral = 0.0
+            previous_error = 0.0
+            previous_time = time.monotonic()
+            deadline = previous_time + duration_s
+            while time.monotonic() < deadline:
+                cycle_started = time.monotonic()
+                state, reading = self._read_pid_sphere_reading()
+                current_coordinate = float(getattr(state, coordinate_name))
+                error = wrap_angle(target_coordinate - current_coordinate) if axis == "phi1" else target_coordinate - current_coordinate
+                dt = max(cycle_started - previous_time, 1e-6)
+                trial_integral = float(np.clip(
+                    integral + error * dt,
+                    -self.config.pid_integral_limit_rad_s,
+                    self.config.pid_integral_limit_rad_s,
+                ))
+                fine = self.config.pid_fine_gain[controlled_index] if abs(error) < self.config.pid_fine_error_threshold_rad[controlled_index] else 1.0
+                correction_phase = fine * self.config.pid_kp[controlled_index] * error + fine * self.config.pid_ki_per_s[controlled_index] * trial_integral
+                correction_phase = float(np.clip(
+                    correction_phase,
+                    -self.config.pid_max_phase_step_rad[controlled_index],
+                    self.config.pid_max_phase_step_rad[controlled_index],
+                ))
+                delta_rp = self._phase_to_rp_delta(correction_phase, 0.0)[0] if axis == "phi1" else self._phase_to_rp_delta(0.0, correction_phase)[1]
+                requested = self._applied_rp_voltages[controlled_index] + delta_rp
+                applied = float(np.clip(requested, self.config.rp_output_min_voltage, self.config.rp_output_max_voltage))
+                saturated = not np.isclose(requested, applied)
+                # Do not integrate farther into a rail.
+                if saturated and np.sign(error) == np.sign(delta_rp):
+                    trial_integral = integral
+                setpoint = setpoint_for(applied)
+                self._apply_pid_output(setpoint)
+                self._applied_rp_voltages = setpoint
+                integral = trial_integral
+                writer.writerow([
+                    "single-axis-pid", axis, coordinate_name, time.monotonic() - started, "pid", "",
+                    reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2, reading.s3,
+                    reading.dop, reading.ptotal, state.u, state.v, target_coordinate, error,
+                    getattr(state, other_coordinate), integral, delta_rp, setpoint[0], setpoint[1], int(saturated),
+                ])
+                output.flush()
+                previous_error, previous_time = error, cycle_started
+                time.sleep(max(self.config.pid_pre_acquisition_settle_s, self.config.pid_sample_period_s - (time.monotonic() - cycle_started)))
+            completed = True
+        finally:
+            output.close()
+            self.rp.set_output_zero()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(f"Single-axis {axis} PID log saved to {output_file}; outputs returned to zero.")
+            else:
+                print("Single-axis PID test aborted; outputs were returned to zero.")
+
+    @staticmethod
+    def _write_power_balance_plots(csv_file: Path, paths: ExperimentPaths, output_format: str) -> None:
+        try:
+            from .plot_power_balance import create_report
+        except ImportError:  # pragma: no cover - support direct execution
+            from plot_power_balance import create_report
+        create_report(
+            csv_file,
+            pdf_file=paths.pdf if output_format in {"pdf", "both"} else None,
+            png_directory=paths.directory if output_format in {"png", "both"} else None,
+        )
+        if output_format in {"pdf", "both"}:
+            print(f"PDF report saved to {paths.pdf}")
+        if output_format in {"png", "both"}:
+            print(f"PNG plots saved to {paths.directory}")
 
     def _write_pid_row(
         self,
@@ -775,7 +959,7 @@ class PolarizationLockApp:
     def interactive_cli(self) -> None:
         self.connect()
         print("Rough alignment CLI")
-        print("Commands: set <u> <v> | capture | capture-unchecked | rough | live [file] | sweep <phi1|phi2> <file> [pdf] | cross-sweep <phi1|phi2> <file> [pdf] | bidirectional-sweep <phi1|phi2> <file> [pdf] | diagnostic-suite <file> [pdf] | intensity-diagnostic <file> [pdf] | phi2-path-test <file> [pdf] | pax-path-hold <seconds> <file> [pdf] | pid-test <seconds> <file> [pdf] | pid-live <seconds> <file> [pdf] | stop | quit")
+        print("Commands: set <u> <v> | capture | capture-unchecked | rough | live [file] | sweep <phi1|phi2> <file> [pdf] | cross-sweep <phi1|phi2> <file> [pdf] | bidirectional-sweep <phi1|phi2> <file> [pdf] | diagnostic-suite <file> [pdf] | intensity-diagnostic <file> [pdf] | phi2-path-test <file> [pdf] | pax-path-hold <seconds> <file> [pdf] | power-balance <seconds> <file> [pdf|png|both] | single-axis-pid <phi1|phi2> <seconds> <file> [pdf] | pid-test <seconds> <file> [pdf] | pid-live <seconds> <file> [pdf] | stop | quit")
         try:
             while True:
                 cmd = input(">> ").strip().split()
@@ -839,6 +1023,18 @@ class PolarizationLockApp:
                     self._run_pax_path_hold(float(cmd[1]), str(paths.csv))
                     if len(cmd) == 4:
                         self._write_automatic_pdf("pax-path-hold", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "power-balance" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() in {"pdf", "png", "both"}):
+                    paths = self._new_experiment_paths("power-balance", cmd[2])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_phi2_power_balance(float(cmd[1]), str(paths.csv))
+                    if len(cmd) == 4:
+                        self._write_power_balance_plots(paths.csv, paths, cmd[3].lower())
+                elif cmd[0] == "single-axis-pid" and len(cmd) in {4, 5} and (len(cmd) == 4 or cmd[4].lower() == "pdf"):
+                    paths = self._new_experiment_paths(f"single-axis-pid-{cmd[1]}", cmd[3])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_single_axis_pid_test(cmd[1], float(cmd[2]), str(paths.csv))
+                    if len(cmd) == 5:
+                        self._write_automatic_pdf("single-axis-pid", paths.csv, output_file=paths.pdf)
                 elif cmd[0] == "pid-test" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() == "pdf"):
                     paths = self._new_experiment_paths("pid-test", cmd[2])
                     print(f"Experiment folder: {paths.directory}")

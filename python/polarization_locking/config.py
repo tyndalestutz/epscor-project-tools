@@ -92,6 +92,15 @@ class PolarizationLockConfig:
     pid_recenter_max_events_per_axis: int = 2
     pid_recenter_settle_s: float = 0.75
 
+    # Single-actuator characterization/lock test. A short one-V_lambda sweep
+    # selects the measured coordinate at the midpoint command as the target;
+    # the other RP output remains exactly zero throughout the subsequent PI
+    # hold. These are intentionally conservative enough to compare actuator
+    # authority before revisiting the two-axis controller.
+    single_axis_pid_sweep_points: int = 17
+    single_axis_pid_settle_s: float = 0.18
+    single_axis_pid_target_settle_s: float = 0.75
+
     # Cross-sweep defaults for characterizing phase cross-coupling. Each
     # swept axis covers one of its own V_lambda values, and the fixed/bias
     # axis spans its *entire* V_lambda in cross_sweep_bias_intervals equally
@@ -139,5 +148,11 @@ class PolarizationLockConfig:
     # a lock update so the comparison is about the PAX/path condition rather
     # than a transient following an actuator move.
     pax_path_hold_sample_period_s: float = 0.25
+
+    # Guided phi2 power-balance test. The RP sine is centered at half a
+    # calibrated phi2 V_lambda, so it spans 0..V_lambda without asking the
+    # unipolar RP output to generate a negative voltage.
+    power_balance_phi2_frequency_hz: float = 0.5
+    power_balance_sample_period_s: float = 0.05
 
 DEFAULT_CONFIG = PolarizationLockConfig()

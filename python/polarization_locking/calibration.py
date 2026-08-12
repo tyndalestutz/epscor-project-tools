@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import math
 import statistics
 import time
 from dataclasses import dataclass
@@ -83,6 +84,15 @@ class Phi2PathBalancePoint:
 class PAXPathHoldPoint:
     condition: str
     elapsed_s: float
+    photodiode: PhotodiodeReading
+    reading: PAXReading
+
+
+@dataclass
+class PowerBalancePoint:
+    condition: str
+    elapsed_s: float
+    phi2_rp_command_estimated_v: float
     photodiode: PhotodiodeReading
     reading: PAXReading
 
@@ -386,6 +396,58 @@ class CalibrationSweep:
             self.save_pax_path_hold_csv(output_file, points)
         return points
 
+    def run_phi2_power_balance(
+        self,
+        duration_s: float,
+        frequency_hz: float,
+        phi2_v_lambda_rp: float,
+        sample_period_s: float,
+        prepare_condition: Callable[[str], None],
+        output_file: Optional[str] = None,
+    ) -> list[PowerBalancePoint]:
+        """Measure simultaneous PD/PAX fringe contrast for A, B, and both paths.
+
+        Phi2 is driven continuously by RP OUT2.  The logged command is the
+        known generator waveform evaluated from the local trigger time; it is
+        not a separate analog monitor measurement.
+        """
+        if duration_s <= 0.0 or frequency_hz <= 0.0 or sample_period_s <= 0.0:
+            raise ValueError("duration, frequency, and sample period must be positive")
+        lower, upper = self.config.rp_output_min_voltage, self.config.rp_output_max_voltage
+        if not lower <= phi2_v_lambda_rp <= upper:
+            raise ValueError(f"phi2 V_lambda RP command must be in [{lower}, {upper}] V")
+
+        points: list[PowerBalancePoint] = []
+        offset = amplitude = phi2_v_lambda_rp / 2.0
+        with self.rp.photodiode_monitor() as read_pd:
+            for condition in ("path_a_only", "path_b_only", "both_paths"):
+                self.rp.set_output_zero()
+                prepare_condition(condition)
+                started = time.monotonic()
+                self.rp.set_phi2_sine(offset=offset, amplitude=amplitude, frequency_hz=frequency_hz)
+                next_sample = started
+                while True:
+                    now = time.monotonic()
+                    elapsed = now - started
+                    if elapsed >= duration_s:
+                        break
+                    if now < next_sample:
+                        time.sleep(next_sample - now)
+                    elapsed = time.monotonic() - started
+                    command = offset + amplitude * math.sin(2.0 * math.pi * frequency_hz * elapsed)
+                    points.append(PowerBalancePoint(
+                        condition=condition,
+                        elapsed_s=elapsed,
+                        phi2_rp_command_estimated_v=command,
+                        photodiode=read_pd(),
+                        reading=self.pax.read_polarization(),
+                    ))
+                    next_sample += sample_period_s
+                self.rp.set_output_zero()
+        if output_file is not None:
+            self.save_phi2_power_balance_csv(output_file, points)
+        return points
+
     def run_static_diagnostic_suite(
         self,
         phi1_values: list[tuple[float, float]],
@@ -626,6 +688,57 @@ class CalibrationSweep:
                     reading.timestamp, reading.revisions, reading.adc_min, reading.adc_max, reading.rev_time,
                     reading.theta, reading.eta, reading.s1, reading.s2, reading.s3, reading.dop,
                     reading.ptotal, sphere.u, sphere.v,
+                ])
+
+    def save_phi2_power_balance_csv(self, output_file: str, points: list[PowerBalancePoint]) -> None:
+        """Save raw signals plus per-condition normalized detector response."""
+        path = Path(output_file)
+        normalized: dict[int, tuple[float, float]] = {}
+        summaries: dict[str, tuple[float, float, float, float]] = {}
+
+        def normalize(values: list[float]) -> tuple[list[float], float, float]:
+            low, high = min(values), max(values)
+            span = high - low
+            normalized_values = [(value - low) / span if span > 0.0 else 0.5 for value in values]
+            # Long captures occasionally include isolated acquisition spikes.
+            # Use robust 5–95% extrema for the reported fringe contrast.
+            lower, upper = statistics.quantiles(values, n=20)[0], statistics.quantiles(values, n=20)[-1]
+            contrast = (upper - lower) / (upper + lower) if upper + lower != 0.0 else float("nan")
+            return normalized_values, float(statistics.fmean(values)), contrast
+
+        for condition in ("path_a_only", "path_b_only", "both_paths"):
+            group = [point for point in points if point.condition == condition]
+            pd_norm, pd_mean, pd_contrast = normalize([point.photodiode.mean_voltage for point in group])
+            pax_norm, pax_mean, pax_contrast = normalize([point.reading.ptotal for point in group])
+            summaries[condition] = (pd_mean, pax_mean, pd_contrast, pax_contrast)
+            for point, pd_value, pax_value in zip(group, pd_norm, pax_norm):
+                normalized[id(point)] = (pd_value, pax_value)
+
+        with path.open("w", newline="") as fh:
+            writer = csv.writer(fh)
+            writer.writerow([
+                "condition", "elapsed_s", "phi2_rp_command_estimated_v", "rp_out1_v",
+                "phi2_sine_frequency_hz", "phi2_sine_offset_v", "phi2_sine_amplitude_v",
+                "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count", "pd_normalized",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "pax_ptotal_normalized",
+                "pd_condition_mean_v", "pax_ptotal_condition_mean", "pd_contrast_5_95", "pax_ptotal_contrast_5_95", "u", "v",
+            ])
+            frequency = self.config.power_balance_phi2_frequency_hz
+            # Use the configured V_lambda exactly: observed extrema can miss a
+            # sine peak between PAX acquisitions.
+            if self.config.phi2_v_lambda is None or self.config.phi2_actuator_volts_per_rp_volt is None:
+                raise RuntimeError("Phi2 V_lambda and output gain are required to save power-balance data")
+            offset = amplitude = self.config.phi2_v_lambda / self.config.phi2_actuator_volts_per_rp_volt / 2.0
+            for point in points:
+                pd_norm, pax_norm = normalized[id(point)]
+                pd_mean, pax_mean, pd_contrast, pax_contrast = summaries[point.condition]
+                pd, reading = point.photodiode, point.reading
+                sphere = pax_to_sphere_angles((reading.theta, reading.eta))
+                writer.writerow([
+                    point.condition, point.elapsed_s, point.phi2_rp_command_estimated_v, 0.0,
+                    frequency, offset, amplitude, pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage,
+                    pd.sample_count, pd_norm, reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2,
+                    reading.s3, reading.dop, reading.ptotal, pax_norm, pd_mean, pax_mean, pd_contrast, pax_contrast, sphere.u, sphere.v,
                 ])
 
     def save_diagnostic_csv(self, output_file: str, points: list[DiagnosticPoint]) -> None:

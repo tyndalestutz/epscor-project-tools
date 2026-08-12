@@ -94,7 +94,7 @@ def _weighted_azimuth_spread(u: np.ndarray, v: np.ndarray) -> float:
     return math.sqrt(max(0.0, -2.0 * math.log(max(float(resultant), 1e-12))))
 
 
-def add_coupling_page(pdf: PdfPages, input_file: Path) -> None:
+def add_coupling_page(pdf: PdfPages, input_file: Path, png_file: Path | None = None) -> None:
     """Visualize Vlambda stability and off-axis response for each bias slice."""
     rows = load_rows(input_file)
     sweep_axis = rows[0]["sweep_axis"]
@@ -138,7 +138,7 @@ def add_coupling_page(pdf: PdfPages, input_file: Path) -> None:
     biases_array = np.asarray(biases)
     nominal_period = float(max(float(row["sweep_rp_v"]) for row in rows) - min(float(row["sweep_rp_v"]) for row in rows))
     figure, axes = plt.subplots(2, 2, figsize=(12.5, 8.5))
-    figure.subplots_adjust(left=0.08, right=0.97, top=0.86, bottom=0.11, hspace=0.38, wspace=0.28)
+    figure.subplots_adjust(left=0.08, right=0.97, top=0.86, bottom=0.22, hspace=0.38, wspace=0.28)
     figure.suptitle(
         f"Cross-coupling summary — {display_name(input_file)} — swept {axis_label(sweep_axis)}, biased {axis_label(bias_axis)}",
         y=0.955,
@@ -149,12 +149,10 @@ def add_coupling_page(pdf: PdfPages, input_file: Path) -> None:
     axes[0, 0].plot(biases_array, inferred_periods, marker="o", color="tab:blue", label="inferred Vλ (RP V)")
     axes[0, 0].axhline(nominal_period, color="black", linestyle="--", linewidth=1.0, label=f"commanded span = {nominal_period:.3f} V")
     axes[0, 0].set(title="Principal-axis Vλ versus fixed-axis bias", ylabel="inferred Vλ (RP V)")
-    axes[0, 0].legend(fontsize=8)
 
     axes[0, 1].plot(biases_array, fit_quality, marker="o", color="tab:green", label="principal response R²")
     axes[0, 1].axhline(0.9, color="black", linestyle="--", linewidth=1.0, alpha=0.6, label="0.90 guide")
     axes[0, 1].set(title="Vλ-fit quality", ylabel="R²", ylim=(-0.05, 1.05))
-    axes[0, 1].legend(fontsize=8)
 
     if sweep_axis == "phi1":
         off_axis_label = "v 5–95% excursion (rad)"
@@ -171,26 +169,34 @@ def add_coupling_page(pdf: PdfPages, input_file: Path) -> None:
         twin = axes[1, 1].twinx()
         twin.plot(biases_array, signal_amplitude, marker="s", color="tab:gray", alpha=0.8, label="S1 cosine amplitude")
         twin.set_ylabel("S1 fit amplitude")
-        handles, labels = axes[1, 1].get_legend_handles_labels()
-        right_handles, right_labels = twin.get_legend_handles_labels()
-        axes[1, 1].legend(handles + right_handles, labels + right_labels, fontsize=8, loc="best")
-    else:
-        axes[1, 1].legend(fontsize=8)
     axes[1, 1].set(title="Measurement-quality context", ylabel="reported DOP", xlabel=f"fixed {axis_label(bias_axis)} RP bias (V)")
 
     for axis in axes.flat:
         axis.grid(alpha=0.22)
+    handles, labels = [], []
+    for legend_axis in (axes[0, 0], axes[0, 1], axes[1, 1]):
+        axis_handles, axis_labels = legend_axis.get_legend_handles_labels()
+        handles.extend(axis_handles)
+        labels.extend(axis_labels)
+    if sweep_axis == "phi2":
+        axis_handles, axis_labels = twin.get_legend_handles_labels()
+        handles.extend(axis_handles)
+        labels.extend(axis_labels)
+    figure.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, 0.025), ncol=min(3, len(handles)), fontsize=8)
+    if png_file is not None:
+        png_file.parent.mkdir(parents=True, exist_ok=True)
+        figure.savefig(png_file, dpi=180)
     pdf.savefig(figure)
     plt.close(figure)
 
 
-def add_report(pdf: PdfPages, input_file: Path) -> None:
+def add_report(pdf: PdfPages, input_file: Path, png_directory: Path | None = None) -> None:
     """Add both response curves and the coupling/Vlambda summary."""
-    add_page(pdf, input_file)
-    add_coupling_page(pdf, input_file)
+    add_page(pdf, input_file, png_file=png_directory / "response.png" if png_directory else None)
+    add_coupling_page(pdf, input_file, png_file=png_directory / "coupling-summary.png" if png_directory else None)
 
 
-def add_page(pdf: PdfPages, input_file: Path) -> None:
+def add_page(pdf: PdfPages, input_file: Path, png_file: Path | None = None) -> None:
     rows = load_rows(input_file)
     sweep_axes = {row["sweep_axis"] for row in rows}
     bias_axes = {row["bias_axis"] for row in rows}
@@ -203,8 +209,10 @@ def add_page(pdf: PdfPages, input_file: Path) -> None:
     bias_label = axis_label(bias_axis)
     bias_values = sorted({float(row["bias_rp_v"]) for row in rows})
 
-    figure, axes = plt.subplots(1, 2, figsize=(12.5, 5.2), sharex=True)
-    figure.subplots_adjust(left=0.075, right=0.975, top=0.82, bottom=0.16, wspace=0.22)
+    figure, axes = plt.subplots(1, 2, figsize=(12.5, 6.0), sharex=True)
+    # All bias curves share labels, so use one figure-level legend underneath
+    # the panels rather than obscuring either measured response.
+    figure.subplots_adjust(left=0.075, right=0.975, top=0.82, bottom=0.35, wspace=0.22)
     figure.suptitle(
         f"Cross-sweep bias relation — {display_name(input_file)}",
         y=0.955,
@@ -240,8 +248,21 @@ def add_page(pdf: PdfPages, input_file: Path) -> None:
     for axis in axes:
         axis.set_xlabel(f"{sweep_label} RP command (V)")
         axis.grid(alpha=0.22)
-        axis.legend(loc="best", fontsize=8, title="Recorded fixed bias", title_fontsize=8)
+    handles, labels = axes[0].get_legend_handles_labels()
+    figure.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.035),
+        ncol=min(4, len(handles)),
+        fontsize=8,
+        title="Recorded fixed bias",
+        title_fontsize=8,
+    )
 
+    if png_file is not None:
+        png_file.parent.mkdir(parents=True, exist_ok=True)
+        figure.savefig(png_file, dpi=180)
     pdf.savefig(figure)
     plt.close(figure)
 
@@ -256,12 +277,19 @@ def main() -> None:
         default=Path("cross-test-bias-report.pdf"),
         help="output PDF path",
     )
+    parser.add_argument(
+        "--png-dir",
+        type=Path,
+        help="write response.png and coupling-summary.png beside the selected experiment data",
+    )
     args = parser.parse_args()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with PdfPages(args.output) as pdf:
         for input_file in args.input_files:
-            add_report(pdf, input_file)
+            # With several inputs, make one self-contained PNG folder per CSV.
+            png_directory = args.png_dir / input_file.parent.name if args.png_dir and len(args.input_files) > 1 else args.png_dir
+            add_report(pdf, input_file, png_directory=png_directory)
     print(f"Wrote {args.output}")
 
 

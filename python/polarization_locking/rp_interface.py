@@ -47,7 +47,11 @@ class RPController:
         except ImportError as exc:  # pragma: no cover - hardware dependency
             raise RuntimeError("pyrpl is not installed in the active Python environment") from exc
 
-        self.p = Pyrpl(hostname=self.config.rp_hostname, config=self.config.rp_config)
+        # We only use Pyrpl as a Python hardware client. Passing gui=False
+        # overrides any persisted ``redpitaya.gui`` value in scope_config.yml,
+        # preventing Pyrpl from constructing/showing its control window while
+        # retaining the normal Red Pitaya, ASG, and scope connections.
+        self.p = Pyrpl(hostname=self.config.rp_hostname, config=self.config.rp_config, gui=False)
         # Make sure no other module is still driving the outputs before we use the ASGs.
         self._clear_output_routes()
 
@@ -108,6 +112,23 @@ class RPController:
         for v1, v2 in zip(v1_values, v2_values):
             self.set_output_voltage(v1, v2)
             time.sleep(delay_s)
+
+    def set_phi2_sine(self, *, offset: float, amplitude: float, frequency_hz: float) -> None:
+        """Drive OUT2/phi2 with a bounded sine; OUT1/phi1 remains at zero."""
+        if self.p is None or self.asg1 is None or self.asg2 is None:
+            raise RuntimeError("Red Pitaya connection is not established")
+        if frequency_hz <= 0.0 or amplitude < 0.0:
+            raise ValueError("Sine frequency must be positive and amplitude non-negative")
+        self._validate_output_voltage(0.0, offset - amplitude)
+        self._validate_output_voltage(0.0, offset + amplitude)
+        self.asg1.setup(waveform="dc", offset=0.0, amplitude=0.0, trigger_source="immediately")
+        self.asg2.setup(
+            waveform="sin",
+            frequency=float(frequency_hz),
+            offset=float(offset),
+            amplitude=float(amplitude),
+            trigger_source="immediately",
+        )
 
     @contextmanager
     def photodiode_monitor(self):

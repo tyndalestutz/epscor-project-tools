@@ -1,0 +1,4 @@
+condition,samples,mean_pd_v,pd_std_v,pd_contrast_5_95,mean_pax_ptotal,pax_ptotal_std,pax_ptotal_contrast_5_95
+path A only,499,0.0958621,0.000156,0.0027,0.000126761,1.9e-06,0.0246
+path B only,498,0.110823,0.000353,0.0047,0.00010684,1.29e-06,0.0208
+both paths,498,0.230093,0.0934,0.6030,0.000229513,0.00011,0.6500
