@@ -21,6 +21,16 @@ class PAXReading:
     s2: float
     s3: float
     dop: float
+    # Total optical power reported by the PAX at its own input port. Older
+    # daemon versions may omit it, in which case it is NaN.
+    ptotal: float = float("nan")
+    # Diagnostic telemetry passed through directly from YAQD's primary record.
+    # These are useful for identifying a bad acquisition/ADC condition without
+    # assigning any physical meaning in the lock controller.
+    revisions: float = float("nan")
+    adc_min: float = float("nan")
+    adc_max: float = float("nan")
+    rev_time: float = float("nan")
 
 
 class PAXController:
@@ -140,6 +150,11 @@ class PAXController:
         theta = float(data["theta"])
         eta = float(data["eta"])
         dop = float(data["dop"])
+        ptotal = float(data.get("ptotal", float("nan")))
+        revisions = float(data.get("revisions", float("nan")))
+        adc_min = float(data.get("adc_min", float("nan")))
+        adc_max = float(data.get("adc_max", float("nan")))
+        rev_time = float(data.get("rev_time", float("nan")))
 
         # The notebook exposes theta and eta directly; the Stokes parameters are
         # derived from these angles for the lock-loop model.
@@ -147,4 +162,7 @@ class PAXController:
         s2 = float(__import__("math").cos(2 * eta) * __import__("math").sin(2 * theta))
         s3 = float(__import__("math").sin(2 * eta))
 
-        return PAXReading(timestamp=timestamp, theta=theta, eta=eta, s1=s1, s2=s2, s3=s3, dop=dop)
+        return PAXReading(
+            timestamp=timestamp, theta=theta, eta=eta, s1=s1, s2=s2, s3=s3, dop=dop, ptotal=ptotal,
+            revisions=revisions, adc_min=adc_min, adc_max=adc_max, rev_time=rev_time,
+        )

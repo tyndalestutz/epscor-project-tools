@@ -93,11 +93,11 @@ class PolarizationLockConfig:
     pid_recenter_settle_s: float = 0.75
 
     # Cross-sweep defaults for characterizing phase cross-coupling. Each
-    # swept axis covers one of *its own* V_lambda values; the corresponding RP
-    # span is calculated from the electrical transfer above. 0.005 V steps
-    # are denser than the initial axis sweep while 0.25 s settling keeps the
-    # scan practical.
-    cross_sweep_bias_voltages: tuple[float, ...] = (0.0, 0.1, 0.2)
+    # swept axis covers one of its own V_lambda values, and the fixed/bias
+    # axis spans its *entire* V_lambda in cross_sweep_bias_intervals equally
+    # sized intervals. Ten intervals yields eleven bias slices, including
+    # both endpoints.
+    cross_sweep_bias_intervals: int = 10
     cross_sweep_step_voltage: float = 0.005
     cross_sweep_settle_s: float = 0.25
 
@@ -118,5 +118,26 @@ class PolarizationLockConfig:
     diagnostic_settle_s: float = 3.0
     diagnostic_hold_s: float = 60.0
     diagnostic_sample_period_s: float = 0.5
+
+    # Final-output photodiode diagnostic. The PD is wired to Red Pitaya IN1;
+    # a short scope acquisition yields its mean voltage and within-window
+    # noise alongside each PAX polarization measurement.  The PD arm includes
+    # an OD 2.0 neutral-density filter, so the detector sees 10**-2 of the
+    # incident optical power.  The diagnostic records both the RP-measured
+    # voltage and its linear, pre-filter-equivalent value (100x).  This does
+    # not calibrate the PD against PAX ``ptotal`` units, but it prevents an
+    # accidental 100x error when comparing their *relative* responses.
+    pd_input: str = "in1"
+    pd_nd_optical_density: float = 2.0
+    pd_scope_duration_s: float = 0.01
+    pd_scope_decimation: int = 64
+    pd_scope_timeout_s: float = 2.0
+    intensity_diagnostic_step_voltage: float = 0.005
+    intensity_diagnostic_settle_s: float = 0.25
+
+    # Guided, fixed-actuator PAX diagnostic. This is intentionally slower than
+    # a lock update so the comparison is about the PAX/path condition rather
+    # than a transient following an actuator move.
+    pax_path_hold_sample_period_s: float = 0.25
 
 DEFAULT_CONFIG = PolarizationLockConfig()

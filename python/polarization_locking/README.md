@@ -37,8 +37,11 @@ V, and OUT2 -> phi2 with gain `150`. RP commands are constrained to 0–1 V.
 ## Scripts
 
 - `lock.py`: interactive one-shot rough move and live PAX monitor. Targets are
-  entered directly as `u v`; it includes a bounded PID test mode. Use `live` for console-only
-  monitoring or `live <file.csv>` to log raw PAX data and converted `u,v`.
+  entered directly as `u v`; it includes a bounded PID test mode. Every command
+  that records data creates a dated experiment folder containing `data.csv` and,
+  when requested with the final `pdf` token, `report.pdf`. Use `live` for
+  console-only monitoring or `live <label>` to log raw PAX data and converted
+  `u,v` into its own folder.
 - `calibration.py`: reusable one-axis sweep collector that writes raw PAX,
   Stokes, DOP, and converted `u,v` data to CSV. It also supports cross-sweeps
   and forward/reverse sweeps that hold one phase at a fixed bias.
@@ -57,10 +60,13 @@ V, and OUT2 -> phi2 with gain `150`. RP commands are constrained to 0–1 V.
    0.0964 rad of azimuthal (`u`) motion.
 3. Run `sweep phi2 phi2.csv`. A 0.01 V RP command step predicts roughly
    0.3142 rad of polar (`v`) motion while staying on one canonical branch.
-4. Run `cross-sweep phi1 phi1-cross.csv` and `cross-sweep phi2 phi2-cross.csv`.
-   Each scan covers one V_lambda of the selected phase axis: 0–0.6519 V RP
-   command for phi1 and 0–0.2000 V for phi2. The other output is held at each
-   configured cross-sweep bias (0, 0.1, and 0.2 V by default).
+4. Run `cross-sweep phi1 phi1-cross pdf` and `cross-sweep phi2 phi2-cross pdf`.
+   Each scan covers one V_lambda of the selected phase axis: 0–0.7230 V RP
+   command for phi1 and 0–0.2000 V for phi2. For each full fine sweep, the
+   other axis steps through eleven equally spaced biases spanning its own full
+   V_lambda (ten intervals, including zero and one V_lambda). Append `pdf` to
+   any sweep, diagnostic, or PID test command to automatically create a report
+   beside its CSV in the same dated run folder.
 5. Inspect the CSVs for the dominant predicted axis and cross-coupling. Confirm
    polarity and effective Vlambda before attempting a target move.
 6. Run `bidirectional-sweep phi1 phi1-hysteresis.csv` and
@@ -72,9 +78,17 @@ V, and OUT2 -> phi2 with gain `150`. RP commands are constrained to 0–1 V.
    records the commanded RP outputs alongside every PAX reading, so stable
    state-dependent DOP can be separated from motion artifacts. The default
    suite takes about 11.5 minutes including 3-second settling at each state.
-8. Set a target with `set <u> <v>` (or create one with `capture`), then issue
+8. Run `intensity-diagnostic final-port-amplitude pdf` with the final-output
+   photodiode connected to Red Pitaya `in1`. It independently sweeps phi1 with
+   phi2=0 and phi2 with phi1=0, logging PD mean/noise and PAX Stokes/DOP at
+   every point. The PD arm's OD 2.0 filter is recorded and corrected as a
+   100x pre-filter-equivalent PD signal; PAX `ptotal` is logged separately.
+   Its report directly plots final-port amplitude and DOP correlation,
+   providing a check of the equal-amplitude assumption behind the ideal
+   hybrid-MZ model.
+9. Set a target with `set <u> <v>` (or create one with `capture`), then issue
    `rough`. It performs one measure -> move -> settle -> verify operation.
-9. For a bounded feedback experiment, set a target and run
+10. For a bounded feedback experiment, set a target and run
    `pid-test 120 pid-test.csv`. It seeds both outputs at mid-range, performs
    one 70%-scaled rough correction, then applies conservative incremental PI
    corrections for 120 seconds. The CSV includes every error, integral,
@@ -85,15 +99,14 @@ V, and OUT2 -> phi2 with gain `150`. RP commands are constrained to 0–1 V.
    With the current raw-DOP issue, use `capture-unchecked` to capture the
    present angular target for this diagnostic experiment; ordinary `capture`
    and `rough` still retain their DOP safety gate.
-10. Use `pid-live 600 pid-live.csv` for the same PID test with the PyVista
+11. Use `pid-live 600 pid-live.csv` for the same PID test with the PyVista
     Poincare sphere. The visualizer receives the PID loop's PAX readings—it
     never opens a second PAX client. Cyan marks the target, red marks the live
     state and trace; move the `u`/`v` sliders or use J/L and I/K while locking
     to change the target, R to clear the trace, and Q to stop.
-    Fine PID corrections are slewed in small RP-voltage substeps; the live
-    renderer is decoupled from control sampling so rendering cannot throttle
-    the feedback loop. The PAX daemon configuration uses a 90 Hz waveplate
-    velocity (USB-safe); restart the daemon after changing `pax1000.toml`.
+    The live renderer is decoupled from control sampling so rendering cannot
+    throttle the feedback loop. The PAX daemon configuration uses an 80 Hz
+    waveplate velocity; restart the daemon after changing `pax1000.toml`.
 
 Avoid using a target at an S1 pole during the first test: phi1 azimuth is
 unobservable there, so a PAX reading alone cannot identify the absolute phi1

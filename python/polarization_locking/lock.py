@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import csv
 import math
+import re
 import time
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -19,6 +22,15 @@ except ImportError:  # pragma: no cover - support direct execution
     from control import PolarizationState, SphereAngles, pax_to_sphere_angles, phase_error_to_rp_voltage, sphere_angle_error, sphere_angles_from_stokes
     from pax_interface import PAXController, PAXReading
     from rp_interface import RPController
+
+
+@dataclass(frozen=True)
+class ExperimentPaths:
+    """The self-contained directory allocated for one command-line run."""
+
+    directory: Path
+    csv: Path
+    pdf: Path
 
 
 class PolarizationLockApp:
@@ -262,18 +274,86 @@ class PolarizationLockApp:
             sweep_values.append(one_lambda_rp_voltage)
         return sweep_values
 
+    def _cross_sweep_bias_values(self, sweep_axis: str) -> list[float]:
+        """Return full-V_lambda fixed-axis biases, including both endpoints."""
+        if sweep_axis not in {"phi1", "phi2"}:
+            raise ValueError("Cross-sweep axis must be 'phi1' or 'phi2'")
+        intervals = self.config.cross_sweep_bias_intervals
+        if intervals < 1:
+            raise ValueError("cross_sweep_bias_intervals must be at least one")
+        bias_axis = "phi2" if sweep_axis == "phi1" else "phi1"
+        return np.linspace(0.0, self._one_lambda_rp_voltage(bias_axis), intervals + 1).tolist()
+
+    @staticmethod
+    def _experiment_label(name: str) -> str:
+        stem = Path(name).stem or "run"
+        label = re.sub(r"[^A-Za-z0-9._-]+", "-", stem).strip(".-")
+        return label or "run"
+
+    def _new_experiment_paths(self, kind: str, requested_name: str) -> ExperimentPaths:
+        """Allocate a dated folder so a run's raw data and report stay together."""
+        now = datetime.now()
+        root = Path(__file__).resolve().parents[2] / "experiments" / "polarization_locking" / now.strftime("%Y-%m-%d")
+        base_name = f"{now.strftime('%H%M%S')}_{kind}_{self._experiment_label(requested_name)}"
+        directory = root / base_name
+        suffix = 2
+        while directory.exists():
+            directory = root / f"{base_name}_{suffix}"
+            suffix += 1
+        directory.mkdir(parents=True)
+        return ExperimentPaths(directory=directory, csv=directory / "data.csv", pdf=directory / "report.pdf")
+
+    def _write_automatic_pdf(
+        self,
+        kind: str,
+        csv_file: str | Path,
+        axis: str | None = None,
+        output_file: Path | None = None,
+    ) -> None:
+        """Create the opt-in report that corresponds to a completed test CSV."""
+        csv_path = Path(csv_file)
+        output_file = output_file or csv_path.with_suffix(".pdf")
+        if kind == "pid":
+            try:
+                from .plot_pid_tests import PdfPages, add_page
+            except ImportError:  # pragma: no cover - support direct execution
+                from plot_pid_tests import PdfPages, add_page
+            with PdfPages(output_file) as pdf:
+                add_page(pdf, csv_path)
+        elif kind == "cross":
+            try:
+                from .plot_cross_tests import PdfPages, add_report
+            except ImportError:  # pragma: no cover - support direct execution
+                from plot_cross_tests import PdfPages, add_report
+            with PdfPages(output_file) as pdf:
+                add_report(pdf, csv_path)
+        else:
+            try:
+                from .plot_calibration_tests import create_report
+            except ImportError:  # pragma: no cover - support direct execution
+                from plot_calibration_tests import create_report
+            create_report(csv_path, output_file, kind, axis)
+        print(f"PDF report saved to {output_file}")
+
     def _run_cross_sweep(self, axis: str, output_file: str) -> None:
         try:
             from .calibration import CalibrationSweep
         except ImportError:  # pragma: no cover - support direct execution
             from calibration import CalibrationSweep
         sweep_values = self._one_lambda_sweep_values(axis, self.config.cross_sweep_step_voltage)
+        bias_values = self._cross_sweep_bias_values(axis)
+        bias_axis = "phi2" if axis == "phi1" else "phi1"
+        print(
+            f"Cross-sweep plan: {len(sweep_values)} {axis} points per slice × {len(bias_values)} "
+            f"{bias_axis} biases spanning 0..{bias_values[-1]:.4f} V RP "
+            f"({len(sweep_values) * len(bias_values)} total readings)"
+        )
         sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
         completed = False
         try:
             sweep.run_cross_sweep(
                 sweep_axis=axis,
-                bias_values=list(self.config.cross_sweep_bias_voltages),
+                bias_values=bias_values,
                 sweep_values=sweep_values,
                 settle_s=self.config.cross_sweep_settle_s,
                 output_file=output_file,
@@ -351,6 +431,121 @@ class PolarizationLockApp:
                 print(f"Diagnostic suite saved to {output_file}")
             else:
                 print("Diagnostic suite aborted; outputs were returned to zero.")
+
+    def _run_intensity_diagnostic(self, output_file: str) -> None:
+        """Compare final-port PD amplitude and PAX state for independent sweeps."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+        phi1_values = self._one_lambda_sweep_values("phi1", self.config.intensity_diagnostic_step_voltage)
+        phi2_values = self._one_lambda_sweep_values("phi2", self.config.intensity_diagnostic_step_voltage)
+        print(
+            f"Intensity diagnostic: {len(phi1_values)} phi1 points at phi2=0 and "
+            f"{len(phi2_values)} phi2 points at phi1=0 ({len(phi1_values) + len(phi2_values)} total readings)"
+        )
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            sweep.run_intensity_diagnostic(
+                phi1_values=phi1_values,
+                phi2_values=phi2_values,
+                settle_s=self.config.intensity_diagnostic_settle_s,
+                output_file=output_file,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(f"Intensity diagnostic saved to {output_file}")
+            else:
+                print("Intensity diagnostic aborted; outputs were returned to zero.")
+
+    def _run_phi2_path_balance_test(self, output_file: str) -> None:
+        """Guided three-condition test of the two input-path contributions."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+
+        values = self._one_lambda_sweep_values("phi2", self.config.intensity_diagnostic_step_voltage)
+        instructions = {
+            "path_a_only": (
+                "PATH A ONLY: leave optical path A open and block optical path B. "
+                "Keep the final BS/PAX/PD connections unchanged."
+            ),
+            "path_b_only": (
+                "PATH B ONLY: block optical path A and leave optical path B open. "
+                "Keep the final BS/PAX/PD connections unchanged."
+            ),
+            "both_paths": "BOTH PATHS: unblock both optical paths.",
+        }
+        print(
+            f"Guided phi2 path-balance test: {len(values)} points per condition, "
+            f"{3 * len(values)} simultaneous PAX + PD readings total.\n"
+            "Path A/B are deliberately bench labels: use the same physical path consistently."
+        )
+
+        def prepare(condition: str) -> None:
+            print(f"\n--- {instructions[condition]} ---")
+            input("When the beam block is in place and the setup is stable, press Enter to sweep phi2. ")
+
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            sweep.run_phi2_path_balance(
+                phi2_values=values,
+                settle_s=self.config.intensity_diagnostic_settle_s,
+                prepare_condition=prepare,
+                output_file=output_file,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(f"Phi2 path-balance test saved to {output_file}")
+            else:
+                print("Phi2 path-balance test aborted; outputs were returned to zero.")
+
+    def _run_pax_path_hold(self, duration_s: float, output_file: str) -> None:
+        """Guided no-motion comparison of the raw PAX fields by optical path."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+        instructions = {
+            "path_a_only": "PATH A ONLY: leave path A open and block path B.",
+            "path_b_only": "PATH B ONLY: block path A and leave path B open.",
+            "both_paths": "BOTH PATHS: unblock both paths.",
+        }
+        print(
+            f"Guided PAX path-hold: {duration_s:.1f} s per condition, both RP outputs held at 0 V.\n"
+            "This test does not sweep either actuator; it records raw PAX telemetry and the PD simultaneously."
+        )
+
+        def prepare(condition: str) -> None:
+            print(f"\n--- {instructions[condition]} ---")
+            input("When stable, press Enter to begin this fixed-state acquisition. ")
+
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            sweep.run_pax_path_hold(
+                duration_s=duration_s,
+                sample_period_s=self.config.pax_path_hold_sample_period_s,
+                prepare_condition=prepare,
+                output_file=output_file,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(f"PAX path-hold saved to {output_file}")
+            else:
+                print("PAX path-hold aborted; outputs were returned to zero.")
 
     def _write_pid_row(
         self,
@@ -580,7 +775,7 @@ class PolarizationLockApp:
     def interactive_cli(self) -> None:
         self.connect()
         print("Rough alignment CLI")
-        print("Commands: set <u> <v> | capture | capture-unchecked | rough | live [file] | sweep <phi1|phi2> <file> | cross-sweep <phi1|phi2> <file> | bidirectional-sweep <phi1|phi2> <file> | diagnostic-suite <file> | pid-test <seconds> <file> | pid-live <seconds> <file> | stop | quit")
+        print("Commands: set <u> <v> | capture | capture-unchecked | rough | live [file] | sweep <phi1|phi2> <file> [pdf] | cross-sweep <phi1|phi2> <file> [pdf] | bidirectional-sweep <phi1|phi2> <file> [pdf] | diagnostic-suite <file> [pdf] | intensity-diagnostic <file> [pdf] | phi2-path-test <file> [pdf] | pax-path-hold <seconds> <file> [pdf] | pid-test <seconds> <file> [pdf] | pid-live <seconds> <file> [pdf] | stop | quit")
         try:
             while True:
                 cmd = input(">> ").strip().split()
@@ -598,19 +793,64 @@ class PolarizationLockApp:
                 elif cmd[0] == "rough":
                     self.rough_align_once()
                 elif cmd[0] == "live" and len(cmd) in {1, 2}:
-                    self._run_live_monitor(cmd[1] if len(cmd) == 2 else None)
-                elif cmd[0] == "sweep" and len(cmd) == 3:
-                    self._run_calibration_sweep(cmd[1], cmd[2])
-                elif cmd[0] == "cross-sweep" and len(cmd) == 3:
-                    self._run_cross_sweep(cmd[1], cmd[2])
-                elif cmd[0] == "bidirectional-sweep" and len(cmd) == 3:
-                    self._run_bidirectional_sweep(cmd[1], cmd[2])
-                elif cmd[0] == "diagnostic-suite" and len(cmd) == 2:
-                    self._run_diagnostic_suite(cmd[1])
-                elif cmd[0] == "pid-test" and len(cmd) == 3:
-                    self._run_pid_test(float(cmd[1]), cmd[2])
-                elif cmd[0] == "pid-live" and len(cmd) == 3:
-                    self._run_pid_live(float(cmd[1]), cmd[2])
+                    paths = self._new_experiment_paths("live", cmd[1]) if len(cmd) == 2 else None
+                    self._run_live_monitor(str(paths.csv) if paths is not None else None)
+                    if paths is not None:
+                        print(f"Live log saved to {paths.csv}")
+                elif cmd[0] == "sweep" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() == "pdf"):
+                    paths = self._new_experiment_paths(f"sweep-{cmd[1]}", cmd[2])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_calibration_sweep(cmd[1], str(paths.csv))
+                    if len(cmd) == 4:
+                        self._write_automatic_pdf("sweep", paths.csv, cmd[1], paths.pdf)
+                elif cmd[0] == "cross-sweep" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() == "pdf"):
+                    paths = self._new_experiment_paths(f"cross-sweep-{cmd[1]}", cmd[2])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_cross_sweep(cmd[1], str(paths.csv))
+                    if len(cmd) == 4:
+                        self._write_automatic_pdf("cross", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "bidirectional-sweep" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() == "pdf"):
+                    paths = self._new_experiment_paths(f"bidirectional-{cmd[1]}", cmd[2])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_bidirectional_sweep(cmd[1], str(paths.csv))
+                    if len(cmd) == 4:
+                        self._write_automatic_pdf("bidirectional", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "diagnostic-suite" and len(cmd) in {2, 3} and (len(cmd) == 2 or cmd[2].lower() == "pdf"):
+                    paths = self._new_experiment_paths("diagnostic-suite", cmd[1])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_diagnostic_suite(str(paths.csv))
+                    if len(cmd) == 3:
+                        self._write_automatic_pdf("diagnostic", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "intensity-diagnostic" and len(cmd) in {2, 3} and (len(cmd) == 2 or cmd[2].lower() == "pdf"):
+                    paths = self._new_experiment_paths("intensity-diagnostic", cmd[1])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_intensity_diagnostic(str(paths.csv))
+                    if len(cmd) == 3:
+                        self._write_automatic_pdf("intensity", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "phi2-path-test" and len(cmd) in {2, 3} and (len(cmd) == 2 or cmd[2].lower() == "pdf"):
+                    paths = self._new_experiment_paths("phi2-path-test", cmd[1])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_phi2_path_balance_test(str(paths.csv))
+                    if len(cmd) == 3:
+                        self._write_automatic_pdf("phi2-path-test", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "pax-path-hold" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() == "pdf"):
+                    paths = self._new_experiment_paths("pax-path-hold", cmd[2])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_pax_path_hold(float(cmd[1]), str(paths.csv))
+                    if len(cmd) == 4:
+                        self._write_automatic_pdf("pax-path-hold", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "pid-test" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() == "pdf"):
+                    paths = self._new_experiment_paths("pid-test", cmd[2])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_pid_test(float(cmd[1]), str(paths.csv))
+                    if len(cmd) == 4:
+                        self._write_automatic_pdf("pid", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "pid-live" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() == "pdf"):
+                    paths = self._new_experiment_paths("pid-live", cmd[2])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_pid_live(float(cmd[1]), str(paths.csv))
+                    if len(cmd) == 4:
+                        self._write_automatic_pdf("pid", paths.csv, output_file=paths.pdf)
                 elif cmd[0] == "stop":
                     self.rp.set_output_zero()
                     self._applied_rp_voltages[:] = 0.0

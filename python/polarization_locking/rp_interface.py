@@ -1,7 +1,22 @@
 from __future__ import annotations
 
 import time
+from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Any
+
+import numpy as np
+
+
+@dataclass(frozen=True)
+class PhotodiodeReading:
+    """Summary of one Red Pitaya scope capture on the final-output PD."""
+
+    mean_voltage: float
+    std_voltage: float
+    min_voltage: float
+    max_voltage: float
+    sample_count: int
 
 class RPController:
     """Thin wrapper around the Pyrpl Red Pitaya interface."""
@@ -93,6 +108,38 @@ class RPController:
         for v1, v2 in zip(v1_values, v2_values):
             self.set_output_voltage(v1, v2)
             time.sleep(delay_s)
+
+    @contextmanager
+    def photodiode_monitor(self):
+        """Temporarily route the Pyrpl scope's first channel to the PD on IN1."""
+        if self.p is None:
+            raise RuntimeError("Red Pitaya connection is not established")
+        scope = self.p.rp.scope
+        previous = {
+            "input1": scope.input1,
+            "duration": scope.duration,
+            "decimation": scope.decimation,
+        }
+        scope.input1 = self.config.pd_input
+        scope.duration = self.config.pd_scope_duration_s
+        scope.decimation = self.config.pd_scope_decimation
+        try:
+            yield lambda: self._read_photodiode(scope)
+        finally:
+            for name, value in previous.items():
+                setattr(scope, name, value)
+
+    def _read_photodiode(self, scope: Any) -> PhotodiodeReading:
+        trace = np.asarray(scope.single(timeout=self.config.pd_scope_timeout_s)[0], dtype=float)
+        if trace.size == 0:
+            raise RuntimeError("Red Pitaya scope returned an empty photodiode trace")
+        return PhotodiodeReading(
+            mean_voltage=float(np.mean(trace)),
+            std_voltage=float(np.std(trace)),
+            min_voltage=float(np.min(trace)),
+            max_voltage=float(np.max(trace)),
+            sample_count=int(trace.size),
+        )
 
     def _validate_output_voltage(self, v1: float, v2: float) -> None:
         lower = self.config.rp_output_min_voltage

@@ -6,18 +6,18 @@ import statistics
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional
 
 try:
     from .config import PolarizationLockConfig
     from .control import pax_to_sphere_angles
     from .pax_interface import PAXController, PAXReading
-    from .rp_interface import RPController
+    from .rp_interface import PhotodiodeReading, RPController
 except ImportError:  # pragma: no cover - support direct execution
     from config import PolarizationLockConfig
     from control import pax_to_sphere_angles
     from pax_interface import PAXController, PAXReading
-    from rp_interface import RPController
+    from rp_interface import PhotodiodeReading, RPController
 
 
 @dataclass
@@ -58,6 +58,32 @@ class DiagnosticPoint:
     sample_index: int
     rp_out1_voltage: float
     rp_out2_voltage: float
+    reading: PAXReading
+
+
+@dataclass
+class IntensityDiagnosticPoint:
+    sweep_axis: str
+    sweep_rp_voltage: float
+    rp_out1_voltage: float
+    rp_out2_voltage: float
+    photodiode: PhotodiodeReading
+    reading: PAXReading
+
+
+@dataclass
+class Phi2PathBalancePoint:
+    condition: str
+    sweep_rp_voltage: float
+    photodiode: PhotodiodeReading
+    reading: PAXReading
+
+
+@dataclass
+class PAXPathHoldPoint:
+    condition: str
+    elapsed_s: float
+    photodiode: PhotodiodeReading
     reading: PAXReading
 
 
@@ -237,6 +263,129 @@ class CalibrationSweep:
             print(f"Warning: {invalid_dop_count}/{len(points)} bidirectional readings had an invalid PAX DOP outside [0, 1].")
         return points
 
+    def run_intensity_diagnostic(
+        self,
+        phi1_values: list[float],
+        phi2_values: list[float],
+        settle_s: float,
+        output_file: Optional[str] = None,
+    ) -> list[IntensityDiagnosticPoint]:
+        """Sweep each actuator alone while logging final-port PD and PAX data.
+
+        The non-swept actuator is held at 0 V RP. This directly tests whether
+        either nominal phase axis changes final-output amplitude and whether
+        raw PAX DOP covaries with that amplitude.
+        """
+        if settle_s < 0:
+            raise ValueError("settle_s must be non-negative")
+        lower = self.config.rp_output_min_voltage
+        upper = self.config.rp_output_max_voltage
+        values = [*phi1_values, *phi2_values]
+        if not values or any(value < lower or value > upper for value in values):
+            raise ValueError(f"Intensity-diagnostic values must remain within [{lower}, {upper}] V")
+
+        points: list[IntensityDiagnosticPoint] = []
+        low_dop_count = 0
+        invalid_dop_count = 0
+        with self.rp.photodiode_monitor() as read_pd:
+            for sweep_axis, sweep_values in (("phi1", phi1_values), ("phi2", phi2_values)):
+                for sweep_voltage in sweep_values:
+                    out1, out2 = (sweep_voltage, 0.0) if sweep_axis == "phi1" else (0.0, sweep_voltage)
+                    self.rp.set_output_voltage(out1, out2)
+                    time.sleep(settle_s)
+                    photodiode = read_pd()
+                    reading = self.pax.read_polarization()
+                    low_dop_count += reading.dop < self.config.minimum_dop
+                    invalid_dop_count += not 0.0 <= reading.dop <= 1.0
+                    points.append(IntensityDiagnosticPoint(
+                        sweep_axis=sweep_axis,
+                        sweep_rp_voltage=sweep_voltage,
+                        rp_out1_voltage=out1,
+                        rp_out2_voltage=out2,
+                        photodiode=photodiode,
+                        reading=reading,
+                    ))
+
+        if output_file is not None:
+            self.save_intensity_diagnostic_csv(output_file, points)
+        if low_dop_count:
+            print(f"Warning: {low_dop_count}/{len(points)} intensity-diagnostic readings had DOP below {self.config.minimum_dop:.3f}.")
+        if invalid_dop_count:
+            print(f"Warning: {invalid_dop_count}/{len(points)} intensity-diagnostic readings had invalid raw DOP outside [0, 1].")
+        return points
+
+    def run_phi2_path_balance(
+        self,
+        phi2_values: list[float],
+        settle_s: float,
+        prepare_condition: Callable[[str], None],
+        output_file: Optional[str] = None,
+    ) -> list[Phi2PathBalancePoint]:
+        """Sweep phi2 with path A only, path B only, and both paths open.
+
+        ``prepare_condition`` is intentionally supplied by the CLI: changing
+        which optical path is blocked is a manual bench operation, while the
+        PAX and PD are acquired together at every voltage point.
+        """
+        if not phi2_values:
+            raise ValueError("phi2_values must not be empty")
+        lower, upper = self.config.rp_output_min_voltage, self.config.rp_output_max_voltage
+        if any(value < lower or value > upper for value in phi2_values):
+            raise ValueError(f"Phi2 sweep values must remain within [{lower}, {upper}] V")
+
+        points: list[Phi2PathBalancePoint] = []
+        with self.rp.photodiode_monitor() as read_pd:
+            for condition in ("path_a_only", "path_b_only", "both_paths"):
+                self.rp.set_output_zero()
+                prepare_condition(condition)
+                for voltage in phi2_values:
+                    self.rp.set_output_voltage(0.0, voltage)
+                    time.sleep(settle_s)
+                    points.append(Phi2PathBalancePoint(
+                        condition=condition,
+                        sweep_rp_voltage=voltage,
+                        photodiode=read_pd(),
+                        reading=self.pax.read_polarization(),
+                    ))
+
+        if output_file is not None:
+            self.save_phi2_path_balance_csv(output_file, points)
+        return points
+
+    def run_pax_path_hold(
+        self,
+        duration_s: float,
+        sample_period_s: float,
+        prepare_condition: Callable[[str], None],
+        output_file: Optional[str] = None,
+    ) -> list[PAXPathHoldPoint]:
+        """Acquire fixed-state PAX telemetry for each manually selected path."""
+        if duration_s <= 0.0 or sample_period_s <= 0.0:
+            raise ValueError("duration_s and sample_period_s must be positive")
+        points: list[PAXPathHoldPoint] = []
+        with self.rp.photodiode_monitor() as read_pd:
+            for condition in ("path_a_only", "path_b_only", "both_paths"):
+                self.rp.set_output_zero()
+                prepare_condition(condition)
+                started = time.monotonic()
+                next_sample = started
+                while True:
+                    now = time.monotonic()
+                    if now - started >= duration_s:
+                        break
+                    if now < next_sample:
+                        time.sleep(next_sample - now)
+                    points.append(PAXPathHoldPoint(
+                        condition=condition,
+                        elapsed_s=time.monotonic() - started,
+                        photodiode=read_pd(),
+                        reading=self.pax.read_polarization(),
+                    ))
+                    next_sample += sample_period_s
+        if output_file is not None:
+            self.save_pax_path_hold_csv(output_file, points)
+        return points
+
     def run_static_diagnostic_suite(
         self,
         phi1_values: list[tuple[float, float]],
@@ -277,7 +426,7 @@ class CalibrationSweep:
             writer = csv.writer(output)
             writer.writerow([
                 "test_name", "phase_axis", "phase_fraction", "sample_index", "rp_out1_v", "rp_out2_v",
-                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "u", "v",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
             ])
             output.flush()
         try:
@@ -304,7 +453,7 @@ class CalibrationSweep:
                         writer.writerow([
                             point.test_name, point.phase_axis, point.phase_fraction, point.sample_index,
                             point.rp_out1_voltage, point.rp_out2_voltage, reading.timestamp,
-                            reading.theta, reading.eta, reading.s1, reading.s2, reading.s3, reading.dop,
+                            reading.theta, reading.eta, reading.s1, reading.s2, reading.s3, reading.dop, reading.ptotal,
                             sphere.u, sphere.v,
                         ])
                         output.flush()
@@ -349,7 +498,7 @@ class CalibrationSweep:
             writer = csv.writer(fh)
             writer.writerow([
                 "sweep_axis", "bias_axis", "bias_rp_v", "sweep_rp_v", "rp_out1_v", "rp_out2_v",
-                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "u", "v",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
             ])
             for point in points:
                 sphere = pax_to_sphere_angles((point.reading.theta, point.reading.eta))
@@ -367,6 +516,7 @@ class CalibrationSweep:
                     point.reading.s2,
                     point.reading.s3,
                     point.reading.dop,
+                    point.reading.ptotal,
                     sphere.u,
                     sphere.v,
                 ])
@@ -389,13 +539,102 @@ class CalibrationSweep:
                     sphere.u, sphere.v,
                 ])
 
+    def save_intensity_diagnostic_csv(self, output_file: str, points: list[IntensityDiagnosticPoint]) -> None:
+        path = Path(output_file)
+        nd_od = self.config.pd_nd_optical_density
+        nd_transmission = 10.0 ** (-nd_od)
+        # PAX ptotal and the RP photodiode are different instruments with no
+        # shared absolute-power calibration. Normalize each actuator sweep to
+        # its own observed [min, max] range so their *responses* can be
+        # compared without conflating detector units, responsivity, or the PD
+        # arm's neutral-density attenuation.
+        normalized: dict[int, tuple[float, float]] = {}
+        for axis in ("phi1", "phi2"):
+            axis_points = [point for point in points if point.sweep_axis == axis]
+            pd_values = [point.photodiode.mean_voltage for point in axis_points]
+            ptotal_values = [point.reading.ptotal for point in axis_points]
+
+            def scale(values: list[float]) -> list[float]:
+                low, high = min(values), max(values)
+                span = high - low
+                return [(value - low) / span if span > 0.0 else 0.5 for value in values]
+
+            for point, pd_norm, ptotal_norm in zip(axis_points, scale(pd_values), scale(ptotal_values)):
+                normalized[id(point)] = (pd_norm, ptotal_norm)
+        with path.open("w", newline="") as fh:
+            writer = csv.writer(fh)
+            writer.writerow([
+                "sweep_axis", "sweep_rp_v", "rp_out1_v", "rp_out2_v",
+                "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pd_nd_optical_density", "pd_nd_transmission", "pd_pre_nd_equivalent_v", "pd_normalized",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
+                "pax_ptotal_normalized",
+            ])
+            for point in points:
+                sphere = pax_to_sphere_angles((point.reading.theta, point.reading.eta))
+                pd_norm, ptotal_norm = normalized[id(point)]
+                writer.writerow([
+                    point.sweep_axis, point.sweep_rp_voltage, point.rp_out1_voltage, point.rp_out2_voltage,
+                    point.photodiode.mean_voltage, point.photodiode.std_voltage,
+                    point.photodiode.min_voltage, point.photodiode.max_voltage, point.photodiode.sample_count,
+                    nd_od, nd_transmission, point.photodiode.mean_voltage / nd_transmission, pd_norm,
+                    point.reading.timestamp, point.reading.theta, point.reading.eta,
+                    point.reading.s1, point.reading.s2, point.reading.s3, point.reading.dop, point.reading.ptotal,
+                    sphere.u, sphere.v, ptotal_norm,
+                ])
+
+    def save_phi2_path_balance_csv(self, output_file: str, points: list[Phi2PathBalancePoint]) -> None:
+        """Persist raw simultaneous measurements; plotting normalizes per condition."""
+        path = Path(output_file)
+        with path.open("w", newline="") as fh:
+            writer = csv.writer(fh)
+            writer.writerow([
+                "condition", "sweep_axis", "sweep_rp_v", "rp_out1_v", "rp_out2_v",
+                "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pd_nd_optical_density", "pd_nd_transmission", "pax_timestamp",
+                "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
+            ])
+            transmission = 10.0 ** (-self.config.pd_nd_optical_density)
+            for point in points:
+                sphere = pax_to_sphere_angles((point.reading.theta, point.reading.eta))
+                pd = point.photodiode
+                reading = point.reading
+                writer.writerow([
+                    point.condition, "phi2", point.sweep_rp_voltage, 0.0, point.sweep_rp_voltage,
+                    pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
+                    self.config.pd_nd_optical_density, transmission, reading.timestamp,
+                    reading.theta, reading.eta, reading.s1, reading.s2, reading.s3, reading.dop,
+                    reading.ptotal, sphere.u, sphere.v,
+                ])
+
+    def save_pax_path_hold_csv(self, output_file: str, points: list[PAXPathHoldPoint]) -> None:
+        path = Path(output_file)
+        with path.open("w", newline="") as fh:
+            writer = csv.writer(fh)
+            writer.writerow([
+                "condition", "elapsed_s", "rp_out1_v", "rp_out2_v",
+                "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pax_timestamp", "pax_revisions", "pax_adc_min", "pax_adc_max", "pax_rev_time",
+                "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
+            ])
+            for point in points:
+                pd, reading = point.photodiode, point.reading
+                sphere = pax_to_sphere_angles((reading.theta, reading.eta))
+                writer.writerow([
+                    point.condition, point.elapsed_s, 0.0, 0.0,
+                    pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
+                    reading.timestamp, reading.revisions, reading.adc_min, reading.adc_max, reading.rev_time,
+                    reading.theta, reading.eta, reading.s1, reading.s2, reading.s3, reading.dop,
+                    reading.ptotal, sphere.u, sphere.v,
+                ])
+
     def save_diagnostic_csv(self, output_file: str, points: list[DiagnosticPoint]) -> None:
         path = Path(output_file)
         with path.open("w", newline="") as fh:
             writer = csv.writer(fh)
             writer.writerow([
                 "test_name", "phase_axis", "phase_fraction", "sample_index", "rp_out1_v", "rp_out2_v",
-                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "u", "v",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
             ])
             for point in points:
                 sphere = pax_to_sphere_angles((point.reading.theta, point.reading.eta))
@@ -403,5 +642,5 @@ class CalibrationSweep:
                     point.test_name, point.phase_axis, point.phase_fraction, point.sample_index,
                     point.rp_out1_voltage, point.rp_out2_voltage, point.reading.timestamp,
                     point.reading.theta, point.reading.eta, point.reading.s1, point.reading.s2,
-                    point.reading.s3, point.reading.dop, sphere.u, sphere.v,
+                    point.reading.s3, point.reading.dop, point.reading.ptotal, sphere.u, sphere.v,
                 ])
