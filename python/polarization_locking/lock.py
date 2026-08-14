@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import csv
+import json
+import subprocess
+import sys
 import math
 import re
 import time
@@ -516,6 +519,129 @@ class PolarizationLockApp:
             else:
                 print("Phi2 path-balance test aborted; outputs were returned to zero.")
 
+    def _run_field_model_calibration(self, output_file: str) -> None:
+        """Acquire the intentional two-axis data set consumed by the field fit."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+        fractions = self.config.field_model_phi1_fractions
+        if len(fractions) < 3 or any(fraction < 0.0 or fraction > 1.0 for fraction in fractions):
+            raise ValueError("field_model_phi1_fractions must contain at least three fractions in [0, 1]")
+        phi1_lambda = self._one_lambda_rp_voltage("phi1")
+        phi1_values = [fraction * phi1_lambda for fraction in fractions]
+        phi2_values = self._one_lambda_sweep_values("phi2", self.config.field_model_phi2_step_voltage)
+        repeats = self.config.field_model_repeats
+        points_per_block = len(phi2_values)
+        blocks = len(phi1_values) * repeats * 3
+        print(
+            "Fit-ready field-model calibration\n"
+            f"  phi1 biases (RP V): {', '.join(f'{value:.4f}' for value in phi1_values)}\n"
+            f"  phi2 sweep: 0..{phi2_values[-1]:.4f} RP V in {len(phi2_values)} points\n"
+            f"  {blocks} manual block settings × {points_per_block} PAX+PD samples = {blocks * points_per_block} rows.\n"
+            "Each phi1 bias performs A → B → both forward, then both → B → A reverse. "
+            "This brackets drift; keep the final BS, PAX, and PD paths unchanged."
+        )
+        instructions = {
+            "path_a_only": "leave optical path A open and block optical path B",
+            "path_b_only": "block optical path A and leave optical path B open",
+            "both_paths": "unblock both optical paths",
+        }
+
+        def prepare(condition: str, phi1_voltage: float, repeat_index: int, direction: str) -> None:
+            print(
+                f"\n--- phi1={phi1_voltage:.4f} RP V; pass {repeat_index + 1}/{repeats}; {direction}; "
+                f"{condition}: {instructions[condition]} ---"
+            )
+            input("When stable, press Enter to acquire this phi2 sweep. ")
+
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            sweep.run_field_model_calibration(
+                phi1_values=phi1_values,
+                phi2_values=phi2_values,
+                repeats=repeats,
+                settle_s=self.config.field_model_settle_s,
+                prepare_condition=prepare,
+                output_file=output_file,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                context_file = Path(output_file).with_name("field-model-context.json")
+                context_file.write_text(json.dumps({
+                    "schema_version": 1,
+                    "purpose": "State-matched phi2 output-amplitude model calibration",
+                    "raw_data_file": Path(output_file).name,
+                    "rp_vlambda_v": {"phi1": phi1_lambda, "phi2": self._one_lambda_rp_voltage("phi2")},
+                    "actuator_vlambda_v": {"phi1": self.config.phi1_v_lambda, "phi2": self.config.phi2_v_lambda},
+                    "actuator_volts_per_rp_volt": {
+                        "phi1": self.config.phi1_actuator_volts_per_rp_volt,
+                        "phi2": self.config.phi2_actuator_volts_per_rp_volt,
+                    },
+                    "output_assignment": {"rp_out1": "phi1", "rp_out2": "phi2", "pd": "final output with OD 2.0", "pax": "other final output"},
+                    "scan": {
+                        "phi1_rp_biases_v": phi1_values,
+                        "phi2_rp_values_v": phi2_values,
+                        "repeats": repeats,
+                        "settle_s": self.config.field_model_settle_s,
+                        "conditions": ["path_a_only", "path_b_only", "both_paths"],
+                    },
+                }, indent=2) + "\n")
+                print(
+                    f"Field-model calibration saved to {output_file}\n"
+                    f"Model context saved to {context_file}\n"
+                    "Fit it with: python python/field_propogation/fit_phi2_interference.py "
+                    f"{output_file} --phi1-vlambda-rp {phi1_lambda:.8f}"
+                )
+            else:
+                print("Field-model calibration aborted; outputs were returned to zero.")
+
+    def _run_phi1_fringe_map(self, output_file: str) -> None:
+        """Run an isolated both-path phi1 calibration/hysteresis measurement."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+        count = self.config.phi1_fringe_map_points
+        if count < 3:
+            raise ValueError("phi1_fringe_map_points must be at least 3")
+        phi1_lambda = self._one_lambda_rp_voltage("phi1")
+        phi1_values = np.linspace(0.0, phi1_lambda, count).tolist()
+        phi2_values = self._one_lambda_sweep_values("phi2", self.config.phi1_fringe_map_phi2_step_voltage)
+        print(
+            "Focused phi1 fringe map (both paths open throughout)\n"
+            f"  phi1: 0..{phi1_lambda:.4f} RP V in {len(phi1_values)} points, forward then reverse\n"
+            f"  phi2: 0..{phi2_values[-1]:.4f} RP V in {len(phi2_values)} points at each phi1 value\n"
+            f"  total: {2 * len(phi1_values) * len(phi2_values)} simultaneous PAX + PD samples.\n"
+            "This isolates the phi1-voltage-to-fringe-phase map; do not change beam blocks during acquisition."
+        )
+        input("Set BOTH PATHS OPEN and let the interferometer settle, then press Enter to begin. ")
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            sweep.run_phi1_fringe_map(
+                phi1_values=phi1_values,
+                phi2_values=phi2_values,
+                settle_s=self.config.phi1_fringe_map_settle_s,
+                output_file=output_file,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(
+                    f"Phi1 fringe map saved to {output_file}\n"
+                    "Analyze it with: python python/field_propogation/fit_phi1_fringe_map.py "
+                    f"{output_file} --phi1-vlambda-rp {phi1_lambda:.8f}"
+                )
+            else:
+                print("Phi1 fringe map aborted; outputs were returned to zero.")
+
     def _run_pax_path_hold(self, duration_s: float, output_file: str) -> None:
         """Guided no-motion comparison of the raw PAX fields by optical path."""
         try:
@@ -597,6 +723,131 @@ class PolarizationLockApp:
                 print(f"Phi2 power-balance saved to {output_file}")
             else:
                 print("Phi2 power-balance aborted; outputs were returned to zero.")
+
+    def _run_first_npbs_d_test(self, output_file: str, report_format: str | None = None) -> None:
+        """Record the static and phi1-driven polarization state at first-NPBS D."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+        phi1_lambda = self._one_lambda_rp_voltage("phi1")
+        static_s = self.config.first_npbs_d_static_duration_s
+        driven_s = self.config.first_npbs_d_driven_duration_s
+        frequency = self.config.first_npbs_d_phi1_frequency_hz
+        print(
+            "First-NPBS D-port polarization test\n"
+            "  Connect and align the PAX at D: the REFLECTED output of the first NPBS, before the phi2/C arm and final NPBS.\n"
+            f"  Static: phi1=phi2=0 for {static_s:.0f} s.\n"
+            f"  Driven: OUT1/phi1 sine = {phi1_lambda / 2:.4f} +/- {phi1_lambda / 2:.4f} RP V "
+            f"(0..one V_lambda) at {frequency:.2f} Hz for {driven_s:.0f} s; OUT2/phi2 remains 0.\n"
+            "Ideal D prediction: S1=0 and (S2,S3)=(-sin(phi1+delta), cos(phi1+delta)); "
+            "the unknown static delta rotates this equator but does not change its shape."
+        )
+        input("When the PAX is aligned at D and stable, press Enter to begin. ")
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            sweep.run_first_npbs_d_test(
+                static_duration_s=static_s, driven_duration_s=driven_s, frequency_hz=frequency,
+                phi1_v_lambda_rp=phi1_lambda, sample_period_s=self.config.first_npbs_d_sample_period_s,
+                output_file=output_file,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(f"First-NPBS D-port test saved to {output_file}")
+                if report_format is not None:
+                    analyzer = Path(__file__).resolve().parents[1] / "field_propogation" / "analyze_first_npbs_d.py"
+                    subprocess.run([sys.executable, str(analyzer), output_file, "--format", report_format], check=True)
+            else:
+                print("First-NPBS D-port test aborted; outputs were returned to zero.")
+
+    def _run_first_npbs_d_isolation(self, output_file: str, report_format: str | None = None) -> None:
+        """Guided static A/B isolation at D, prior to any commanded phi1 test."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+        duration = self.config.first_npbs_d_isolation_duration_s
+        instructions = {
+            "path_a_only": "leave input PATH A open (PBS transmitted/phi1 arm) and block input PATH B",
+            "path_b_only": "block input PATH A and leave input PATH B open (PBS reflected arm)",
+            "both_paths": "unblock both input paths A and B",
+        }
+        print(
+            "First-NPBS D-port A/B isolation test\n"
+            "Keep the PAX aligned at D, the REFLECTED output of the first NPBS. Both RP outputs remain at 0 V.\n"
+            f"Each of A-only, B-only, and both-open is recorded for {duration:.0f} s.\n"
+            "Ideal predictions at D: A-only is fixed S=(-1,0,0); B-only is fixed S=(+1,0,0); "
+            "both-open is an S1=0 equatorial state whose angle exposes A/B relative phase."
+        )
+
+        def prepare(condition: str) -> None:
+            print(f"\n--- {condition}: {instructions[condition]} ---")
+            input("When stable, press Enter to begin this 60-second capture. ")
+
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            sweep.run_first_npbs_d_isolation(
+                duration_s=duration, sample_period_s=self.config.first_npbs_d_sample_period_s,
+                prepare_condition=prepare, output_file=output_file,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(f"First-NPBS D-port isolation saved to {output_file}")
+                if report_format is not None:
+                    analyzer = Path(__file__).resolve().parents[1] / "field_propogation" / "analyze_first_npbs_d_isolation.py"
+                    subprocess.run([sys.executable, str(analyzer), output_file, "--format", report_format], check=True)
+            else:
+                print("First-NPBS D-port isolation aborted; outputs were returned to zero.")
+
+    def _run_first_npbs_d_polarizer_test(self, output_file: str, report_format: str | None = None) -> None:
+        """Drive phi1 with raw PAX at D and a linear analyzer in C."""
+        try:
+            from .calibration import CalibrationSweep
+        except ImportError:  # pragma: no cover - support direct execution
+            from calibration import CalibrationSweep
+        phi1_lambda = self._one_lambda_rp_voltage("phi1")
+        static_s = self.config.first_npbs_d_polarizer_static_duration_s
+        driven_s = self.config.first_npbs_d_polarizer_driven_duration_s
+        frequency = self.config.first_npbs_d_polarizer_phi1_frequency_hz
+        print(
+            "Phi1 C-arm polarizer / D-port PAX test\n"
+            "  Keep BOTH input paths A and B open. Keep PAX directly at first-NPBS D with NO polarizer before it.\n"
+            "  Place a linear polarizer in arm C immediately before the final NPBS (therefore before the PD path). Set it approximately 45 degrees "
+            "to the A/B linear eigenstates for substantial phase-to-power conversion at final F.\n"
+            "  The PAX records the raw D-port polarization trajectory; PD at final port F is the intentional intensity analyzer.\n"
+            f"  Static: {static_s:.0f} s at phi1=0. Driven: OUT1 = {phi1_lambda / 2:.4f} +/- {phi1_lambda / 2:.4f} RP V "
+            f"at {frequency:.3f} Hz for {driven_s:.0f} s; OUT2=0. This is intentionally slow enough for the PAX to resolve."
+        )
+        input("When the polarizer/PAX are aligned at D and both A/B paths are open, press Enter to begin. ")
+        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        completed = False
+        try:
+            points = sweep.run_first_npbs_d_polarizer_test(
+                static_duration_s=static_s, driven_duration_s=driven_s, frequency_hz=frequency,
+                phi1_v_lambda_rp=phi1_lambda, sample_period_s=self.config.first_npbs_d_polarizer_sample_period_s,
+            )
+            sweep.save_first_npbs_d_polarizer_csv(
+                output_file, points, frequency_hz=frequency, phi1_v_lambda_rp=phi1_lambda,
+            )
+            completed = True
+        finally:
+            sweep.disconnect()
+            self._applied_rp_voltages[:] = 0.0
+            if completed:
+                print(f"Phi1 C-arm polarizer / D-port PAX test saved to {output_file}")
+                if report_format is not None:
+                    analyzer = Path(__file__).resolve().parents[1] / "field_propogation" / "analyze_first_npbs_d_polarizer.py"
+                    subprocess.run([sys.executable, str(analyzer), output_file, "--format", report_format], check=True)
+            else:
+                print("D-port phi1 analyzer test aborted; outputs were returned to zero.")
 
     def _run_single_axis_pid_test(self, axis: str, duration_s: float, output_file: str) -> None:
         """Characterize and PI-hold one actuator with the other output fixed at zero."""
@@ -959,7 +1210,7 @@ class PolarizationLockApp:
     def interactive_cli(self) -> None:
         self.connect()
         print("Rough alignment CLI")
-        print("Commands: set <u> <v> | capture | capture-unchecked | rough | live [file] | sweep <phi1|phi2> <file> [pdf] | cross-sweep <phi1|phi2> <file> [pdf] | bidirectional-sweep <phi1|phi2> <file> [pdf] | diagnostic-suite <file> [pdf] | intensity-diagnostic <file> [pdf] | phi2-path-test <file> [pdf] | pax-path-hold <seconds> <file> [pdf] | power-balance <seconds> <file> [pdf|png|both] | single-axis-pid <phi1|phi2> <seconds> <file> [pdf] | pid-test <seconds> <file> [pdf] | pid-live <seconds> <file> [pdf] | stop | quit")
+        print("Commands: set <u> <v> | capture | capture-unchecked | rough | live [file] | sweep <phi1|phi2> <file> [pdf] | cross-sweep <phi1|phi2> <file> [pdf] | bidirectional-sweep <phi1|phi2> <file> [pdf] | diagnostic-suite <file> [pdf] | intensity-diagnostic <file> [pdf] | phi2-path-test <file> [pdf] | first-npbs-d-test <file> [png|pdf|both] | first-npbs-d-isolation <file> [png|pdf|both] | d-polarizer-phi1-test <file> [png|pdf|both] | field-model-calibration <file> | phi1-fringe-map <file> | pax-path-hold <seconds> <file> [pdf] | power-balance <seconds> <file> [pdf|png|both] | single-axis-pid <phi1|phi2> <seconds> <file> [pdf] | pid-test <seconds> <file> [pdf] | pid-live <seconds> <file> [pdf] | stop | quit")
         try:
             while True:
                 cmd = input(">> ").strip().split()
@@ -1017,6 +1268,26 @@ class PolarizationLockApp:
                     self._run_phi2_path_balance_test(str(paths.csv))
                     if len(cmd) == 3:
                         self._write_automatic_pdf("phi2-path-test", paths.csv, output_file=paths.pdf)
+                elif cmd[0] == "first-npbs-d-test" and len(cmd) in {2, 3} and (len(cmd) == 2 or cmd[2].lower() in {"png", "pdf", "both"}):
+                    paths = self._new_experiment_paths("first-npbs-d-test", cmd[1])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_first_npbs_d_test(str(paths.csv), cmd[2].lower() if len(cmd) == 3 else None)
+                elif cmd[0] == "first-npbs-d-isolation" and len(cmd) in {2, 3} and (len(cmd) == 2 or cmd[2].lower() in {"png", "pdf", "both"}):
+                    paths = self._new_experiment_paths("first-npbs-d-isolation", cmd[1])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_first_npbs_d_isolation(str(paths.csv), cmd[2].lower() if len(cmd) == 3 else None)
+                elif cmd[0] == "d-polarizer-phi1-test" and len(cmd) in {2, 3} and (len(cmd) == 2 or cmd[2].lower() in {"png", "pdf", "both"}):
+                    paths = self._new_experiment_paths("d-polarizer-phi1-test", cmd[1])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_first_npbs_d_polarizer_test(str(paths.csv), cmd[2].lower() if len(cmd) == 3 else None)
+                elif cmd[0] == "field-model-calibration" and len(cmd) == 2:
+                    paths = self._new_experiment_paths("field-model-calibration", cmd[1])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_field_model_calibration(str(paths.csv))
+                elif cmd[0] == "phi1-fringe-map" and len(cmd) == 2:
+                    paths = self._new_experiment_paths("phi1-fringe-map", cmd[1])
+                    print(f"Experiment folder: {paths.directory}")
+                    self._run_phi1_fringe_map(str(paths.csv))
                 elif cmd[0] == "pax-path-hold" and len(cmd) in {3, 4} and (len(cmd) == 3 or cmd[3].lower() == "pdf"):
                     paths = self._new_experiment_paths("pax-path-hold", cmd[2])
                     print(f"Experiment folder: {paths.directory}")

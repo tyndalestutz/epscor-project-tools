@@ -1,0 +1,43 @@
+{
+  "geometry": "Both input paths open. PAX at raw D. Linear polarizer in C immediately before final NPBS. PD at final port F.",
+  "drive": {
+    "frequency_hz": 0.05,
+    "duration_s": 79.8922388649953,
+    "samples": 684
+  },
+  "pd_final_f_known_frequency_fit": {
+    "baseline": 0.04137811936640532,
+    "amplitude": 0.0022487706200337923,
+    "contrast": 0.05434685419414101,
+    "phase_rad": 1.2904746634087467,
+    "r_squared": 0.027063124189665833
+  },
+  "pax_d_total_power_known_frequency_fit": {
+    "baseline": 0.0006746715576192313,
+    "amplitude": 3.1706931840140504e-06,
+    "contrast": 0.004699609977931684,
+    "phase_rad": 1.5398001453986172,
+    "r_squared": 0.03274945578685173
+  },
+  "pax_d": {
+    "equator_s1_rms": 0.08897828761646841,
+    "command_phase_coherence": 0.3045966074083213,
+    "best_static_phase_offset_rad": 2.37958779074581,
+    "equatorial_angle_span_rad": 1.7857932081824
+  },
+  "static": {
+    "pd_mean_std": [
+      0.04803320744799243,
+      0.010626695314309393
+    ],
+    "pax_ptotal_mean_std": [
+      0.0007527678103174603,
+      1.0308601776150761e-05
+    ],
+    "stokes_std": [
+      0.04168627779164902,
+      0.23390577835206933,
+      0.19510845505119562
+    ]
+  }
+}

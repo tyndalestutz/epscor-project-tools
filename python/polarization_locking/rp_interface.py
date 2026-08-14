@@ -130,6 +130,23 @@ class RPController:
             trigger_source="immediately",
         )
 
+    def set_phi1_sine(self, *, offset: float, amplitude: float, frequency_hz: float) -> None:
+        """Drive OUT1/phi1 with a bounded sine; OUT2/phi2 remains at zero."""
+        if self.p is None or self.asg1 is None or self.asg2 is None:
+            raise RuntimeError("Red Pitaya connection is not established")
+        if frequency_hz <= 0.0 or amplitude < 0.0:
+            raise ValueError("Sine frequency must be positive and amplitude non-negative")
+        self._validate_output_voltage(offset - amplitude, 0.0)
+        self._validate_output_voltage(offset + amplitude, 0.0)
+        self.asg2.setup(waveform="dc", offset=0.0, amplitude=0.0, trigger_source="immediately")
+        self.asg1.setup(
+            waveform="sin",
+            frequency=float(frequency_hz),
+            offset=float(offset),
+            amplitude=float(amplitude),
+            trigger_source="immediately",
+        )
+
     @contextmanager
     def photodiode_monitor(self):
         """Temporarily route the Pyrpl scope's first channel to the PD on IN1."""

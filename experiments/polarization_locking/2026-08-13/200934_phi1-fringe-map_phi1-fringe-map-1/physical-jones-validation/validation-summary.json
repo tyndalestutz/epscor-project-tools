@@ -1,0 +1,485 @@
+{
+  "power_normalized_rms": {
+    "pd": 1.0065833626654304,
+    "pax": 1.3212962510172848,
+    "stokes": 0.8266154279263109
+  },
+  "contrast_rows": [
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.0,
+      "detector": "pd",
+      "measured_contrast": 0.5457102855894951,
+      "predicted_contrast": 0.4441595490278849
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.0,
+      "detector": "pax",
+      "measured_contrast": 0.587835666150033,
+      "predicted_contrast": 0.4640891345407106
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.04518518518518518,
+      "detector": "pd",
+      "measured_contrast": 0.5532659878770219,
+      "predicted_contrast": 0.4667694698318214
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.04518518518518518,
+      "detector": "pax",
+      "measured_contrast": 0.7088564809613077,
+      "predicted_contrast": 0.4881743795006604
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.09037037037037036,
+      "detector": "pd",
+      "measured_contrast": 0.5318977991156345,
+      "predicted_contrast": 0.48825494079632414
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.09037037037037036,
+      "detector": "pax",
+      "measured_contrast": 0.6827573828968821,
+      "predicted_contrast": 0.5113977867606861
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.13555555555555554,
+      "detector": "pd",
+      "measured_contrast": 0.540570185834224,
+      "predicted_contrast": 0.5035423495800612
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.13555555555555554,
+      "detector": "pax",
+      "measured_contrast": 0.6624643653887327,
+      "predicted_contrast": 0.5283476645275615
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.18074074074074073,
+      "detector": "pd",
+      "measured_contrast": 0.5459210783340558,
+      "predicted_contrast": 0.5103698765816858
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.18074074074074073,
+      "detector": "pax",
+      "measured_contrast": 0.6862344234953317,
+      "predicted_contrast": 0.5364815479267951
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.22592592592592592,
+      "detector": "pd",
+      "measured_contrast": 0.5400029844468898,
+      "predicted_contrast": 0.5093481490961334
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.22592592592592592,
+      "detector": "pax",
+      "measured_contrast": 0.6568713369638166,
+      "predicted_contrast": 0.5362474405660139
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.2711111111111111,
+      "detector": "pd",
+      "measured_contrast": 0.5822330091838079,
+      "predicted_contrast": 0.5030190829108548
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.2711111111111111,
+      "detector": "pax",
+      "measured_contrast": 0.6734515183763741,
+      "predicted_contrast": 0.5301600839411903
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.3162962962962963,
+      "detector": "pd",
+      "measured_contrast": 0.5666341078103428,
+      "predicted_contrast": 0.4943260432377507
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.3162962962962963,
+      "detector": "pax",
+      "measured_contrast": 0.6435064422127783,
+      "predicted_contrast": 0.5212280378387649
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.36148148148148146,
+      "detector": "pd",
+      "measured_contrast": 0.6023363403718308,
+      "predicted_contrast": 0.4851093227511045
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.36148148148148146,
+      "detector": "pax",
+      "measured_contrast": 0.6141445940384858,
+      "predicted_contrast": 0.5113710833493765
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.4066666666666666,
+      "detector": "pd",
+      "measured_contrast": 0.5721133277526018,
+      "predicted_contrast": 0.47542566869725233
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.4066666666666666,
+      "detector": "pax",
+      "measured_contrast": 0.5972118242057539,
+      "predicted_contrast": 0.5006910851204706
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.45185185185185184,
+      "detector": "pd",
+      "measured_contrast": 0.6162913995925294,
+      "predicted_contrast": 0.46416275877703717
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.45185185185185184,
+      "detector": "pax",
+      "measured_contrast": 0.6147974651427209,
+      "predicted_contrast": 0.4881111945783776
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.497037037037037,
+      "detector": "pd",
+      "measured_contrast": 0.5959570253170349,
+      "predicted_contrast": 0.45060315463393813
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.497037037037037,
+      "detector": "pax",
+      "measured_contrast": 0.63295614700539,
+      "predicted_contrast": 0.47301133868577905
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.5422222222222222,
+      "detector": "pd",
+      "measured_contrast": 0.6276331640926295,
+      "predicted_contrast": 0.435987133693292
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.5422222222222222,
+      "detector": "pax",
+      "measured_contrast": 0.6237758698241428,
+      "predicted_contrast": 0.45684066482266417
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.5874074074074074,
+      "detector": "pd",
+      "measured_contrast": 0.5967286672317241,
+      "predicted_contrast": 0.42406638194381857
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.5874074074074074,
+      "detector": "pax",
+      "measured_contrast": 0.6097046960757623,
+      "predicted_contrast": 0.4436529274920571
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.6325925925925926,
+      "detector": "pd",
+      "measured_contrast": 0.577439718048841,
+      "predicted_contrast": 0.41988424414961284
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.6325925925925926,
+      "detector": "pax",
+      "measured_contrast": 0.6490371541145988,
+      "predicted_contrast": 0.4387994964292449
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.6777777777777777,
+      "detector": "pd",
+      "measured_contrast": 0.5901734945047202,
+      "predicted_contrast": 0.4268657948179339
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.6777777777777777,
+      "detector": "pax",
+      "measured_contrast": 0.663760735025302,
+      "predicted_contrast": 0.44589822619889147
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.7229629629629629,
+      "detector": "pd",
+      "measured_contrast": 0.6031310427273343,
+      "predicted_contrast": 0.44415955040588395
+    },
+    {
+      "direction": "forward",
+      "phi1_rp_v": 0.7229629629629629,
+      "detector": "pax",
+      "measured_contrast": 0.6466662245978375,
+      "predicted_contrast": 0.46408913599953144
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.0,
+      "detector": "pd",
+      "measured_contrast": 0.598539061660041,
+      "predicted_contrast": 0.4441595490278844
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.0,
+      "detector": "pax",
+      "measured_contrast": 0.6588280513601601,
+      "predicted_contrast": 0.46408913454071044
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.04518518518518518,
+      "detector": "pd",
+      "measured_contrast": 0.5713252262512081,
+      "predicted_contrast": 0.466769469831821
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.04518518518518518,
+      "detector": "pax",
+      "measured_contrast": 0.6568759927814174,
+      "predicted_contrast": 0.48817437950066
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.09037037037037036,
+      "detector": "pd",
+      "measured_contrast": 0.6011937985011041,
+      "predicted_contrast": 0.488254940796324
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.09037037037037036,
+      "detector": "pax",
+      "measured_contrast": 0.6739619640814463,
+      "predicted_contrast": 0.5113977867606859
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.13555555555555554,
+      "detector": "pd",
+      "measured_contrast": 0.5481867117663495,
+      "predicted_contrast": 0.503542349580061
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.13555555555555554,
+      "detector": "pax",
+      "measured_contrast": 0.7235238516337541,
+      "predicted_contrast": 0.5283476645275612
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.18074074074074073,
+      "detector": "pd",
+      "measured_contrast": 0.57156905166565,
+      "predicted_contrast": 0.5103698765816854
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.18074074074074073,
+      "detector": "pax",
+      "measured_contrast": 0.6942872585460522,
+      "predicted_contrast": 0.5364815479267946
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.22592592592592592,
+      "detector": "pd",
+      "measured_contrast": 0.5528626308689953,
+      "predicted_contrast": 0.509348149096133
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.22592592592592592,
+      "detector": "pax",
+      "measured_contrast": 0.6674201520616639,
+      "predicted_contrast": 0.5362474405660136
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.2711111111111111,
+      "detector": "pd",
+      "measured_contrast": 0.5908522885448743,
+      "predicted_contrast": 0.5030190829108547
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.2711111111111111,
+      "detector": "pax",
+      "measured_contrast": 0.6631117294319203,
+      "predicted_contrast": 0.5301600839411903
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.3162962962962963,
+      "detector": "pd",
+      "measured_contrast": 0.544681163810334,
+      "predicted_contrast": 0.49432604323775053
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.3162962962962963,
+      "detector": "pax",
+      "measured_contrast": 0.6978714219106664,
+      "predicted_contrast": 0.5212280378387646
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.36148148148148146,
+      "detector": "pd",
+      "measured_contrast": 0.588443203983743,
+      "predicted_contrast": 0.4851093227511044
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.36148148148148146,
+      "detector": "pax",
+      "measured_contrast": 0.6731713787550487,
+      "predicted_contrast": 0.5113710833493763
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.4066666666666666,
+      "detector": "pd",
+      "measured_contrast": 0.6670620876058513,
+      "predicted_contrast": 0.47542566869725217
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.4066666666666666,
+      "detector": "pax",
+      "measured_contrast": 0.6569998871987153,
+      "predicted_contrast": 0.5006910851204704
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.45185185185185184,
+      "detector": "pd",
+      "measured_contrast": 0.5965092395821922,
+      "predicted_contrast": 0.46416275877703694
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.45185185185185184,
+      "detector": "pax",
+      "measured_contrast": 0.6432514456013578,
+      "predicted_contrast": 0.4881111945783774
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.497037037037037,
+      "detector": "pd",
+      "measured_contrast": 0.6180719337279901,
+      "predicted_contrast": 0.4506031546339379
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.497037037037037,
+      "detector": "pax",
+      "measured_contrast": 0.6275284298330868,
+      "predicted_contrast": 0.47301133868577894
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.5422222222222222,
+      "detector": "pd",
+      "measured_contrast": 0.598408244497539,
+      "predicted_contrast": 0.43598713369329173
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.5422222222222222,
+      "detector": "pax",
+      "measured_contrast": 0.6791145900684386,
+      "predicted_contrast": 0.45684066482266406
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.5874074074074074,
+      "detector": "pd",
+      "measured_contrast": 0.6278216679937411,
+      "predicted_contrast": 0.42406638194381846
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.5874074074074074,
+      "detector": "pax",
+      "measured_contrast": 0.6736694197042492,
+      "predicted_contrast": 0.44365292749205676
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.6325925925925926,
+      "detector": "pd",
+      "measured_contrast": 0.647222214822757,
+      "predicted_contrast": 0.4198842441496126
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.6325925925925926,
+      "detector": "pax",
+      "measured_contrast": 0.6627922598203153,
+      "predicted_contrast": 0.43879949642924493
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.6777777777777777,
+      "detector": "pd",
+      "measured_contrast": 0.5975598811286291,
+      "predicted_contrast": 0.42686579481793374
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.6777777777777777,
+      "detector": "pax",
+      "measured_contrast": 0.6287985283548595,
+      "predicted_contrast": 0.44589822619889125
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.7229629629629629,
+      "detector": "pd",
+      "measured_contrast": 0.583732579597134,
+      "predicted_contrast": 0.4441595504058837
+    },
+    {
+      "direction": "reverse",
+      "phi1_rp_v": 0.7229629629629629,
+      "detector": "pax",
+      "measured_contrast": 0.7066644693858225,
+      "predicted_contrast": 0.4640891359995312
+    }
+  ]
+}

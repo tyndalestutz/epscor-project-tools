@@ -97,6 +97,54 @@ class PowerBalancePoint:
     reading: PAXReading
 
 
+@dataclass
+class FirstNPBSDPoint:
+    """PAX observation at D, the reflected output of the first NPBS."""
+
+    stage: str
+    elapsed_s: float
+    phi1_rp_command_estimated_v: float
+    photodiode: PhotodiodeReading
+    reading: PAXReading
+
+
+@dataclass
+class FirstNPBSDIsolationPoint:
+    """Fixed-actuator D-port observation for one A/B blocking condition."""
+
+    condition: str
+    elapsed_s: float
+    photodiode: PhotodiodeReading
+    reading: PAXReading
+
+
+@dataclass
+class FieldModelCalibrationPoint:
+    """One deliberately structured A/B/both two-axis calibration sample."""
+
+    phi1_bias_index: int
+    phi1_rp_voltage: float
+    repeat_index: int
+    direction: str
+    condition: str
+    phi2_rp_voltage: float
+    photodiode: PhotodiodeReading
+    reading: PAXReading
+
+
+@dataclass
+class Phi1FringeMapPoint:
+    """One both-path sample for extracting fringe phase versus phi1 voltage."""
+
+    phi1_index: int
+    phi1_direction: str
+    phi1_rp_voltage: float
+    phi2_direction: str
+    phi2_rp_voltage: float
+    photodiode: PhotodiodeReading
+    reading: PAXReading
+
+
 class CalibrationSweep:
     def __init__(
         self,
@@ -362,6 +410,99 @@ class CalibrationSweep:
             self.save_phi2_path_balance_csv(output_file, points)
         return points
 
+    def run_field_model_calibration(
+        self,
+        *,
+        phi1_values: list[float],
+        phi2_values: list[float],
+        repeats: int,
+        settle_s: float,
+        prepare_condition: Callable[[str, float, int, str], None],
+        output_file: Optional[str] = None,
+    ) -> list[FieldModelCalibrationPoint]:
+        """Acquire fit-ready A/B/both scans at multiple phi1 biases.
+
+        Conditions are cycled in alternating order and phi2 direction reverses
+        on alternate repeats. This is not simultaneous blocking, but it
+        brackets slow drift much more fairly than acquiring all A scans, then
+        all B scans, then all both-path scans.
+        """
+        if len(phi1_values) < 3 or not phi2_values:
+            raise ValueError("Field-model calibration needs at least three phi1 biases and one phi2 value")
+        if repeats < 1 or settle_s < 0.0:
+            raise ValueError("repeats must be positive and settle_s non-negative")
+        lower, upper = self.config.rp_output_min_voltage, self.config.rp_output_max_voltage
+        if any(value < lower or value > upper for value in [*phi1_values, *phi2_values]):
+            raise ValueError(f"Field-model RP values must remain within [{lower}, {upper}] V")
+
+        points: list[FieldModelCalibrationPoint] = []
+        with self.rp.photodiode_monitor() as read_pd:
+            for bias_index, phi1_voltage in enumerate(phi1_values):
+                for repeat_index in range(repeats):
+                    forward = repeat_index % 2 == 0
+                    direction = "forward" if forward else "reverse"
+                    conditions = ("path_a_only", "path_b_only", "both_paths") if forward else ("both_paths", "path_b_only", "path_a_only")
+                    voltages = phi2_values if forward else list(reversed(phi2_values))
+                    for condition in conditions:
+                        prepare_condition(condition, phi1_voltage, repeat_index, direction)
+                        for phi2_voltage in voltages:
+                            self.rp.set_output_voltage(phi1_voltage, phi2_voltage)
+                            time.sleep(settle_s)
+                            points.append(FieldModelCalibrationPoint(
+                                phi1_bias_index=bias_index,
+                                phi1_rp_voltage=phi1_voltage,
+                                repeat_index=repeat_index,
+                                direction=direction,
+                                condition=condition,
+                                phi2_rp_voltage=phi2_voltage,
+                                photodiode=read_pd(),
+                                reading=self.pax.read_polarization(),
+                            ))
+        if output_file is not None:
+            self.save_field_model_calibration_csv(output_file, points)
+        return points
+
+    def run_phi1_fringe_map(
+        self,
+        *,
+        phi1_values: list[float],
+        phi2_values: list[float],
+        settle_s: float,
+        output_file: Optional[str] = None,
+    ) -> list[Phi1FringeMapPoint]:
+        """Map the phi2 fringe at dense forward/reverse phi1 commands.
+
+        Both optical paths remain open for the complete measurement. For each
+        phi1 value, phi2 is scanned forward on the outward phi1 pass and in
+        reverse on the return pass. This isolates phi1 calibration/hysteresis
+        from manual beam-block changes.
+        """
+        if len(phi1_values) < 3 or len(phi2_values) < 4 or settle_s < 0.0:
+            raise ValueError("Phi1 fringe map needs >=3 phi1 values, >=4 phi2 values, and non-negative settling")
+        lower, upper = self.config.rp_output_min_voltage, self.config.rp_output_max_voltage
+        if any(value < lower or value > upper for value in [*phi1_values, *phi2_values]):
+            raise ValueError(f"Phi1 fringe-map RP values must remain within [{lower}, {upper}] V")
+        points: list[Phi1FringeMapPoint] = []
+        passes = (("forward", phi1_values, "forward", phi2_values), ("reverse", list(reversed(phi1_values)), "reverse", list(reversed(phi2_values))))
+        with self.rp.photodiode_monitor() as read_pd:
+            for phi1_direction, biases, phi2_direction, phi2_scan in passes:
+                for index, phi1_voltage in enumerate(biases):
+                    for phi2_voltage in phi2_scan:
+                        self.rp.set_output_voltage(phi1_voltage, phi2_voltage)
+                        time.sleep(settle_s)
+                        points.append(Phi1FringeMapPoint(
+                            phi1_index=index,
+                            phi1_direction=phi1_direction,
+                            phi1_rp_voltage=phi1_voltage,
+                            phi2_direction=phi2_direction,
+                            phi2_rp_voltage=phi2_voltage,
+                            photodiode=read_pd(),
+                            reading=self.pax.read_polarization(),
+                        ))
+        if output_file is not None:
+            self.save_phi1_fringe_map_csv(output_file, points)
+        return points
+
     def run_pax_path_hold(
         self,
         duration_s: float,
@@ -447,6 +588,125 @@ class CalibrationSweep:
         if output_file is not None:
             self.save_phi2_power_balance_csv(output_file, points)
         return points
+
+    def run_first_npbs_d_test(
+        self,
+        *,
+        static_duration_s: float,
+        driven_duration_s: float,
+        frequency_hz: float,
+        phi1_v_lambda_rp: float,
+        sample_period_s: float,
+        output_file: Optional[str] = None,
+    ) -> list[FirstNPBSDPoint]:
+        """Test the ideal D-port equatorial trajectory under phi1 modulation.
+
+        The static stage holds phi1=phi2=0.  The driven stage applies an OUT1
+        sine from 0 to one calibrated phi1 V_lambda; OUT2 stays at zero.
+        PAX is expected to be physically connected at D for the whole run.
+        """
+        if min(static_duration_s, driven_duration_s, frequency_hz, phi1_v_lambda_rp, sample_period_s) <= 0.0:
+            raise ValueError("durations, frequency, V_lambda, and sample period must be positive")
+        lower, upper = self.config.rp_output_min_voltage, self.config.rp_output_max_voltage
+        if not lower <= phi1_v_lambda_rp <= upper:
+            raise ValueError(f"phi1 V_lambda RP command must be in [{lower}, {upper}] V")
+        points: list[FirstNPBSDPoint] = []
+
+        def acquire(stage: str, duration_s: float, started: float, command) -> None:
+            next_sample = started
+            while True:
+                now = time.monotonic()
+                elapsed = now - started
+                if elapsed >= duration_s:
+                    return
+                if now < next_sample:
+                    time.sleep(next_sample - now)
+                elapsed = time.monotonic() - started
+                points.append(FirstNPBSDPoint(
+                    stage=stage, elapsed_s=elapsed, phi1_rp_command_estimated_v=command(elapsed),
+                    photodiode=read_pd(), reading=self.pax.read_polarization(),
+                ))
+                next_sample += sample_period_s
+
+        offset = amplitude = phi1_v_lambda_rp / 2.0
+        with self.rp.photodiode_monitor() as read_pd:
+            self.rp.set_output_zero()
+            static_started = time.monotonic()
+            acquire("static", static_duration_s, static_started, lambda _elapsed: 0.0)
+            self.rp.set_phi1_sine(offset=offset, amplitude=amplitude, frequency_hz=frequency_hz)
+            driven_started = time.monotonic()
+            acquire(
+                "phi1_sine", driven_duration_s, driven_started,
+                lambda elapsed: offset + amplitude * math.sin(2.0 * math.pi * frequency_hz * elapsed),
+            )
+            self.rp.set_output_zero()
+        if output_file is not None:
+            self.save_first_npbs_d_csv(output_file, points, frequency_hz=frequency_hz, phi1_v_lambda_rp=phi1_v_lambda_rp)
+        return points
+
+    def run_first_npbs_d_isolation(
+        self,
+        *,
+        duration_s: float,
+        sample_period_s: float,
+        prepare_condition: Callable[[str], None],
+        output_file: Optional[str] = None,
+    ) -> list[FirstNPBSDIsolationPoint]:
+        """Hold A-only, B-only, and both-open states while PAX observes D.
+
+        At D and zero actuator command, ideal A-only and B-only inputs have
+        fixed orthogonal Stokes states; only both-open can show relative-phase
+        motion around the equator. This intentionally uses manual blocking at
+        the *input* A/B paths, not downstream C/D points.
+        """
+        if duration_s <= 0.0 or sample_period_s <= 0.0:
+            raise ValueError("duration_s and sample_period_s must be positive")
+        points: list[FirstNPBSDIsolationPoint] = []
+        with self.rp.photodiode_monitor() as read_pd:
+            for condition in ("path_a_only", "path_b_only", "both_paths"):
+                self.rp.set_output_zero()
+                prepare_condition(condition)
+                started = time.monotonic()
+                next_sample = started
+                while True:
+                    now = time.monotonic()
+                    if now - started >= duration_s:
+                        break
+                    if now < next_sample:
+                        time.sleep(next_sample - now)
+                    points.append(FirstNPBSDIsolationPoint(
+                        condition=condition, elapsed_s=time.monotonic() - started,
+                        photodiode=read_pd(), reading=self.pax.read_polarization(),
+                    ))
+                    next_sample += sample_period_s
+        if output_file is not None:
+            self.save_first_npbs_d_isolation_csv(output_file, points)
+        return points
+
+    def run_first_npbs_d_polarizer_test(
+        self,
+        *,
+        static_duration_s: float,
+        driven_duration_s: float,
+        frequency_hz: float,
+        phi1_v_lambda_rp: float,
+        sample_period_s: float,
+        output_file: Optional[str] = None,
+    ) -> list[FirstNPBSDPoint]:
+        """Drive phi1 with a polarizer in C, PAX at D, and PD at final F.
+
+        PAX observes the unfiltered D-port Stokes trajectory.  The polarizer
+        acts in C before the final NPBS, so the final-F PD is the intentional
+        phase-to-power analyzer.  Its exact fringe phase/contrast depends on
+        the manually selected polarizer axis.
+        """
+        # This is deliberately a separate public method so its CSV contract and
+        # guided CLI language stay tied to the physical polarizer geometry.
+        return self.run_first_npbs_d_test(
+            static_duration_s=static_duration_s, driven_duration_s=driven_duration_s,
+            frequency_hz=frequency_hz, phi1_v_lambda_rp=phi1_v_lambda_rp,
+            sample_period_s=sample_period_s, output_file=output_file,
+        )
 
     def run_static_diagnostic_suite(
         self,
@@ -690,6 +950,50 @@ class CalibrationSweep:
                     reading.ptotal, sphere.u, sphere.v,
                 ])
 
+    def save_field_model_calibration_csv(self, output_file: str, points: list[FieldModelCalibrationPoint]) -> None:
+        """Save the stable input contract for ``fit_phi2_interference.py``."""
+        path = Path(output_file)
+        with path.open("w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow([
+                "phi1_bias_index", "phi1_rp_v", "repeat_index", "direction", "condition", "phi2_rp_v",
+                "rp_out1_v", "rp_out2_v", "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pd_nd_optical_density", "pd_nd_transmission", "pax_timestamp", "theta", "eta", "s1", "s2", "s3",
+                "dop", "pax_ptotal", "u", "v",
+            ])
+            transmission = 10.0 ** (-self.config.pd_nd_optical_density)
+            for point in points:
+                pd, reading = point.photodiode, point.reading
+                sphere = pax_to_sphere_angles((reading.theta, reading.eta))
+                writer.writerow([
+                    point.phi1_bias_index, point.phi1_rp_voltage, point.repeat_index, point.direction, point.condition,
+                    point.phi2_rp_voltage, point.phi1_rp_voltage, point.phi2_rp_voltage,
+                    pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
+                    self.config.pd_nd_optical_density, transmission, reading.timestamp, reading.theta, reading.eta,
+                    reading.s1, reading.s2, reading.s3, reading.dop, reading.ptotal, sphere.u, sphere.v,
+                ])
+
+    def save_phi1_fringe_map_csv(self, output_file: str, points: list[Phi1FringeMapPoint]) -> None:
+        """Save a standalone, directly fit-ready phi1 fringe-map data set."""
+        path = Path(output_file)
+        with path.open("w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow([
+                "condition", "phi1_index", "phi1_direction", "phi1_rp_v", "phi2_direction", "phi2_rp_v",
+                "rp_out1_v", "rp_out2_v", "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
+            ])
+            for point in points:
+                pd, reading = point.photodiode, point.reading
+                sphere = pax_to_sphere_angles((reading.theta, reading.eta))
+                writer.writerow([
+                    "both_paths", point.phi1_index, point.phi1_direction, point.phi1_rp_voltage,
+                    point.phi2_direction, point.phi2_rp_voltage, point.phi1_rp_voltage, point.phi2_rp_voltage,
+                    pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
+                    reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2, reading.s3, reading.dop,
+                    reading.ptotal, sphere.u, sphere.v,
+                ])
+
     def save_phi2_power_balance_csv(self, output_file: str, points: list[PowerBalancePoint]) -> None:
         """Save raw signals plus per-condition normalized detector response."""
         path = Path(output_file)
@@ -739,6 +1043,97 @@ class CalibrationSweep:
                     frequency, offset, amplitude, pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage,
                     pd.sample_count, pd_norm, reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2,
                     reading.s3, reading.dop, reading.ptotal, pax_norm, pd_mean, pax_mean, pd_contrast, pax_contrast, sphere.u, sphere.v,
+                ])
+
+    def save_first_npbs_d_csv(
+        self, output_file: str, points: list[FirstNPBSDPoint], *, frequency_hz: float, phi1_v_lambda_rp: float,
+    ) -> None:
+        """Save raw D-port telemetry and the ideal Jones/Stokes reference."""
+        path = Path(output_file)
+        with path.open("w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow([
+                "stage", "elapsed_s", "phi1_rp_command_estimated_v", "phi1_ideal_rad", "phi2_rp_v",
+                "sine_frequency_hz", "phi1_vlambda_rp_v", "ideal_s1", "ideal_s2", "ideal_s3",
+                "ideal_u_rad", "ideal_v_rad", "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
+            ])
+            for point in points:
+                phi1 = 2.0 * math.pi * point.phi1_rp_command_estimated_v / phi1_v_lambda_rp
+                # D = (i exp(i phi1), 1) / sqrt(2) in the transmitted-first
+                # convention. A static unknown phase just rotates S2/S3.
+                ideal_s1, ideal_s2, ideal_s3 = 0.0, -math.sin(phi1), math.cos(phi1)
+                sphere = pax_to_sphere_angles((point.reading.theta, point.reading.eta))
+                pd, reading = point.photodiode, point.reading
+                writer.writerow([
+                    point.stage, point.elapsed_s, point.phi1_rp_command_estimated_v, phi1, 0.0,
+                    frequency_hz, phi1_v_lambda_rp, ideal_s1, ideal_s2, ideal_s3,
+                    math.atan2(ideal_s3, ideal_s2), math.pi / 2.0,
+                    pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
+                    reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2, reading.s3,
+                    reading.dop, reading.ptotal, sphere.u, sphere.v,
+                ])
+
+    def save_first_npbs_d_isolation_csv(self, output_file: str, points: list[FirstNPBSDIsolationPoint]) -> None:
+        """Save raw D-port A/B isolation telemetry with ideal reference states."""
+        ideal = {
+            "path_a_only": (-1.0, 0.0, 0.0),  # D = i A / sqrt(2): x-polarized
+            "path_b_only": (1.0, 0.0, 0.0),   # D = B / sqrt(2): y-polarized
+            "both_paths": (0.0, 0.0, 0.0),    # phase unknown; ideal locus is S1=0 equator
+        }
+        path = Path(output_file)
+        with path.open("w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow([
+                "condition", "elapsed_s", "rp_out1_v", "rp_out2_v", "ideal_s1", "ideal_s2", "ideal_s3",
+                "ideal_description", "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
+            ])
+            for point in points:
+                reference = ideal[point.condition]
+                description = {
+                    "path_a_only": "ideal fixed x state at D: S=(-1,0,0)",
+                    "path_b_only": "ideal fixed y state at D: S=(+1,0,0)",
+                    "both_paths": "ideal equatorial locus at D: S1=0; phase may vary",
+                }[point.condition]
+                pd, reading = point.photodiode, point.reading
+                sphere = pax_to_sphere_angles((reading.theta, reading.eta))
+                writer.writerow([
+                    point.condition, point.elapsed_s, 0.0, 0.0, *reference, description,
+                    pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
+                    reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2, reading.s3,
+                    reading.dop, reading.ptotal, sphere.u, sphere.v,
+                ])
+
+    def save_first_npbs_d_polarizer_csv(
+        self, output_file: str, points: list[FirstNPBSDPoint], *, frequency_hz: float, phi1_v_lambda_rp: float,
+    ) -> None:
+        """Save raw D-port polarization and C-polarizer/final-F PD telemetry."""
+        path = Path(output_file)
+        with path.open("w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow([
+                "stage", "elapsed_s", "phi1_rp_command_estimated_v", "phi1_ideal_rad", "phi2_rp_v",
+                "sine_frequency_hz", "phi1_vlambda_rp_v", "ideal_d_s1", "ideal_d_s2", "ideal_d_s3",
+                "c_polarizer_expected", "pd_final_f_ideal_relative_power", "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
+            ])
+            for point in points:
+                phi1 = 2.0 * math.pi * point.phi1_rp_command_estimated_v / phi1_v_lambda_rp
+                # PAX is directly at D: its ideal state is equatorial. The
+                # C-arm polarizer produces the PD fringe at final F; because
+                # its installed angle is manually chosen, do not encode a
+                # false numerical contrast prediction here.
+                ideal_d_s1, ideal_d_s2, ideal_d_s3 = 0.0, -math.sin(phi1), math.cos(phi1)
+                pd, reading = point.photodiode, point.reading
+                sphere = pax_to_sphere_angles((reading.theta, reading.eta))
+                writer.writerow([
+                    point.stage, point.elapsed_s, point.phi1_rp_command_estimated_v, phi1, 0.0,
+                    frequency_hz, phi1_v_lambda_rp, ideal_d_s1, ideal_d_s2, ideal_d_s3,
+                    "linear polarizer installed in C before final NPBS", float("nan"),
+                    pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
+                    reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2, reading.s3,
+                    reading.dop, reading.ptotal, sphere.u, sphere.v,
                 ])
 
     def save_diagnostic_csv(self, output_file: str, points: list[DiagnosticPoint]) -> None:

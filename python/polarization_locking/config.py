@@ -155,4 +155,35 @@ class PolarizationLockConfig:
     power_balance_phi2_frequency_hz: float = 0.5
     power_balance_sample_period_s: float = 0.05
 
+    # Fit-ready field-propagation calibration. At each phi1 bias, sweep one
+    # phi2 V_lambda for path A only, path B only, and both paths. Alternating
+    # the condition order and sweep direction on the second repeat brackets
+    # slow interferometer drift while providing the independent Stokes states
+    # needed to fit P = B + h.S.
+    field_model_phi1_fractions: tuple[float, ...] = (0.0, 0.25, 0.50, 0.75)
+    field_model_phi2_step_voltage: float = 0.005
+    field_model_repeats: int = 2
+    field_model_settle_s: float = 0.30
+
+    # Focused both-path map for calibrating phi1 from the measured phi2 fringe
+    # phase. This is intentionally independent of manual block changes.
+    phi1_fringe_map_points: int = 17
+    phi1_fringe_map_phi2_step_voltage: float = 0.010
+    phi1_fringe_map_settle_s: float = 0.30
+
+    # First-NPBS D-port isolation test. The PAX is temporarily moved to D;
+    # phi1 is held static, then driven across one V_lambda with OUT1.
+    first_npbs_d_static_duration_s: float = 60.0
+    first_npbs_d_driven_duration_s: float = 60.0
+    first_npbs_d_phi1_frequency_hz: float = 0.5
+    first_npbs_d_sample_period_s: float = 0.05
+    first_npbs_d_isolation_duration_s: float = 60.0
+    first_npbs_d_polarizer_static_duration_s: float = 30.0
+    # PAX returns a fresh measurement about every 0.12 s in this setup. A
+    # 0.15-Hz sine (6.7-s period) gives roughly 50 PAX samples/cycle: dense
+    # enough to resolve the trajectory while avoiding the slow-drift regime.
+    first_npbs_d_polarizer_driven_duration_s: float = 80.0
+    first_npbs_d_polarizer_phi1_frequency_hz: float = 0.15
+    first_npbs_d_polarizer_sample_period_s: float = 0.10
+
 DEFAULT_CONFIG = PolarizationLockConfig()

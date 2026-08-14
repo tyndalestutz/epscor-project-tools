@@ -1,0 +1,105 @@
+{
+  "input_file": "experiments/polarization_locking/2026-08-12/014544_phi2-path-test_path-balance-0/data.csv",
+  "phi2_vlambda_rp_v": 0.2,
+  "model": "P = B + C cos(phi2) + D sin(phi2)",
+  "condition_fits": [
+    {
+      "detector": "pd_mean_v",
+      "condition": "path_a_only",
+      "samples": 41,
+      "baseline": 0.09047387712111404,
+      "cos_phi2": -0.0463863272401052,
+      "sin_phi2": -0.05801623327721643,
+      "amplitude": 0.07428037882578764,
+      "contrast": 0.8210146529517159,
+      "phase_rad": 2.24525701358323,
+      "r_squared": 0.9719602599207026,
+      "residual_rms": 0.008895121811028833
+    },
+    {
+      "detector": "pd_mean_v",
+      "condition": "path_b_only",
+      "samples": 41,
+      "baseline": 0.10904824700919533,
+      "cos_phi2": 0.07600892935516877,
+      "sin_phi2": 0.01604471876731003,
+      "amplitude": 0.07768391301962786,
+      "contrast": 0.7123811262465988,
+      "phase_rad": -0.20803584911623565,
+      "r_squared": 0.9665651545472896,
+      "residual_rms": 0.010324030650101422
+    },
+    {
+      "detector": "pd_mean_v",
+      "condition": "both_paths",
+      "samples": 41,
+      "baseline": 0.20466116107626012,
+      "cos_phi2": 0.025254845400120553,
+      "sin_phi2": -0.08989174810717182,
+      "amplitude": 0.09337201718902306,
+      "contrast": 0.4562273403414882,
+      "phase_rad": 1.2969093937012368,
+      "r_squared": 0.8689721350727427,
+      "residual_rms": 0.025368352139090434
+    },
+    {
+      "detector": "pax_ptotal",
+      "condition": "path_a_only",
+      "samples": 41,
+      "baseline": 0.0001316040725144224,
+      "cos_phi2": 5.6494016908681315e-05,
+      "sin_phi2": 7.211927987244449e-05,
+      "amplitude": 9.161203237456501e-05,
+      "contrast": 0.6961185214426044,
+      "phase_rad": -0.9062959350560814,
+      "r_squared": 0.948895456339057,
+      "residual_rms": 1.4986056195458338e-05
+    },
+    {
+      "detector": "pax_ptotal",
+      "condition": "path_b_only",
+      "samples": 41,
+      "baseline": 0.0002507342582651579,
+      "cos_phi2": -0.00019303427887147924,
+      "sin_phi2": -6.757924830235835e-05,
+      "amplitude": 0.0002045218512055468,
+      "contrast": 0.815691691357388,
+      "phase_rad": 2.8048382230771187,
+      "r_squared": 0.9683044889193254,
+      "residual_rms": 2.6399303372640996e-05
+    },
+    {
+      "detector": "pax_ptotal",
+      "condition": "both_paths",
+      "samples": 41,
+      "baseline": 0.00038953024620659376,
+      "cos_phi2": -0.0001715184944703436,
+      "sin_phi2": 0.00012700068941221964,
+      "amplitude": 0.00021341923309896972,
+      "contrast": 0.5478887331018175,
+      "phase_rad": -2.504232291204148,
+      "r_squared": 0.9179031202354779,
+      "residual_rms": 4.527490247007365e-05
+    }
+  ],
+  "both_path_residuals": [
+    {
+      "detector": "pd_mean_v",
+      "baseline": 0.005139036945950748,
+      "cos_phi2": -0.004367756714943022,
+      "sin_phi2": -0.047920233597265424,
+      "amplitude": 0.04811887453731036,
+      "phase_rad": 1.6616915715527067,
+      "relative_to_single_path_sum": 0.24117062078731463
+    },
+    {
+      "detector": "pax_ptotal",
+      "baseline": 7.191915427013414e-06,
+      "cos_phi2": -3.4978232507545704e-05,
+      "sin_phi2": 0.00012246065784213349,
+      "amplitude": 0.00012735811504760902,
+      "phase_rad": -1.849016510351594,
+      "relative_to_single_path_sum": 0.33310318321453236
+    }
+  ]
+}
