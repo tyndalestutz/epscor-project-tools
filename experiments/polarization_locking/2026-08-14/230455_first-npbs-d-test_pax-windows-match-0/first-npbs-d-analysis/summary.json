@@ -1,0 +1,30 @@
+{
+  "ideal_model": "D=(i exp(i(delta+phi1)), 1)/sqrt(2); S=(0,-sin(delta+phi1),cos(delta+phi1))",
+  "samples": {
+    "static": 356,
+    "phi1_sine": 355
+  },
+  "fitted_static_phase_offset_rad": 1.6632899881548713,
+  "driven_equator_s1_rms": 0.08614567998824704,
+  "driven_s2s3_radius_rms_from_one": 0.005162445240899717,
+  "driven_trajectory_rms": 1.3522936334463385,
+  "driven_command_frequency_hz": 0.5,
+  "driven_command_phase_coherence": 0.038776241308733195,
+  "driven_strongest_phase_frequency_hz": 0.9309539693128753,
+  "driven_strongest_phase_coherence": 0.4620320123570193,
+  "static": {
+    "mean_stokes": [
+      0.11044685524113117,
+      -0.9460333515514351,
+      -0.09414626827712988
+    ],
+    "std_stokes": [
+      0.025411290962732345,
+      0.054643479898150334,
+      0.2834205823249639
+    ],
+    "mean_dop": 0.823698413202247,
+    "mean_ptotal": 0.0007628945081460674,
+    "equatorial_phase_concentration": 0.9507063805813815
+  }
+}

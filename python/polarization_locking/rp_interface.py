@@ -190,3 +190,47 @@ class RPController:
 
     def set_output_zero(self) -> None:
         self.set_output_voltage(0.0, 0.0)
+
+    @contextmanager
+    def photodiode_pid_lock(
+        self,
+        *,
+        setpoint: float,
+        initial_output: float,
+        proportional_gain: float,
+        integral_gain_hz: float,
+    ):
+        """Route the FPGA PID used in the dynamic-locking notebook: IN1→OUT1.
+
+        The ASG is detached first, the PID is configured while paused with its
+        integrator seeded at the present OUT1 command, then unpaused.  Output
+        limits enforce the experiment's physical 0–1 V RP range.
+        """
+        if self.p is None or self.asg1 is None:
+            raise RuntimeError("Red Pitaya connection is not established")
+        self._validate_output_voltage(initial_output, 0.0)
+        pid = self.p.rp.pid1
+        self.asg1.output_direct = "off"
+        # Freeze both terms while routing/seeding the block.  Freezing only I
+        # leaves the proportional path live during a potentially transient
+        # re-route of OUT1.
+        pid.pause_gains = "pi"
+        pid.paused = True
+        pid.input = self.config.pd_input
+        pid.output_direct = "out1"
+        pid.min_voltage = self.config.rp_output_min_voltage
+        pid.max_voltage = self.config.rp_output_max_voltage
+        pid.ival = float(initial_output)
+        pid.p = float(proportional_gain)
+        pid.i = float(integral_gain_hz)
+        pid.setpoint = float(setpoint)
+        pid.paused = False
+        try:
+            yield pid
+        finally:
+            pid.pause_gains = "pi"
+            pid.paused = True
+            pid.ival = 0.0
+            pid.output_direct = "off"
+            self.asg1.output_direct = "out1"
+            self.asg1.setup(waveform="dc", offset=0.0, amplitude=0.0, trigger_source="immediately")

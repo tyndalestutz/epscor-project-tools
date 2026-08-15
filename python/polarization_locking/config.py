@@ -14,11 +14,18 @@ class PolarizationLockConfig:
     pax_autostart_daemon: bool = True
     pax_daemon_config_path: str = str(Path(__file__).resolve().parents[1] / "PAX1000" / "pax1000.toml")
     pax_daemon_start_timeout_s: float = 5.0
-    # The YAQD PAX driver has its own 100 ms acquisition wait. Keep this short
-    # so the lock loop does not add another 60 ms of idle time per sample.
-    pax_measurement_wait_s: float = 0.01
+    # Match the proven PAX live-plot acquisition sequence: trigger, wait 60
+    # ms, then fetch the newest completed record. A 10-ms wait can retrieve a
+    # previous/incomplete measurement because YAQD itself waits before issuing
+    # its serial query.
+    pax_measurement_wait_s: float = 0.06
     pax_read_retries: int = 3
     pax_retry_wait_s: float = 0.25
+    # Values observed in the known-good Thorlabs Windows application log.
+    # They are reasserted by PAXController after it attaches to a daemon.
+    pax_rotation_velocity_hz: float = 60.0
+    pax_measurement_mode: int = 5
+    pax_wavelength_nm: float = 830.0
 
     # Target in the hybrid-MZ sphere coordinates. u is azimuth in [-pi, pi)
     # and v is polar angle in [0, pi]. Both must be set before a rough move.
@@ -185,5 +192,82 @@ class PolarizationLockConfig:
     first_npbs_d_polarizer_driven_duration_s: float = 80.0
     first_npbs_d_polarizer_phi1_frequency_hz: float = 0.15
     first_npbs_d_polarizer_sample_period_s: float = 0.10
+
+    # Time-independent phi1 calibration at first-NPBS D.  Unlike a sine
+    # sweep, every sample is taken after a held command has settled, so the
+    # data directly calibrate equatorial phase versus OUT1 voltage without
+    # waveform/PAX timestamp ambiguity.  A reverse pass makes hysteresis
+    # visible rather than silently averaging it into the calibration.
+    phi1_step_map_points: int = 13
+    phi1_step_map_settle_s: float = 0.50
+    phi1_step_map_samples_per_step: int = 4
+    phi1_step_map_inter_sample_s: float = 0.05
+
+    # Initial D-port phi1 lock experiment.  Its calibration is a short
+    # sequence of held commands, then the measured state at half the current
+    # sweep range becomes the target.  Gains act on phase error and are
+    # divided by the measured local radians/RP-volt slope at run time.
+    phi1_d_lock_sweep_points: int = 9
+    phi1_d_lock_sweep_settle_s: float = 0.35
+    phi1_d_lock_target_settle_s: float = 0.75
+    # Lock-0: the measured residual was dominated by a ~0.058-Hz relative
+    # phase wander, while OUT1 never railed.  Increase proportional stiffness
+    # modestly to reject that drift, but reduce integral action so it does not
+    # carry PAX-scale angular noise into large slow command excursions.
+    # Lock-3 verified that a ~4.7-Hz one-read loop was noisier and less tight
+    # than Lock-1.  Restore the best measured policy before varying any other
+    # controller parameter: three-read Stokes average and Kp=0.28.
+    phi1_d_lock_kp: float = 0.28
+    phi1_d_lock_ki_per_s: float = 0.005
+    phi1_d_lock_integral_limit_rad_s: float = 3.0
+    phi1_d_lock_max_phase_step_rad: float = 0.18
+    phi1_d_lock_sample_period_s: float = 0.18
+    # The direct YAQD path takes ~0.17 s per fresh state.  Although one-read
+    # feedback reaches ~4.7 Hz, Lock-3 showed that its extra angular noise is
+    # worse than the slow-drift benefit.  Lock-1's three-read, ~2-Hz update
+    # is the current best-performing reference.
+    phi1_d_lock_pax_average_count: int = 3
+    phi1_d_lock_calibration_pax_average_count: int = 3
+    phi1_d_lock_stokes_filter_alpha: float = 1.0
+
+    # PD-based phi1 lock: PAX establishes a local u/PD operating point, then
+    # the Red Pitaya FPGA PID closes the high-bandwidth loop directly from
+    # IN1 (the final-F photodiode) to OUT1.  The local open-loop PD sweep
+    # determines the required feedback polarity and proportional gain.
+    phi1_pd_lock_sweep_points: int = 9
+    phi1_pd_lock_sweep_settle_s: float = 0.35
+    phi1_pd_lock_local_calibration_span_rp_v: float = 0.040
+    phi1_pd_lock_local_calibration_points: int = 9
+    phi1_pd_lock_local_settle_s: float = 0.08
+    # Do not interpret a noisy fringe maximum/minimum as a usable error
+    # discriminator.  The earlier 0.02 V/V threshold accepted a 0.083 V/V
+    # pseudo-slope at a measured maximum and let I wind the output to a rail.
+    phi1_pd_lock_min_pd_slope_v_per_rp_v: float = 0.12
+    phi1_pd_lock_target_settle_s: float = 0.40
+    # Keep the first hardware-PID trial deliberately conservative.  The PD
+    # fringe is nonlinear and one PD target can occur on several phi1 branches.
+    # A P-only preflight must remain on the selected local branch before the
+    # integrator is enabled.
+    # The inner PD loop needs enough stiffness to preserve the selected local
+    # fringe branch.  A 0.17 trial lost that branch; retain 0.22.
+    phi1_pd_lock_loop_fraction: float = 0.22
+    phi1_pd_lock_max_p: float = 0.927
+    phi1_pd_lock_p_only_preflight_s: float = 1.0
+    phi1_pd_lock_integral_unity_gain_hz: float = 5.0
+    phi1_pd_lock_log_period_s: float = 0.05
+    phi1_pd_lock_pax_period_s: float = 1.0
+
+    # Same-branch, PAX-validated PD gain scan.  I remains at the proven 5 Hz
+    # while each P value is held long enough for PAX validation.  The gain is
+    # specified as |P dPD/dOUT1| and converted from a fresh local slope.
+    phi1_pd_gain_scan_fractions: tuple[float, ...] = (0.12, 0.17, 0.22, 0.27, 0.32)
+    phi1_pd_gain_scan_hold_s: float = 18.0
+
+    # Hybrid phi1 lock: the FPGA PD loop remains the only fast actuator path.
+    # PAX supplies a slow outer-loop correction to the FPGA PD setpoint using
+    # the freshly measured local u-to-PD calibration.
+    phi1_pd_pax_outer_period_s: float = 3.0
+    phi1_pd_pax_outer_gain: float = 0.12
+    phi1_pd_pax_outer_max_setpoint_step_v: float = 0.0015
 
 DEFAULT_CONFIG = PolarizationLockConfig()

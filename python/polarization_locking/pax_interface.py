@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
@@ -41,6 +42,7 @@ class PAXController:
         self.client: Optional[Any] = None
         self._test_mode = False
         self._daemon_process: Optional[subprocess.Popen[Any]] = None
+        self._daemon_log_path: Optional[Path] = None
 
     def connect(self) -> Any:
         if yaqc is None:
@@ -55,8 +57,18 @@ class PAXController:
                 ) from exc
             self._start_daemon()
             self.client = self._wait_for_daemon(exc)
+        self._apply_measurement_configuration()
         self._test_mode = False
         return self.client
+
+    def _apply_measurement_configuration(self) -> None:
+        """Apply wavelength after the project daemon configures motor/mode."""
+        if self.client is None:
+            raise RuntimeError("PAX connection is not established")
+        wavelength = float(self.config.pax_wavelength_nm)
+        if wavelength <= 0.0:
+            raise ValueError("pax_wavelength_nm must be positive")
+        self.client.set_wavelength(wavelength)
 
     def _new_client(self) -> Any:
         if yaqc is None:
@@ -79,22 +91,38 @@ class PAXController:
         config_path = Path(self.config.pax_daemon_config_path)
         if not config_path.is_file():
             raise RuntimeError(f"PAX daemon configuration was not found: {config_path}")
+        daemon_path = config_path.with_name("pax1000_daemon.py")
+        if not daemon_path.is_file():
+            raise RuntimeError(f"Project PAX daemon was not found: {daemon_path}")
+        # Do not discard daemon stderr: when VISA cannot open the USB device,
+        # that error is the only useful diagnosis available to lock.py.
+        self._daemon_log_path = config_path.with_name("pax1000-daemon.log")
         try:
-            self._daemon_process = subprocess.Popen(
-                ["yaqd-thorlabs-pax1000", "-c", config_path.name],
-                cwd=config_path.parent,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            with self._daemon_log_path.open("a", encoding="utf-8") as daemon_log:
+                daemon_log.write(
+                    f"\n--- PAX daemon launch {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n"
+                )
+                daemon_log.flush()
+                self._daemon_process = subprocess.Popen(
+                    [sys.executable, str(daemon_path), "-c", config_path.name, "-v"],
+                    cwd=config_path.parent,
+                    stdout=daemon_log,
+                    stderr=subprocess.STDOUT,
+                )
         except FileNotFoundError as exc:
-            raise RuntimeError("yaqd-thorlabs-pax1000 is not available in the active environment") from exc
+            raise RuntimeError("Python or the project PAX daemon is unavailable in the active environment") from exc
 
     def _wait_for_daemon(self, original_error: ConnectionRefusedError) -> Any:
         deadline = time.monotonic() + self.config.pax_daemon_start_timeout_s
         while time.monotonic() < deadline:
             if self._daemon_process is not None and self._daemon_process.poll() is not None:
+                log_hint = (
+                    f" See {self._daemon_log_path} for its traceback."
+                    if self._daemon_log_path is not None
+                    else ""
+                )
                 raise RuntimeError(
-                    "The PAX daemon exited while starting; run it manually with '-v' to see its error output."
+                    "The PAX daemon exited while starting." + log_hint
                 )
             try:
                 return self._new_client()

@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
 
+import numpy as np
+
 try:
     from .config import PolarizationLockConfig
     from .control import pax_to_sphere_angles
@@ -114,6 +116,19 @@ class FirstNPBSDIsolationPoint:
 
     condition: str
     elapsed_s: float
+    photodiode: PhotodiodeReading
+    reading: PAXReading
+
+
+@dataclass
+class Phi1StepMapPoint:
+    """One settled PAX sample for a static OUT1/phi1 calibration step at D."""
+
+    direction: str
+    step_index: int
+    sample_index: int
+    elapsed_s: float
+    phi1_rp_voltage: float
     photodiode: PhotodiodeReading
     reading: PAXReading
 
@@ -683,6 +698,54 @@ class CalibrationSweep:
             self.save_first_npbs_d_isolation_csv(output_file, points)
         return points
 
+    def run_phi1_step_map(
+        self,
+        *,
+        phi1_v_lambda_rp: float,
+        points: int,
+        settle_s: float,
+        samples_per_step: int,
+        inter_sample_s: float,
+        output_file: Optional[str] = None,
+    ) -> list[Phi1StepMapPoint]:
+        """Map held OUT1 voltages to D-port equatorial phase, forward/reverse.
+
+        OUT2 remains at zero.  Every PAX measurement follows a static command
+        and an explicit settle interval; this intentionally avoids assigning a
+        host timestamp to an asynchronously started RP waveform.
+        """
+        if points < 3:
+            raise ValueError("points must be at least 3")
+        if min(phi1_v_lambda_rp, settle_s, samples_per_step, inter_sample_s) <= 0:
+            raise ValueError("V_lambda, timing values, and samples_per_step must be positive")
+        lower, upper = self.config.rp_output_min_voltage, self.config.rp_output_max_voltage
+        if not lower <= phi1_v_lambda_rp <= upper:
+            raise ValueError(f"phi1 V_lambda RP command must be in [{lower}, {upper}] V")
+        values = np.linspace(0.0, phi1_v_lambda_rp, points)
+        result: list[Phi1StepMapPoint] = []
+        started = time.monotonic()
+        with self.rp.photodiode_monitor() as read_pd:
+            for direction, commands in (("forward", values), ("reverse", values[::-1])):
+                for step_index, command in enumerate(commands):
+                    self.rp.set_output_voltage(float(command), 0.0)
+                    time.sleep(settle_s)
+                    for sample_index in range(samples_per_step):
+                        if sample_index:
+                            time.sleep(inter_sample_s)
+                        result.append(Phi1StepMapPoint(
+                            direction=direction,
+                            step_index=step_index,
+                            sample_index=sample_index,
+                            elapsed_s=time.monotonic() - started,
+                            phi1_rp_voltage=float(command),
+                            photodiode=read_pd(),
+                            reading=self.pax.read_polarization(),
+                        ))
+            self.rp.set_output_zero()
+        if output_file is not None:
+            self.save_phi1_step_map_csv(output_file, result, phi1_v_lambda_rp=phi1_v_lambda_rp)
+        return result
+
     def run_first_npbs_d_polarizer_test(
         self,
         *,
@@ -1102,6 +1165,32 @@ class CalibrationSweep:
                     point.condition, point.elapsed_s, 0.0, 0.0, *reference, description,
                     pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
                     reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2, reading.s3,
+                    reading.dop, reading.ptotal, sphere.u, sphere.v,
+                ])
+
+    def save_phi1_step_map_csv(
+        self, output_file: str, points: list[Phi1StepMapPoint], *, phi1_v_lambda_rp: float,
+    ) -> None:
+        """Persist raw held-step telemetry and the derived D-equatorial phase."""
+        path = Path(output_file)
+        with path.open("w", newline="") as handle:
+            writer = csv.writer(handle)
+            writer.writerow([
+                "direction", "step_index", "sample_index", "elapsed_s", "phi1_rp_voltage", "phi1_vlambda_rp_v",
+                "phi1_ideal_rad", "pd_mean_v", "pd_std_v", "pd_min_v", "pd_max_v", "pd_sample_count",
+                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "equatorial_radius", "equatorial_phase_rad",
+                "dop", "pax_ptotal", "u", "v",
+            ])
+            for point in points:
+                reading, pd = point.reading, point.photodiode
+                phase = math.atan2(reading.s3, -reading.s2)
+                radius = math.hypot(reading.s2, reading.s3)
+                sphere = pax_to_sphere_angles((reading.theta, reading.eta))
+                writer.writerow([
+                    point.direction, point.step_index, point.sample_index, point.elapsed_s, point.phi1_rp_voltage,
+                    phi1_v_lambda_rp, 2.0 * math.pi * point.phi1_rp_voltage / phi1_v_lambda_rp,
+                    pd.mean_voltage, pd.std_voltage, pd.min_voltage, pd.max_voltage, pd.sample_count,
+                    reading.timestamp, reading.theta, reading.eta, reading.s1, reading.s2, reading.s3, radius, phase,
                     reading.dop, reading.ptotal, sphere.u, sphere.v,
                 ])
 

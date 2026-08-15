@@ -1,0 +1,352 @@
+[2026-08-14 06:53:14][Debug][None] OS : Windows 8
+
+[2026-08-14 06:53:14][Debug][None] OS version : Microsoft Windows NT 6.2.9200.0
+
+[2026-08-14 06:53:14][Debug][None] OS 64 bit : True
+
+[2026-08-14 06:53:14][Debug][None] OS language : English (United States)
+
+[2026-08-14 06:53:14][Debug][None] Software version : 1.7.2117.219
+
+[2026-08-14 06:53:16][Debug][Low] Bootstrapper sequence completed.
+
+[2026-08-14 06:53:26][Info][None] Scanning found 1 devices.
+
+[2026-08-14 06:53:26][Info][None] Found device with resource description USB::0x1313::0x8031::M01303584::INSTR.
+
+[2026-08-14 06:53:28][Info][Medium] External power supply is connected for device with serialnumber : M01303584
+
+[2026-08-14 06:53:28][Debug][None] Initialize device and get settings from device PAX1000IR1 *3584
+
+[2026-08-14 06:53:29][Debug][None] Wavelength : 980 Wavelength Limits : 600:1080
+
+[2026-08-14 06:53:29][Debug][None] Basic Scan Rate : 66.666 Scan Rate Limits : 50:400
+
+[2026-08-14 06:53:29][Debug][None] Measurement Mode : 0
+
+[2026-08-14 06:53:29][Debug][None] Basic Scan Rate : 66.666 Scan Rate Limits : 50:400
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 0.04825839
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 0.01974207
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 0.008043227
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 0.003290411
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 0.001287078
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 0.0005265321
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 0.0002246498
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 9.190218E-05
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 3.593984E-05
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 1.470267E-05
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 6.225307E-06
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 2.546717E-06
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 1.158197E-06
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 4.738078E-07
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 1.930328E-07
+
+[2026-08-14 06:53:29][Debug][None] Power range  : 7.896797E-08
+
+[2026-08-14 06:53:29][Debug][None] Power range index : 8
+
+[2026-08-14 06:53:29][Info][Medium] Device PAX1000IR1 *3584. Manufacturer: THORLABS.
+
+[2026-08-14 06:53:29][Info][None] Start measurement for device PAX1000IR1 *3584.
+
+[2026-08-14 06:53:32][Debug][None] Set wavelength : 980 for device PAX1000IR1 *3584
+
+[2026-08-14 06:53:32][Debug][None] Set basic scan rate : 60 for device PAX1000IR1 *3584
+
+[2026-08-14 06:53:32][Debug][None] Set measurement mode : 5 for device PAX1000IR1 *3584
+
+[2026-08-14 06:53:32][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:400
+
+[2026-08-14 06:53:32][Debug][None] AutoPowerRange : True for device PAX1000IR1 *3584
+
+[2026-08-14 06:53:33][Debug][None] AutoPowerRange : True for device PAX1000IR1 *3584
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:33][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:53:34][Warn][Medium] PAX1000IR1 *3584 Motor speed too high.
+
+[2026-08-14 06:58:09][Debug][None] Set wavelength : 830 for device PAX1000IR1 *3584
+
+[2026-08-14 06:58:09][Debug][None] AutoPowerRange : True for device PAX1000IR1 *3584
+
+[2026-08-14 06:58:30][Debug][None] Set measurement mode : 5 for device PAX1000IR1 *3584
+
+[2026-08-14 06:58:30][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:400
+
+[2026-08-14 06:58:33][Debug][None] Set wavelength : 830 for device PAX1000IR1 *3584
+
+[2026-08-14 06:58:33][Debug][None] AutoPowerRange : True for device PAX1000IR1 *3584
+
+[2026-08-14 06:58:33][Debug][None] Set basic scan rate : 60 for device PAX1000IR1 *3584
+
+[2026-08-14 06:58:34][Debug][None] Set basic scan rate : 60 for device PAX1000IR1 *3584
+
+[2026-08-14 06:59:12][Debug][None] Set basic scan rate : 101.2 for device PAX1000IR1 *3584
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:12][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:13][Warn][Medium] PAX1000IR1 *3584 Motor speed too low.
+
+[2026-08-14 06:59:18][Debug][None] Set basic scan rate : 96.6 for device PAX1000IR1 *3584
+
+[2026-08-14 06:59:45][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 06:59:49][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:00:04][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:00:13][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:00:13][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:00:14][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:00:17][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:00:17][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:00:21][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:02:41][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 07:08:56][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 08:11:06][Debug][None] Set wavelength : 980 for device PAX1000IR1 *3584
+
+[2026-08-14 08:11:06][Debug][None] Set basic scan rate : 60 for device PAX1000IR1 *3584
+
+[2026-08-14 08:11:06][Debug][None] Set measurement mode : 5 for device PAX1000IR1 *3584
+
+[2026-08-14 08:11:07][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:400
+
+[2026-08-14 08:11:07][Debug][None] AutoPowerRange : True for device PAX1000IR1 *3584
+
+[2026-08-14 08:11:07][Debug][None] AutoPowerRange : True for device PAX1000IR1 *3584
+
+[2026-08-14 08:11:34][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 08:11:34][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 08:11:38][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 08:25:34][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 08:25:41][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 08:50:37][Debug][None] Set wavelength : 830 for device PAX1000IR1 *3584
+
+[2026-08-14 08:50:38][Debug][None] AutoPowerRange : True for device PAX1000IR1 *3584
+
+[2026-08-14 08:50:52][Debug][None] Set measurement mode : 5 for device PAX1000IR1 *3584
+
+[2026-08-14 08:50:52][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:400
+
+[2026-08-14 08:51:43][Debug][None] Set measurement mode : 9 for device PAX1000IR1 *3584
+
+[2026-08-14 08:51:43][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:400
+
+[2026-08-14 08:51:51][Debug][None] Set measurement mode : 5 for device PAX1000IR1 *3584
+
+[2026-08-14 08:51:52][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:400
+
+[2026-08-14 08:51:56][Debug][None] Set measurement mode : 9 for device PAX1000IR1 *3584
+
+[2026-08-14 08:51:56][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:400
+
+[2026-08-14 08:52:00][Debug][None] Set measurement mode : 3 for device PAX1000IR1 *3584
+
+[2026-08-14 08:52:00][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:200
+
+[2026-08-14 08:52:04][Debug][None] Set measurement mode : 2 for device PAX1000IR1 *3584
+
+[2026-08-14 08:52:04][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:200
+
+[2026-08-14 08:52:06][Debug][None] Set measurement mode : 1 for device PAX1000IR1 *3584
+
+[2026-08-14 08:52:06][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:400
+
+[2026-08-14 08:52:10][Debug][None] Set measurement mode : 3 for device PAX1000IR1 *3584
+
+[2026-08-14 08:52:10][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:200
+
+[2026-08-14 09:17:07][Debug][None] Set power range index : 4 for device PAX1000IR1 *3584
+
+[2026-08-14 09:17:10][Debug][None] AutoPowerRange : True for device PAX1000IR1 *3584
+
+[2026-08-14 09:17:28][Debug][None] Set measurement mode : 3 for device PAX1000IR1 *3584
+
+[2026-08-14 09:17:28][Debug][None] Basic Scan Rate : 60 Scan Rate Limits : 50:200
+
+[2026-08-14 09:17:34][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+
+[2026-08-14 09:17:54][Warn][Medium] PAX1000IR1 *3584 ADC overflow during last measurement.
+

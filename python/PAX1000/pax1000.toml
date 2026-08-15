@@ -2,10 +2,11 @@
 serial = "M01303584"
 model = "PAX1000IR1"
 autorange = true
-# 80 Hz leaves a practical margin below the 100 Hz USB-powered operating limit. The PAX1000IR1
-# can run faster with its DS15 external supply, but do not select that regime
-# until the power path and YAQD driver's fixed 100 ms acquisition wait are
-# addressed.
-velocity = 80
+# Match the known-good Thorlabs Windows configuration captured in
+# data/Logfile2.txt: Basic Scan Rate = 60 Hz with the external supply present.
+# The lock client reasserts this value when connecting to an already-running
+# daemon as well, so it cannot silently retain an old 80 Hz setting.
+velocity = 60
+measurement_mode = 5
 port = 38400
 log_level = "debug"
