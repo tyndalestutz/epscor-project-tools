@@ -29,7 +29,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import least_squares
 
-from physical_hybrid_mzi import PhysicalParameters, Retarder, fringe_coefficients, port_observables
+if __package__:
+    from ..physical_hybrid_mzi import PhysicalParameters, Retarder, fringe_coefficients, port_observables
+else:  # Support running this file directly from any working directory.
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from physical_hybrid_mzi import PhysicalParameters, Retarder, fringe_coefficients, port_observables
 
 
 @dataclass(frozen=True)

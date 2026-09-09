@@ -608,7 +608,7 @@ class PolarizationLockApp:
                 print(
                     f"Field-model calibration saved to {output_file}\n"
                     f"Model context saved to {context_file}\n"
-                    "Fit it with: python python/field_propogation/fit_phi2_interference.py "
+                    "Fit it with: python python/field_propogation/calibration/fit_phi2_interference.py "
                     f"{output_file} --phi1-vlambda-rp {phi1_lambda:.8f}"
                 )
             else:
@@ -650,7 +650,7 @@ class PolarizationLockApp:
             if completed:
                 print(
                     f"Phi1 fringe map saved to {output_file}\n"
-                    "Analyze it with: python python/field_propogation/fit_phi1_fringe_map.py "
+                    "Analyze it with: python python/field_propogation/calibration/fit_phi1_fringe_map.py "
                     f"{output_file} --phi1-vlambda-rp {phi1_lambda:.8f}"
                 )
             else:
@@ -773,7 +773,7 @@ class PolarizationLockApp:
             if completed:
                 print(f"First-NPBS D-port test saved to {output_file}")
                 if report_format is not None:
-                    analyzer = Path(__file__).resolve().parents[1] / "field_propogation" / "analyze_first_npbs_d.py"
+                    analyzer = Path(__file__).resolve().parent / "analysis" / "analyze_first_npbs_d.py"
                     subprocess.run([sys.executable, str(analyzer), output_file, "--format", report_format], check=True)
             else:
                 print("First-NPBS D-port test aborted; outputs were returned to zero.")
@@ -816,7 +816,7 @@ class PolarizationLockApp:
             if completed:
                 print(f"First-NPBS D-port isolation saved to {output_file}")
                 if report_format is not None:
-                    analyzer = Path(__file__).resolve().parents[1] / "field_propogation" / "analyze_first_npbs_d_isolation.py"
+                    analyzer = Path(__file__).resolve().parent / "analysis" / "analyze_first_npbs_d_isolation.py"
                     subprocess.run([sys.executable, str(analyzer), output_file, "--format", report_format], check=True)
             else:
                 print("First-NPBS D-port isolation aborted; outputs were returned to zero.")
@@ -854,7 +854,7 @@ class PolarizationLockApp:
             if completed:
                 print(f"Phi1 held-step map saved to {output_file}")
                 if report_format is not None:
-                    analyzer = Path(__file__).resolve().parents[1] / "field_propogation" / "analyze_phi1_step_map.py"
+                    analyzer = Path(__file__).resolve().parent / "analysis" / "analyze_phi1_step_map.py"
                     subprocess.run([sys.executable, str(analyzer), output_file, "--format", report_format], check=True)
             else:
                 print("Phi1 held-step map aborted; outputs were returned to zero.")
@@ -896,7 +896,7 @@ class PolarizationLockApp:
             if completed:
                 print(f"Phi1 C-arm polarizer / D-port PAX test saved to {output_file}")
                 if report_format is not None:
-                    analyzer = Path(__file__).resolve().parents[1] / "field_propogation" / "analyze_first_npbs_d_polarizer.py"
+                    analyzer = Path(__file__).resolve().parent / "analysis" / "analyze_first_npbs_d_polarizer.py"
                     subprocess.run([sys.executable, str(analyzer), output_file, "--format", report_format], check=True)
             else:
                 print("D-port phi1 analyzer test aborted; outputs were returned to zero.")

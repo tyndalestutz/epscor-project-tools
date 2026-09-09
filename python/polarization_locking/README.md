@@ -36,6 +36,11 @@ V, and OUT2 -> phi2 with gain `150`. RP commands are constrained to 0–1 V.
 
 ## Scripts
 
+[Offline bench diagnostics](analysis/README.md) contains the first-NPBS and
+phi1-step analysis scripts invoked by the lock CLI.
+[Jones models and calibration fits](../field_propogation/README.md) live in
+`../field_propogation/`; fitted-data workflows are in its `calibration/` folder.
+
 - `lock.py`: interactive one-shot rough move and live PAX monitor. Targets are
   entered directly as `u v`; it includes a bounded PID test mode. Every command
   that records data creates a dated experiment folder containing `data.csv` and,

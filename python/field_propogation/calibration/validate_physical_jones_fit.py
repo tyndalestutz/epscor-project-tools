@@ -23,7 +23,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-from physical_hybrid_mzi import PhysicalParameters, Retarder, port_observables
+if __package__:
+    from ..physical_hybrid_mzi import PhysicalParameters, Retarder, port_observables
+else:  # Support running this file directly from any working directory.
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from physical_hybrid_mzi import PhysicalParameters, Retarder, port_observables
 
 
 def _load(path: Path) -> list[dict[str, str]]:
