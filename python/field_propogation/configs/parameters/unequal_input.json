@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "name": "Unequal input amplitudes",
+  "description": "Illustrative amplitude imbalance, not a measurement. Expected intensity contrast (1-0.49)/(1+0.49).",
+  "values": {
+    "ax": 1,
+    "ay": 0.7,
+    "pbs_leakage_rad": 0,
+    "npbs1_mixing_rad": "pi/4",
+    "npbs2_mixing_rad": "pi/4",
+    "phi1_offset_rad": 0,
+    "phi2_offset_rad": 0,
+    "loss_a": 1,
+    "axis_a": 0,
+    "retardance_a": 0,
+    "loss_b": 1,
+    "axis_b": 0,
+    "retardance_b": 0,
+    "loss_c": 1,
+    "axis_c": 0,
+    "retardance_c": 0,
+    "loss_d": 1,
+    "axis_d": 0,
+    "retardance_d": 0
+  },
+  "phase_values": {
+    "phi1": 0.73,
+    "phi2": 1.18
+  },
+  "scan": {
+    "points": 81,
+    "start_rad": 0,
+    "stop_rad": "2*pi",
+    "dark_threshold": 1e-12
+  }
+}

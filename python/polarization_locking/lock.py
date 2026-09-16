@@ -588,7 +588,7 @@ class PolarizationLockApp:
                 context_file = Path(output_file).with_name("field-model-context.json")
                 context_file.write_text(json.dumps({
                     "schema_version": 1,
-                    "purpose": "State-matched phi2 output-amplitude model calibration",
+                    "purpose": "Whole-system diagnostic; not independent component characterization",
                     "raw_data_file": Path(output_file).name,
                     "rp_vlambda_v": {"phi1": phi1_lambda, "phi2": self._one_lambda_rp_voltage("phi2")},
                     "actuator_vlambda_v": {"phi1": self.config.phi1_v_lambda, "phi2": self.config.phi2_v_lambda},
@@ -608,8 +608,8 @@ class PolarizationLockApp:
                 print(
                     f"Field-model calibration saved to {output_file}\n"
                     f"Model context saved to {context_file}\n"
-                    "Fit it with: python python/field_propogation/calibration/fit_phi2_interference.py "
-                    f"{output_file} --phi1-vlambda-rp {phi1_lambda:.8f}"
+                    "This is a whole-system diagnostic, not independent optic characterization.\n"
+                    "Measurement-first workflow: python python/field_propogation/acquire.py --help"
                 )
             else:
                 print("Field-model calibration aborted; outputs were returned to zero.")
@@ -650,8 +650,8 @@ class PolarizationLockApp:
             if completed:
                 print(
                     f"Phi1 fringe map saved to {output_file}\n"
-                    "Analyze it with: python python/field_propogation/calibration/fit_phi1_fringe_map.py "
-                    f"{output_file} --phi1-vlambda-rp {phi1_lambda:.8f}"
+                    "Keep this run separate from independent component measurements.\n"
+                    "Measurement-first workflow: python python/field_propogation/acquire.py --help"
                 )
             else:
                 print("Phi1 fringe map aborted; outputs were returned to zero.")

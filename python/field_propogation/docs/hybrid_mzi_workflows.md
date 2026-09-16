@@ -1,7 +1,9 @@
+> **Historical workflow, superseded.** These fits do not identify independently measured optic parameters. Use [the acquisition protocol](measurement_acquisition.md) for new work.
+
 # Hybrid-MZI field propagation
 
 [Back to the Jones simulation guide](../README.md). Run the commands below
-from the repository root. Calibration scripts live in `calibration/` and the
+from the repository root. Historical calibration scripts now live in `archive/effective_fits/` and the
 tutorial report generator lives in `reports/`.
 
 `ideal_hybrid_mzi.py` is a standalone symbolic reference for the two-NPBS
@@ -107,7 +109,7 @@ not be identifiable without additional calibrated measurements.
 phi1 was fixed and phi2 was stepped through one estimated \(V_\lambda\). Run:
 
 ```bash
-python python/field_propogation/calibration/fit_phi2_interference.py \
+python python/field_propogation/archive/effective_fits/fit_phi2_interference.py \
   experiments/polarization_locking/2026-08-12/014544_phi2-path-test_path-balance-0/data.csv
 ```
 
@@ -164,7 +166,7 @@ passes, and at every phi1 command measures a complete phi2 fringe. Analyze
 the completed run with:
 
 ```bash
-python python/field_propogation/calibration/fit_phi1_fringe_map.py <run>/data.csv
+python python/field_propogation/archive/effective_fits/fit_phi1_fringe_map.py <run>/data.csv
 ```
 
 The result plots measured fringe phase and contrast against phi1 RP voltage;
@@ -176,7 +178,7 @@ After a field-model calibration and a high-visibility phi1 fringe map, compare
 the data-fitted propagation model with the measured phi2-dependent amplitude:
 
 ```bash
-python python/field_propogation/calibration/predict_phi2_amplitude.py \
+python python/field_propogation/archive/effective_fits/predict_phi2_amplitude.py \
   <field-model-run>/field-propagation-fit/effective-analyzer-fit.csv \
   <phi1-fringe-run>/phi1-fringe-fit/phi1-fringe-map-fit.csv
 ```
@@ -192,7 +194,7 @@ For a fresh, high-visibility field-model calibration, use the one-command
 state-matched workflow instead of running three individual fit commands:
 
 ```bash
-python python/field_propogation/calibration/validate_phi2_power_model.py \
+python python/field_propogation/archive/effective_fits/validate_phi2_power_model.py \
   <new-field-model-calibration>/data.csv \
   <high-visibility-phi1-fringe-map>/data.csv
 ```
@@ -214,7 +216,7 @@ normalization, branch-selection step, worked numerical example, and aggregate
 contrast error, run:
 
 ```bash
-python python/field_propogation/reports/write_phi2_amplitude_tutorial_report.py \
+python python/field_propogation/archive/effective_fits/write_phi2_amplitude_tutorial_report.py \
   <field-model-run>/data.csv \
   <phi1-fringe-run>/data.csv
 ```

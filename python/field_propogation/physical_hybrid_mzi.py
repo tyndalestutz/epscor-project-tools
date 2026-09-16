@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Constrained physical Jones-network model of the hybrid two-NPBS MZI.
+"""Historical compatibility API for the former effective Jones-network fit.
+
+Not an independently characterized physical model. Active acquisition uses
+acquire.py and measured section matrices; this API is retained for regression
+and archived fit reproduction only.
 
 Unlike the effective-analyzer fit, this module propagates complex Jones fields
 through the actual named optical network and returns the fundamental final-port
@@ -19,26 +23,24 @@ matrix at every component would be unidentifiable from the current data.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
 
 
+if not __package__:
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    __package__ = "field_propogation"
+
+from .elements import Retarder
+from .observables import intensity, normalized_stokes
+from .configuration import from_dicts, read_json
+from .propagation import compile_network
+
 Port = Literal["E", "F"]
-
-
-@dataclass(frozen=True)
-class Retarder:
-    """Lossless linear retarder: axis angle and relative phase in radians."""
-
-    axis_rad: float = 0.0
-    retardance_rad: float = 0.0
-
-    def matrix(self) -> np.ndarray:
-        c, s = np.cos(self.axis_rad), np.sin(self.axis_rad)
-        rotate = np.array(((c, -s), (s, c)), dtype=complex)
-        phase = np.diag((np.exp(-0.5j * self.retardance_rad), np.exp(0.5j * self.retardance_rad)))
-        return rotate.T @ phase @ rotate
 
 
 @dataclass(frozen=True)
@@ -77,64 +79,43 @@ def phase_from_rp_voltage(command_v: float | np.ndarray, v_lambda_rp_v: float, o
     return 2.0 * np.pi * np.asarray(command_v, dtype=float) / v_lambda_rp_v + offset_rad
 
 
-def _npbs(field_a: np.ndarray, field_b: np.ndarray, mixing_rad: float) -> tuple[np.ndarray, np.ndarray]:
-    """Return transmitted-first and reflected-second Jones fields."""
-    transmitted = np.cos(mixing_rad) * field_a + 1j * np.sin(mixing_rad) * field_b
-    reflected = 1j * np.sin(mixing_rad) * field_a + np.cos(mixing_rad) * field_b
-    return transmitted, reflected
+@lru_cache(maxsize=1)
+def _compatibility_flow() -> dict:
+    return read_json(Path(__file__).parent / "archive/effective_fits/configs/flows/hybrid_mzi_relative_fit.json")
 
 
-def _pbs_split(input_field: np.ndarray, leakage_rad: float) -> tuple[np.ndarray, np.ndarray]:
-    """Return PBS-transmitted A and reflected B, including lossless leakage."""
-    c, s = np.cos(leakage_rad), np.sin(leakage_rad)
-    arm_a = np.array((c * input_field[0], 1j * s * input_field[1]), dtype=complex)
-    arm_b = np.array((1j * s * input_field[0], c * input_field[1]), dtype=complex)
-    return arm_a, arm_b
-
-
-def intensity(field: np.ndarray) -> float:
-    """Total power in an orthogonal Jones basis, in arbitrary field units."""
-    return float(np.vdot(field, field).real)
-
-
-def normalized_stokes(field: np.ndarray) -> np.ndarray:
-    """Return [S1,S2,S3] using the PAX / locking convention."""
-    ex, ey = field
-    s0 = intensity(field)
-    if s0 <= 0.0:
-        raise ValueError("Stokes coordinates are undefined for a zero field")
-    return np.asarray((
-        (abs(ey) ** 2 - abs(ex) ** 2) / s0,
-        2.0 * np.real(ex * np.conj(ey)) / s0,
-        2.0 * np.imag(ex * np.conj(ey)) / s0,
-    ), dtype=float)
+@lru_cache(maxsize=128)
+def _compiled_model(parameters: PhysicalParameters):
+    """Reuse a compiled configuration across the many phase samples of a fit."""
+    values = dict(
+        ax=parameters.ax, ay=parameters.ay,
+        pbs_leakage_rad=parameters.pbs_leakage_rad,
+        npbs1_mixing_rad=parameters.npbs1_mixing_rad,
+        npbs2_mixing_rad=parameters.npbs2_mixing_rad,
+        phi1_offset_rad=0, phi2_offset_rad=0,
+    )
+    # The historical input delta is an x-only input phase, including PBS
+    # leakage paths. Put it in the input field, not on arm A after the PBS.
+    values["ax"] = parameters.ax * np.exp(1j * parameters.delta_rad)
+    for arm in "abcd":
+        retarder = getattr(parameters, "retarder_" + arm)
+        values.update({"loss_" + arm: getattr(parameters, "loss_" + arm),
+                       "axis_" + arm: retarder.axis_rad,
+                       "retardance_" + arm: retarder.retardance_rad})
+    config = from_dicts(_compatibility_flow(), dict(schema_version=1, values=values,
+                       phase_values={"phi1": 0, "phi2": 0}))
+    return compile_network(config)
 
 
 def propagate(phi1_rad: float, phi2_rad: float, parameters: PhysicalParameters = PhysicalParameters()) -> dict[str, np.ndarray]:
-    """Propagate fields through named physical checkpoints A--F.
+    """Compatibility API backed by the shared configurable propagation engine.
 
-    Order: Ein -> PBS(A,B) -> phi1 on A -> NPBS1(C,D) -> phi2 on C ->
-    NPBS2(E,F). ``C``/``E`` are transmitted outputs and ``D``/``F`` reflected.
+    Order and checkpoint names retain the historical calibration contract.
+    New studies should select a flow and parameter file with run_simulation.py.
     """
-    ein = np.asarray((parameters.ax * np.exp(1j * parameters.delta_rad), parameters.ay), dtype=complex)
-    a_before, b_before = _pbs_split(ein, parameters.pbs_leakage_rad)
-    a_after = parameters.loss_a * parameters.retarder_a.matrix() @ (np.exp(1j * phi1_rad) * a_before)
-    b_after = parameters.loss_b * parameters.retarder_b.matrix() @ b_before
-    c_before, d_before = _npbs(a_after, b_after, parameters.npbs1_mixing_rad)
-    c_after = parameters.loss_c * parameters.retarder_c.matrix() @ (np.exp(1j * phi2_rad) * c_before)
-    d_after = parameters.loss_d * parameters.retarder_d.matrix() @ d_before
-    port_e, port_f = _npbs(c_after, d_after, parameters.npbs2_mixing_rad)
-    return {
-        "Ein": ein,
-        "A_before_phi1": a_before,
-        "A_after_phi1": a_after,
-        "B": b_after,
-        "C": c_before,
-        "C_after_phi2": c_after,
-        "D": d_after,
-        "E": port_e,
-        "F": port_f,
-    }
+    fields = _compiled_model(parameters).evaluate({"phi1": phi1_rad, "phi2": phi2_rad}, checkpoints=True)
+    return {name: fields[name] for name in (
+        "Ein", "A_before_phi1", "A_after_phi1", "B", "C", "C_after_phi2", "D", "E", "F")}
 
 
 def port_observables(phi1_rad: float, phi2_rad: float, parameters: PhysicalParameters = PhysicalParameters()) -> dict[str, object]:

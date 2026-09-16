@@ -1,0 +1,82 @@
+\subsection{Independent ideal hybrid-MZI reference: do not set the amplitudes equal}
+This comparison assumes an ideal PBS, two 50/50 NPBSs, no arm attenuation or
+retardance, and zero phase-plate offsets. It is a reference limit, not an
+assumption imposed on the configured network above. Let
+$\alpha=\phi_1+\delta$ and retain independent input amplitudes $a_x,a_y$.
+Propagation through the two combiners gives
+\begin{align}
+\mathbf E_E &= i e^{i\phi_2/2}
+\begin{bmatrix}a_xe^{i\alpha}\sin(\phi_2/2)\\a_y\cos(\phi_2/2)\end{bmatrix},\\
+\mathbf E_F &= i e^{i\phi_2/2}
+\begin{bmatrix}a_xe^{i\alpha}\cos(\phi_2/2)\\-a_y\sin(\phi_2/2)\end{bmatrix}.
+\end{align}
+The shared phase has unit modulus and cancels in each field norm. Therefore
+\begin{align}
+I_E &= a_x^2\sin^2\!\frac{\phi_2}{2}+a_y^2\cos^2\!\frac{\phi_2}{2}
+=\frac{a_x^2+a_y^2}{2}+\frac{a_y^2-a_x^2}{2}\cos\phi_2,\\
+I_F &= a_x^2\cos^2\!\frac{\phi_2}{2}+a_y^2\sin^2\!\frac{\phi_2}{2}
+=\frac{a_x^2+a_y^2}{2}-\frac{a_y^2-a_x^2}{2}\cos\phi_2,\\
+I_E+I_F&=a_x^2+a_y^2,\qquad
+\mathcal V_E=\mathcal V_F=\frac{|a_x^2-a_y^2|}{a_x^2+a_y^2}.
+\end{align}
+The visibility formula assumes a nonzero input and a full phase cycle.
+Constant individual-port power follows only in the special case $a_x=a_y$.
+Unequal effective amplitudes immediately produce complementary fringes, even
+with ideal optical elements. Ideal PBS-to-NPBS1 arm transmissions $\ell_A,\ell_B$
+can be included here by replacing $a_x$ with $\ell_A a_x$ and $a_y$ with
+$\ell_B a_y$; their common attenuation and their ratio play different roles.
+
+For the same independent amplitudes, the normalized Stokes coordinates are
+\begin{align}
+s_{1,E}&=\frac{a_y^2\cos^2(\phi_2/2)-a_x^2\sin^2(\phi_2/2)}{I_E},\\
+s_{2,E}&=\frac{a_xa_y\sin\phi_2\cos\alpha}{I_E},\qquad
+s_{3,E}=\frac{a_xa_y\sin\phi_2\sin\alpha}{I_E},\\
+s_{1,F}&=\frac{a_y^2\sin^2(\phi_2/2)-a_x^2\cos^2(\phi_2/2)}{I_F},\\
+s_{2,F}&=-\frac{a_xa_y\sin\phi_2\cos\alpha}{I_F},\qquad
+s_{3,F}=-\frac{a_xa_y\sin\phi_2\sin\alpha}{I_F}.
+\end{align}
+These expressions are undefined at a dark output. Only after choosing
+$a_x=a_y>0$ does port E reduce to
+\begin{equation}
+\mathbf s_E=(\cos\phi_2,\ \sin\phi_2\cos\alpha,\ \sin\phi_2\sin\alpha)^T.
+\end{equation}
+At fixed $\phi_2$, a $\phi_1$ scan has component amplitudes
+$|\sin\phi_2|$ for both $s_2$ and $s_3$. At fixed $\phi_1$, a $\phi_2$ scan
+has amplitudes $|\cos\alpha|$ and $|\sin\alpha|$ instead. Different heights
+in these two cuts are expected; they do not indicate a loss of polarization.
+The vector remains on the unit sphere.
+
+\subsection{Why differential polarization phase can modulate total port power}
+For a scalar final NPBS, write its incident fields as
+$e^{i\phi_2}\mathbf c$ and $\mathbf d$, with real mixing coefficients
+$t=\cos\mu$, $r=\sin\mu$ and $z=\mathbf c^\dagger\mathbf d$.
+Direct expansion gives
+\begin{align}
+I_E&=t^2\|\mathbf c\|^2+r^2\|\mathbf d\|^2
++2tr[\operatorname{Re}z\sin\phi_2-\operatorname{Im}z\cos\phi_2],\\
+I_F&=r^2\|\mathbf c\|^2+t^2\|\mathbf d\|^2
+-2tr[\operatorname{Re}z\sin\phi_2-\operatorname{Im}z\cos\phi_2],\\
+I_E+I_F&=\|\mathbf c\|^2+\|\mathbf d\|^2.
+\end{align}
+Thus the fringe is governed by the polarization overlap of the two incident
+fields. Differential retardance can change that overlap without attenuating
+either arm. Power moves between outputs while their sum remains fixed during
+this phase scan.
+
+As a transparent special case, keep the ideal PBS/NPBSs and add axis-aligned
+retarders with retardances $\rho_C,\rho_D$ in arms C and D. Define
+$\Delta\rho=\rho_C-\rho_D$. The E-port intensity becomes
+\begin{equation}
+I_E=\frac{a_x^2+a_y^2}{2}
++\frac{a_y^2\cos(\phi_2+\Delta\rho/2)
+-a_x^2\cos(\phi_2-\Delta\rho/2)}{2}.
+\end{equation}
+Even in the explicitly chosen balanced case $a_x=a_y=a$, this gives
+\begin{equation}
+I_E=a^2[1-\sin\phi_2\sin(\Delta\rho/2)],\qquad
+\mathcal V=|\sin(\Delta\rho/2)|.
+\end{equation}
+This aligned-retarder example explains the mechanism; rotated axes and other
+imperfections must use the configured transfer calculation, not this special-case
+formula. A fitted retarder parameter is not, by itself, an independently
+measured property of an optic.

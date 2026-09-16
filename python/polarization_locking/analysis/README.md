@@ -13,5 +13,5 @@ python python/polarization_locking/analysis/analyze_first_npbs_d.py --help
 - `analyze_first_npbs_d_polarizer.py`: D-port analyzer-polarizer scan.
 - `analyze_phi1_step_map.py`: phi1 voltage-step response.
 
-Reusable Jones models and model fitting are in
+Reusable Jones models and independent measurement acquisition are in
 [../../field_propogation/](../../field_propogation/README.md).

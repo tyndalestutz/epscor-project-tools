@@ -1,0 +1,1660 @@
+{
+  "schema_version": 1,
+  "session": {
+    "schema_version": 1,
+    "operator": "",
+    "bench_id": "",
+    "wavelength_nm": null,
+    "instrument_calibrations": {},
+    "confirmed_planes": false,
+    "basis_verified": false,
+    "normalization_plane": "P0_before_PBS",
+    "notes": "",
+    "created_utc": "2026-09-10T01:04:18.613033+00:00"
+  },
+  "plan": {
+    "schema_version": 1,
+    "normalization_plane": "P0_before_PBS",
+    "planes": {
+      "P0_before_PBS": "Input reference immediately before PBS; ax/ay live only here.",
+      "A0": "Immediately after PBS A output, before all A-section optics.",
+      "B0": "Immediately after PBS B output, before all B-section optics.",
+      "A1": "Immediately before NPBS1 input A, after all A-section optics.",
+      "B1": "Immediately before NPBS1 input B, after all B-section optics.",
+      "C0": "Immediately after NPBS1 output C, before all C-section optics.",
+      "D0": "Immediately after NPBS1 output D, before all D-section optics.",
+      "C1": "Immediately before NPBS2 input C, after all C-section optics.",
+      "D1": "Immediately before NPBS2 input D, after all D-section optics.",
+      "E0": "Immediately after NPBS2 output E, before detector optics/coupling.",
+      "F0": "Immediately after NPBS2 output F, before detector optics/coupling.",
+      "fiber": "After projection into the monitored fiber mode; never called arm transmission.",
+      "camera_z1_z2": "Two recorded longitudinal camera planes, referenced to E0/F0."
+    },
+    "steps": [
+      {
+        "id": "input",
+        "kind": "input_state",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "P0_before_PBS",
+        "input_state": "operating",
+        "blocks": "isolate source from downstream reflections",
+        "instructions": "Record total free-space input power and PAX Stokes/DOP for the actual operating input; record polarization basis calibration.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "PBS_A_H",
+        "kind": "power_ratio",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "A0",
+        "input_state": "H",
+        "blocks": "only PBS illuminated; no downstream return",
+        "instructions": "Inject known H or V at P0; measure both PBS outputs without moving the source. Bracket each output reading with input references.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "PBS_A_V",
+        "kind": "power_ratio",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "A0",
+        "input_state": "V",
+        "blocks": "only PBS illuminated; no downstream return",
+        "instructions": "Inject known H or V at P0; measure both PBS outputs without moving the source. Bracket each output reading with input references.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "PBS_B_H",
+        "kind": "power_ratio",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "B0",
+        "input_state": "H",
+        "blocks": "only PBS illuminated; no downstream return",
+        "instructions": "Inject known H or V at P0; measure both PBS outputs without moving the source. Bracket each output reading with input references.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "PBS_B_V",
+        "kind": "power_ratio",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "B0",
+        "input_state": "V",
+        "blocks": "only PBS illuminated; no downstream return",
+        "instructions": "Inject known H or V at P0; measure both PBS outputs without moving the source. Bracket each output reading with input references.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS1_AC_H",
+        "kind": "power_ratio",
+        "input_plane": "A1",
+        "output_plane": "C0",
+        "input_state": "H",
+        "blocks": "inject only A; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS1_AC_V",
+        "kind": "power_ratio",
+        "input_plane": "A1",
+        "output_plane": "C0",
+        "input_state": "V",
+        "blocks": "inject only A; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS1_AD_H",
+        "kind": "power_ratio",
+        "input_plane": "A1",
+        "output_plane": "D0",
+        "input_state": "H",
+        "blocks": "inject only A; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS1_AD_V",
+        "kind": "power_ratio",
+        "input_plane": "A1",
+        "output_plane": "D0",
+        "input_state": "V",
+        "blocks": "inject only A; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS1_BC_H",
+        "kind": "power_ratio",
+        "input_plane": "B1",
+        "output_plane": "C0",
+        "input_state": "H",
+        "blocks": "inject only B; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS1_BC_V",
+        "kind": "power_ratio",
+        "input_plane": "B1",
+        "output_plane": "C0",
+        "input_state": "V",
+        "blocks": "inject only B; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS1_BD_H",
+        "kind": "power_ratio",
+        "input_plane": "B1",
+        "output_plane": "D0",
+        "input_state": "H",
+        "blocks": "inject only B; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS1_BD_V",
+        "kind": "power_ratio",
+        "input_plane": "B1",
+        "output_plane": "D0",
+        "input_state": "V",
+        "blocks": "inject only B; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS2_CE_H",
+        "kind": "power_ratio",
+        "input_plane": "C1",
+        "output_plane": "E0",
+        "input_state": "H",
+        "blocks": "inject only C; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS2_CE_V",
+        "kind": "power_ratio",
+        "input_plane": "C1",
+        "output_plane": "E0",
+        "input_state": "V",
+        "blocks": "inject only C; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS2_CF_H",
+        "kind": "power_ratio",
+        "input_plane": "C1",
+        "output_plane": "F0",
+        "input_state": "H",
+        "blocks": "inject only C; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS2_CF_V",
+        "kind": "power_ratio",
+        "input_plane": "C1",
+        "output_plane": "F0",
+        "input_state": "V",
+        "blocks": "inject only C; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS2_DE_H",
+        "kind": "power_ratio",
+        "input_plane": "D1",
+        "output_plane": "E0",
+        "input_state": "H",
+        "blocks": "inject only D; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS2_DE_V",
+        "kind": "power_ratio",
+        "input_plane": "D1",
+        "output_plane": "E0",
+        "input_state": "V",
+        "blocks": "inject only D; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS2_DF_H",
+        "kind": "power_ratio",
+        "input_plane": "D1",
+        "output_plane": "F0",
+        "input_state": "H",
+        "blocks": "inject only D; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "NPBS2_DF_V",
+        "kind": "power_ratio",
+        "input_plane": "D1",
+        "output_plane": "F0",
+        "input_state": "V",
+        "blocks": "inject only D; block other incident port; downstream paths disconnected",
+        "instructions": "Measure directly at the splitter. No fiber in the transmission measurement. Record incident/output powers and dark levels.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_A_H",
+        "kind": "jones_response",
+        "input_plane": "A0",
+        "output_plane": "A1",
+        "input_state": "H",
+        "blocks": "inject directly at A0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_A_V",
+        "kind": "jones_response",
+        "input_plane": "A0",
+        "output_plane": "A1",
+        "input_state": "V",
+        "blocks": "inject directly at A0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_A_D",
+        "kind": "jones_response",
+        "input_plane": "A0",
+        "output_plane": "A1",
+        "input_state": "D",
+        "blocks": "inject directly at A0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_A_R",
+        "kind": "jones_response",
+        "input_plane": "A0",
+        "output_plane": "A1",
+        "input_state": "R",
+        "blocks": "inject directly at A0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_B_H",
+        "kind": "jones_response",
+        "input_plane": "B0",
+        "output_plane": "B1",
+        "input_state": "H",
+        "blocks": "inject directly at B0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_B_V",
+        "kind": "jones_response",
+        "input_plane": "B0",
+        "output_plane": "B1",
+        "input_state": "V",
+        "blocks": "inject directly at B0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_B_D",
+        "kind": "jones_response",
+        "input_plane": "B0",
+        "output_plane": "B1",
+        "input_state": "D",
+        "blocks": "inject directly at B0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_B_R",
+        "kind": "jones_response",
+        "input_plane": "B0",
+        "output_plane": "B1",
+        "input_state": "R",
+        "blocks": "inject directly at B0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_C_H",
+        "kind": "jones_response",
+        "input_plane": "C0",
+        "output_plane": "C1",
+        "input_state": "H",
+        "blocks": "inject directly at C0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_C_V",
+        "kind": "jones_response",
+        "input_plane": "C0",
+        "output_plane": "C1",
+        "input_state": "V",
+        "blocks": "inject directly at C0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_C_D",
+        "kind": "jones_response",
+        "input_plane": "C0",
+        "output_plane": "C1",
+        "input_state": "D",
+        "blocks": "inject directly at C0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_C_R",
+        "kind": "jones_response",
+        "input_plane": "C0",
+        "output_plane": "C1",
+        "input_state": "R",
+        "blocks": "inject directly at C0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_D_H",
+        "kind": "jones_response",
+        "input_plane": "D0",
+        "output_plane": "D1",
+        "input_state": "H",
+        "blocks": "inject directly at D0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_D_V",
+        "kind": "jones_response",
+        "input_plane": "D0",
+        "output_plane": "D1",
+        "input_state": "V",
+        "blocks": "inject directly at D0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_D_D",
+        "kind": "jones_response",
+        "input_plane": "D0",
+        "output_plane": "D1",
+        "input_state": "D",
+        "blocks": "inject directly at D0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "arm_D_R",
+        "kind": "jones_response",
+        "input_plane": "D0",
+        "output_plane": "D1",
+        "input_state": "R",
+        "blocks": "inject directly at D0; all other paths blocked; phase actuators held at independently recorded reference",
+        "instructions": "Known H=(1,0), V=(0,1), D=(1,1)/sqrt(2), R=(1,i)/sqrt(2). Measure section input/output free-space powers and output Stokes/DOP. H,V,D reconstruct a Jones matrix; R tests it independently. The section Jones matrix already includes transmission: do not add another arm loss.",
+        "role": "characterization",
+        "required": true,
+        "repeats": 3
+      },
+      {
+        "id": "phase_PBS_A_H",
+        "kind": "phase",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "A0",
+        "input_state": "H",
+        "blocks": "only PBS illuminated; no downstream return",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_PBS_A_V",
+        "kind": "phase",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "A0",
+        "input_state": "V",
+        "blocks": "only PBS illuminated; no downstream return",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_PBS_B_H",
+        "kind": "phase",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "B0",
+        "input_state": "H",
+        "blocks": "only PBS illuminated; no downstream return",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_PBS_B_V",
+        "kind": "phase",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "B0",
+        "input_state": "V",
+        "blocks": "only PBS illuminated; no downstream return",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS1_AC_H",
+        "kind": "phase",
+        "input_plane": "A1",
+        "output_plane": "C0",
+        "input_state": "H",
+        "blocks": "inject only A; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS1_AC_V",
+        "kind": "phase",
+        "input_plane": "A1",
+        "output_plane": "C0",
+        "input_state": "V",
+        "blocks": "inject only A; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS1_AD_H",
+        "kind": "phase",
+        "input_plane": "A1",
+        "output_plane": "D0",
+        "input_state": "H",
+        "blocks": "inject only A; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS1_AD_V",
+        "kind": "phase",
+        "input_plane": "A1",
+        "output_plane": "D0",
+        "input_state": "V",
+        "blocks": "inject only A; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS1_BC_H",
+        "kind": "phase",
+        "input_plane": "B1",
+        "output_plane": "C0",
+        "input_state": "H",
+        "blocks": "inject only B; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS1_BC_V",
+        "kind": "phase",
+        "input_plane": "B1",
+        "output_plane": "C0",
+        "input_state": "V",
+        "blocks": "inject only B; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS1_BD_H",
+        "kind": "phase",
+        "input_plane": "B1",
+        "output_plane": "D0",
+        "input_state": "H",
+        "blocks": "inject only B; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS1_BD_V",
+        "kind": "phase",
+        "input_plane": "B1",
+        "output_plane": "D0",
+        "input_state": "V",
+        "blocks": "inject only B; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS2_CE_H",
+        "kind": "phase",
+        "input_plane": "C1",
+        "output_plane": "E0",
+        "input_state": "H",
+        "blocks": "inject only C; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS2_CE_V",
+        "kind": "phase",
+        "input_plane": "C1",
+        "output_plane": "E0",
+        "input_state": "V",
+        "blocks": "inject only C; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS2_CF_H",
+        "kind": "phase",
+        "input_plane": "C1",
+        "output_plane": "F0",
+        "input_state": "H",
+        "blocks": "inject only C; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS2_CF_V",
+        "kind": "phase",
+        "input_plane": "C1",
+        "output_plane": "F0",
+        "input_state": "V",
+        "blocks": "inject only C; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS2_DE_H",
+        "kind": "phase",
+        "input_plane": "D1",
+        "output_plane": "E0",
+        "input_state": "H",
+        "blocks": "inject only D; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS2_DE_V",
+        "kind": "phase",
+        "input_plane": "D1",
+        "output_plane": "E0",
+        "input_state": "V",
+        "blocks": "inject only D; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS2_DF_H",
+        "kind": "phase",
+        "input_plane": "D1",
+        "output_plane": "F0",
+        "input_state": "H",
+        "blocks": "inject only D; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phase_NPBS2_DF_V",
+        "kind": "phase",
+        "input_plane": "D1",
+        "output_plane": "F0",
+        "input_state": "V",
+        "blocks": "inject only D; block other incident port; downstream paths disconnected",
+        "instructions": "Dedicated coherent reference measurement, referenced to a shared port/basis convention. If inaccessible, declare a bounded nuisance in choices.json; do not estimate from final validation scans.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phi1_origin",
+        "kind": "phase",
+        "input_plane": "A0",
+        "output_plane": "A1",
+        "input_state": "known state",
+        "blocks": "separate dedicated phase-reference experiment",
+        "instructions": "Measure phase at zero command relative to the arm Jones reference. Global arm scalar phases and source origin enter this offset. Only conventionally unobservable common phases may be set to zero as a convention.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phi1_law",
+        "kind": "phase_law",
+        "input_plane": "A0",
+        "output_plane": "A1",
+        "input_state": "known state",
+        "blocks": "independent phase reference, not held-out final amplitude curve",
+        "instructions": "Record command V, independently measured phase rad, direction, settling time and uncertainties over forward/reverse sweeps. No assumed linear V_lambda if hysteresis is material.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phi2_origin",
+        "kind": "phase",
+        "input_plane": "C0",
+        "output_plane": "C1",
+        "input_state": "known state",
+        "blocks": "separate dedicated phase-reference experiment",
+        "instructions": "Measure phase at zero command relative to the arm Jones reference. Global arm scalar phases and source origin enter this offset. Only conventionally unobservable common phases may be set to zero as a convention.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "phi2_law",
+        "kind": "phase_law",
+        "input_plane": "C0",
+        "output_plane": "C1",
+        "input_state": "known state",
+        "blocks": "independent phase reference, not held-out final amplitude curve",
+        "instructions": "Record command V, independently measured phase rad, direction, settling time and uncertainties over forward/reverse sweeps. No assumed linear V_lambda if hysteresis is material.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "spatial_AC_E",
+        "kind": "spatial",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "E0",
+        "input_state": "operating",
+        "blocks": "only route AC open; record actual blocker planes",
+        "instructions": "At one common alignment, record integrated free-space and fiber-coupled powers, then two-plane camera centroids/widths. Repeat over a recorded x/y coupler grid without optimizing each route independently. These are receiver overlaps, not arm losses.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "spatial_AC_F",
+        "kind": "spatial",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "F0",
+        "input_state": "operating",
+        "blocks": "only route AC open; record actual blocker planes",
+        "instructions": "At one common alignment, record integrated free-space and fiber-coupled powers, then two-plane camera centroids/widths. Repeat over a recorded x/y coupler grid without optimizing each route independently. These are receiver overlaps, not arm losses.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "spatial_AD_E",
+        "kind": "spatial",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "E0",
+        "input_state": "operating",
+        "blocks": "only route AD open; record actual blocker planes",
+        "instructions": "At one common alignment, record integrated free-space and fiber-coupled powers, then two-plane camera centroids/widths. Repeat over a recorded x/y coupler grid without optimizing each route independently. These are receiver overlaps, not arm losses.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "spatial_AD_F",
+        "kind": "spatial",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "F0",
+        "input_state": "operating",
+        "blocks": "only route AD open; record actual blocker planes",
+        "instructions": "At one common alignment, record integrated free-space and fiber-coupled powers, then two-plane camera centroids/widths. Repeat over a recorded x/y coupler grid without optimizing each route independently. These are receiver overlaps, not arm losses.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "spatial_BC_E",
+        "kind": "spatial",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "E0",
+        "input_state": "operating",
+        "blocks": "only route BC open; record actual blocker planes",
+        "instructions": "At one common alignment, record integrated free-space and fiber-coupled powers, then two-plane camera centroids/widths. Repeat over a recorded x/y coupler grid without optimizing each route independently. These are receiver overlaps, not arm losses.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "spatial_BC_F",
+        "kind": "spatial",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "F0",
+        "input_state": "operating",
+        "blocks": "only route BC open; record actual blocker planes",
+        "instructions": "At one common alignment, record integrated free-space and fiber-coupled powers, then two-plane camera centroids/widths. Repeat over a recorded x/y coupler grid without optimizing each route independently. These are receiver overlaps, not arm losses.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "spatial_BD_E",
+        "kind": "spatial",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "E0",
+        "input_state": "operating",
+        "blocks": "only route BD open; record actual blocker planes",
+        "instructions": "At one common alignment, record integrated free-space and fiber-coupled powers, then two-plane camera centroids/widths. Repeat over a recorded x/y coupler grid without optimizing each route independently. These are receiver overlaps, not arm losses.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "spatial_BD_F",
+        "kind": "spatial",
+        "input_plane": "P0_before_PBS",
+        "output_plane": "F0",
+        "input_state": "operating",
+        "blocks": "only route BD open; record actual blocker planes",
+        "instructions": "At one common alignment, record integrated free-space and fiber-coupled powers, then two-plane camera centroids/widths. Repeat over a recorded x/y coupler grid without optimizing each route independently. These are receiver overlaps, not arm losses.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_E_BD_BC",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "E0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BD and BC routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_E_BD_AD",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "E0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BD and AD routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_E_BD_AC",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "E0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BD and AC routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_E_BC_AD",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "E0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BC and AD routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_E_BC_AC",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "E0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BC and AC routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_E_AD_AC",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "E0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only AD and AC routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "projection_E_BD",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "fiber",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BD with a dedicated coherent receiver reference",
+        "instructions": "Record h_a=<u_f,u_a> for normalized modes at the SAME coupler position and route phase gauge as G. An isolated fiber/free power ratio determines |h_a|^2 only; phase needs coherent reference or an explicit nuisance. Keep complex overlap covariance/raw reference trace in supporting records.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "projection_E_BC",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "fiber",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BC with a dedicated coherent receiver reference",
+        "instructions": "Record h_a=<u_f,u_a> for normalized modes at the SAME coupler position and route phase gauge as G. An isolated fiber/free power ratio determines |h_a|^2 only; phase needs coherent reference or an explicit nuisance. Keep complex overlap covariance/raw reference trace in supporting records.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "projection_E_AD",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "fiber",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only AD with a dedicated coherent receiver reference",
+        "instructions": "Record h_a=<u_f,u_a> for normalized modes at the SAME coupler position and route phase gauge as G. An isolated fiber/free power ratio determines |h_a|^2 only; phase needs coherent reference or an explicit nuisance. Keep complex overlap covariance/raw reference trace in supporting records.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "projection_E_AC",
+        "kind": "complex_overlap",
+        "input_plane": "E0",
+        "output_plane": "fiber",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only AC with a dedicated coherent receiver reference",
+        "instructions": "Record h_a=<u_f,u_a> for normalized modes at the SAME coupler position and route phase gauge as G. An isolated fiber/free power ratio determines |h_a|^2 only; phase needs coherent reference or an explicit nuisance. Keep complex overlap covariance/raw reference trace in supporting records.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_F_BD_BC",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "F0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BD and BC routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_F_BD_AD",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "F0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BD and AD routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_F_BD_AC",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "F0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BD and AC routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_F_BC_AD",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "F0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BC and AD routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_F_BC_AC",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "F0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BC and AC routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "overlap_F_AD_AC",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "F0",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only AD and AC routes in a dedicated coherent reference measurement",
+        "instructions": "Record normalized complex G_ab=<u_a,u_b> in the same route phase gauge as the Jones fields. Use independently characterized pairwise complex fields or coherent interference with known polarization overlap; isolated powers/centroids alone do not determine complex overlap. Document raw reference trace location/hash in notes.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "projection_F_BD",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "fiber",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BD with a dedicated coherent receiver reference",
+        "instructions": "Record h_a=<u_f,u_a> for normalized modes at the SAME coupler position and route phase gauge as G. An isolated fiber/free power ratio determines |h_a|^2 only; phase needs coherent reference or an explicit nuisance. Keep complex overlap covariance/raw reference trace in supporting records.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "projection_F_BC",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "fiber",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only BC with a dedicated coherent receiver reference",
+        "instructions": "Record h_a=<u_f,u_a> for normalized modes at the SAME coupler position and route phase gauge as G. An isolated fiber/free power ratio determines |h_a|^2 only; phase needs coherent reference or an explicit nuisance. Keep complex overlap covariance/raw reference trace in supporting records.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "projection_F_AD",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "fiber",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only AD with a dedicated coherent receiver reference",
+        "instructions": "Record h_a=<u_f,u_a> for normalized modes at the SAME coupler position and route phase gauge as G. An isolated fiber/free power ratio determines |h_a|^2 only; phase needs coherent reference or an explicit nuisance. Keep complex overlap covariance/raw reference trace in supporting records.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      },
+      {
+        "id": "projection_F_AC",
+        "kind": "complex_overlap",
+        "input_plane": "F0",
+        "output_plane": "fiber",
+        "input_state": "shared calibrated polarization",
+        "blocks": "only AC with a dedicated coherent receiver reference",
+        "instructions": "Record h_a=<u_f,u_a> for normalized modes at the SAME coupler position and route phase gauge as G. An isolated fiber/free power ratio determines |h_a|^2 only; phase needs coherent reference or an explicit nuisance. Keep complex overlap covariance/raw reference trace in supporting records.",
+        "role": "characterization",
+        "required": false,
+        "repeats": 3
+      }
+    ],
+    "quality": {
+      "min_repeats": 3,
+      "max_reference_drift": 0.02,
+      "min_dop": 0.98,
+      "max_stokes_norm_error": 0.02,
+      "max_jones_validation_error": 0.05
+    },
+    "assumptions": [
+      "H/V bases must be verified at each reflection/measurement plane; H maps to s1=-1 in this repository.",
+      "Power-only PBS/NPBS reduction assumes diagonal H/V coefficients. Check output polarization; use a full measured matrix if this fails.",
+      "Each arm Jones matrix includes all amplitude transmission between its two named planes.",
+      "Single-mode Jones reconstruction requires sufficiently polarized light; partial polarization is not normalized away.",
+      "Unknown inter-port/global arm phases remain explicit nuisance parameters; absolute-phase agreement is conditional until independently constrained."
+    ]
+  },
+  "choices": {
+    "phase_PBS_A_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_PBS_A_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_PBS_B_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_PBS_B_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS1_AC_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS1_AC_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS1_AD_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS1_AD_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS1_BC_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS1_BC_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS1_BD_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS1_BD_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS2_CE_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS2_CE_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS2_CF_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS2_CF_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS2_DE_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS2_DE_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS2_DF_H": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phase_NPBS2_DF_V": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phi1_origin": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    },
+    "phi2_origin": {
+      "value": null,
+      "bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "status": "nuisance",
+      "reason": "Unmeasured: dedicated reference or explicit conditional scenario required"
+    }
+  },
+  "detectors": {
+    "schema_version": 1,
+    "status": "assumed",
+    "sources": [],
+    "notes": "Coherent identical-mode baseline only. Replace with independently characterized overlap/projection before claiming a spatial explanation.",
+    "ports": {
+      "E": {
+        "kind": "integrating",
+        "mode_keys": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "gram": [
+          [
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      },
+      "F": {
+        "kind": "integrating",
+        "mode_keys": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "gram": [
+          [
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1
+          ]
+        ]
+      }
+    }
+  },
+  "reading_templates": {
+    "input_state": {
+      "values": {
+        "dark": null,
+        "dop": null,
+        "power": null,
+        "s1": null,
+        "s2": null,
+        "s3": null
+      },
+      "uncertainties": {
+        "dark": null,
+        "dop": null,
+        "power": null,
+        "s1": null,
+        "s2": null,
+        "s3": null
+      },
+      "power_unit": "uW",
+      "detectors": {},
+      "utc": "",
+      "notes": ""
+    },
+    "power_ratio": {
+      "values": {
+        "dark_in": null,
+        "dark_out": null,
+        "power_in_after": null,
+        "power_in_before": null,
+        "power_out": null
+      },
+      "uncertainties": {
+        "dark_in": null,
+        "dark_out": null,
+        "power_in_after": null,
+        "power_in_before": null,
+        "power_out": null
+      },
+      "power_unit": "uW",
+      "detectors": {},
+      "utc": "",
+      "notes": ""
+    },
+    "jones_response": {
+      "values": {
+        "dark_in": null,
+        "dark_out": null,
+        "dop": null,
+        "power_in_after": null,
+        "power_in_before": null,
+        "power_out": null,
+        "s1": null,
+        "s2": null,
+        "s3": null
+      },
+      "uncertainties": {
+        "dark_in": null,
+        "dark_out": null,
+        "dop": null,
+        "power_in_after": null,
+        "power_in_before": null,
+        "power_out": null,
+        "s1": null,
+        "s2": null,
+        "s3": null
+      },
+      "power_unit": "uW",
+      "detectors": {},
+      "utc": "",
+      "notes": ""
+    },
+    "phase": {
+      "values": {
+        "phase_rad": null
+      },
+      "uncertainties": {
+        "phase_rad": null
+      },
+      "power_unit": "uW",
+      "detectors": {},
+      "utc": "",
+      "notes": ""
+    },
+    "phase_law": {
+      "values": {
+        "command_v": null,
+        "phase_rad": null,
+        "settle_s": null
+      },
+      "uncertainties": {
+        "command_v": null,
+        "phase_rad": null,
+        "settle_s": null
+      },
+      "power_unit": "uW",
+      "detectors": {},
+      "utc": "",
+      "notes": ""
+    },
+    "spatial": {
+      "values": {
+        "cx1_m": null,
+        "cx2_m": null,
+        "cy1_m": null,
+        "cy2_m": null,
+        "fiber_power": null,
+        "free_power": null,
+        "width_x_m": null,
+        "width_y_m": null,
+        "x_um": null,
+        "y_um": null,
+        "z1_m": null,
+        "z2_m": null
+      },
+      "uncertainties": {
+        "cx1_m": null,
+        "cx2_m": null,
+        "cy1_m": null,
+        "cy2_m": null,
+        "fiber_power": null,
+        "free_power": null,
+        "width_x_m": null,
+        "width_y_m": null,
+        "x_um": null,
+        "y_um": null,
+        "z1_m": null,
+        "z2_m": null
+      },
+      "power_unit": "uW",
+      "detectors": {},
+      "utc": "",
+      "notes": ""
+    },
+    "complex_overlap": {
+      "values": {
+        "imag": null,
+        "real": null
+      },
+      "uncertainties": {
+        "imag": null,
+        "real": null
+      },
+      "power_unit": "uW",
+      "detectors": {},
+      "utc": "",
+      "notes": ""
+    }
+  },
+  "measurements": {
+    "input": [],
+    "PBS_A_H": [],
+    "PBS_A_V": [],
+    "PBS_B_H": [],
+    "PBS_B_V": [],
+    "NPBS1_AC_H": [],
+    "NPBS1_AC_V": [],
+    "NPBS1_AD_H": [],
+    "NPBS1_AD_V": [],
+    "NPBS1_BC_H": [],
+    "NPBS1_BC_V": [],
+    "NPBS1_BD_H": [],
+    "NPBS1_BD_V": [],
+    "NPBS2_CE_H": [],
+    "NPBS2_CE_V": [],
+    "NPBS2_CF_H": [],
+    "NPBS2_CF_V": [],
+    "NPBS2_DE_H": [],
+    "NPBS2_DE_V": [],
+    "NPBS2_DF_H": [],
+    "NPBS2_DF_V": [],
+    "arm_A_H": [],
+    "arm_A_V": [],
+    "arm_A_D": [],
+    "arm_A_R": [],
+    "arm_B_H": [],
+    "arm_B_V": [],
+    "arm_B_D": [],
+    "arm_B_R": [],
+    "arm_C_H": [],
+    "arm_C_V": [],
+    "arm_C_D": [],
+    "arm_C_R": [],
+    "arm_D_H": [],
+    "arm_D_V": [],
+    "arm_D_D": [],
+    "arm_D_R": [],
+    "phase_PBS_A_H": [],
+    "phase_PBS_A_V": [],
+    "phase_PBS_B_H": [],
+    "phase_PBS_B_V": [],
+    "phase_NPBS1_AC_H": [],
+    "phase_NPBS1_AC_V": [],
+    "phase_NPBS1_AD_H": [],
+    "phase_NPBS1_AD_V": [],
+    "phase_NPBS1_BC_H": [],
+    "phase_NPBS1_BC_V": [],
+    "phase_NPBS1_BD_H": [],
+    "phase_NPBS1_BD_V": [],
+    "phase_NPBS2_CE_H": [],
+    "phase_NPBS2_CE_V": [],
+    "phase_NPBS2_CF_H": [],
+    "phase_NPBS2_CF_V": [],
+    "phase_NPBS2_DE_H": [],
+    "phase_NPBS2_DE_V": [],
+    "phase_NPBS2_DF_H": [],
+    "phase_NPBS2_DF_V": [],
+    "phi1_origin": [],
+    "phi1_law": [],
+    "phi2_origin": [],
+    "phi2_law": [],
+    "spatial_AC_E": [],
+    "spatial_AC_F": [],
+    "spatial_AD_E": [],
+    "spatial_AD_F": [],
+    "spatial_BC_E": [],
+    "spatial_BC_F": [],
+    "spatial_BD_E": [],
+    "spatial_BD_F": [],
+    "overlap_E_BD_BC": [],
+    "overlap_E_BD_AD": [],
+    "overlap_E_BD_AC": [],
+    "overlap_E_BC_AD": [],
+    "overlap_E_BC_AC": [],
+    "overlap_E_AD_AC": [],
+    "projection_E_BD": [],
+    "projection_E_BC": [],
+    "projection_E_AD": [],
+    "projection_E_AC": [],
+    "overlap_F_BD_BC": [],
+    "overlap_F_BD_AD": [],
+    "overlap_F_BD_AC": [],
+    "overlap_F_BC_AD": [],
+    "overlap_F_BC_AC": [],
+    "overlap_F_AD_AC": [],
+    "projection_F_BD": [],
+    "projection_F_BC": [],
+    "projection_F_AD": [],
+    "projection_F_AC": []
+  },
+  "legacy_record_ids": {}
+}

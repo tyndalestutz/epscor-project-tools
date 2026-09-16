@@ -1,0 +1,160 @@
+{
+  "source": "experiments/polarization_locking/2026-08-13/192530_field-model-calibration_phi2-power-model-0/data.csv",
+  "source_sha256": "70aa7cfe62be8823d7ca6a1cd546e687ac86fb84280b4af27569df1774cc5845",
+  "samples": 984,
+  "both_path_stokes_samples": 328,
+  "parameters": [
+    "pbs_leakage",
+    "mu1",
+    "mu2",
+    "log_loss_a",
+    "log_loss_b",
+    "log_loss_c",
+    "axis_c",
+    "rho_c",
+    "axis_d",
+    "rho_d",
+    "ay",
+    "phi1_offset",
+    "phi2_offset",
+    "pd_gain",
+    "pd_offset",
+    "pax_gain",
+    "pax_offset"
+  ],
+  "column_normalized_jacobian_singular_values": [
+    2.176620867209344,
+    1.4365538509567972,
+    1.378106455959077,
+    1.2420019835532168,
+    1.2092226201248049,
+    1.0964466001964377,
+    1.04839557611358,
+    1.024874219996891,
+    0.876092685609189,
+    0.7651368814597465,
+    0.45369693762615065,
+    0.41658970365242487,
+    0.38103761041435114,
+    0.18584608943255998,
+    0.15501888714163725,
+    0.08278490964258493,
+    7.090472095422094e-12
+  ],
+  "rank_at_relative_1e_7": 16,
+  "largest_column_cosines": [
+    [
+      0.9922943956540241,
+      "ay",
+      "log_loss_b",
+      0.9922943956540241
+    ],
+    [
+      0.8578411137456088,
+      "pd_offset",
+      "pd_gain",
+      0.8578411137456088
+    ],
+    [
+      0.8469955157774464,
+      "pax_offset",
+      "pax_gain",
+      0.8469955157774464
+    ],
+    [
+      0.8031578058985261,
+      "pd_gain",
+      "log_loss_c",
+      0.8031578058985261
+    ],
+    [
+      0.762871045112679,
+      "log_loss_c",
+      "log_loss_a",
+      0.762871045112679
+    ],
+    [
+      0.7183214057666869,
+      "pd_offset",
+      "log_loss_c",
+      0.7183214057666869
+    ],
+    [
+      0.698644431188628,
+      "log_loss_c",
+      "log_loss_b",
+      0.698644431188628
+    ],
+    [
+      0.6974626163883908,
+      "ay",
+      "log_loss_c",
+      0.6974626163883908
+    ],
+    [
+      0.6415892107736921,
+      "pax_gain",
+      "log_loss_b",
+      0.6415892107736921
+    ],
+    [
+      0.6377563303428532,
+      "pax_gain",
+      "ay",
+      0.6377563303428532
+    ],
+    [
+      0.5912306901445569,
+      "pd_gain",
+      "log_loss_a",
+      0.5912306901445569
+    ],
+    [
+      0.5810261303979494,
+      "rho_d",
+      "rho_c",
+      -0.5810261303979494
+    ]
+  ],
+  "exact_scale_gauge_max_normalized_prediction_change": 2.220446049250313e-15,
+  "cross_ratios_from_user_handoff_not_original_raw_files": {
+    "zero": {
+      "cross_ratio": 0.7672413793103449,
+      "T_fraction_assuming_separability": 0.4669291247053445
+    },
+    "off_maximum": {
+      "cross_ratio": 0.7571957236842105,
+      "T_fraction_assuming_separability": 0.4652892344936415
+    },
+    "opposite": {
+      "cross_ratio": 0.7639646017699114,
+      "T_fraction_assuming_separability": 0.4663965028010104
+    },
+    "x_plus": {
+      "cross_ratio": 0.7539920539479094,
+      "T_fraction_assuming_separability": 0.46476183492560036
+    },
+    "x_minus": {
+      "cross_ratio": 0.8037553256238588,
+      "T_fraction_assuming_separability": 0.47271957152087446
+    }
+  },
+  "dop": {
+    "both_paths": {
+      "min": 0.3059903,
+      "max": 1.983144,
+      "out_of_unit_interval": 95
+    },
+    "path_a_only": {
+      "min": 0.5704527,
+      "max": 10.54259,
+      "out_of_unit_interval": 321
+    },
+    "path_b_only": {
+      "min": 0.9140282,
+      "max": 1.036381,
+      "out_of_unit_interval": 178
+    }
+  },
+  "limitations": "Local numerical sensitivity diagnostic, not confidence intervals or a unique global identification. No optimizer rerun or multistart fit was performed; the exact gauge already rules out uniqueness."
+}

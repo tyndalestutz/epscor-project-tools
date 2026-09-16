@@ -27,6 +27,6 @@ VNA/transfer-function data and are already organized by acquisition date.
 
 Use the [bench diagnostics](../python/polarization_locking/analysis/README.md)
 for first-NPBS and phi1-step measurements, or the
-[Jones calibration workflows](../python/field_propogation/calibration/README.md)
+[Independent Jones measurement acquisition](../python/field_propogation/docs/measurement_acquisition.md)
 for interference fits and model validation. Pass the recorded run’s `data.csv`
 to the appropriate script; use `--help` for its input requirements.

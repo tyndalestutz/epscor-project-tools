@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "name": "Measured element example",
+  "description": "Illustrative values only. A single element with independent principal-axis amplitudes and phases.",
+  "phases": [],
+  "input": {
+    "name": "Ein",
+    "jones": [
+      "ax",
+      "ay"
+    ]
+  },
+  "elements": [
+    {
+      "name": "sample",
+      "type": "diattenuator",
+      "inputs": [
+        "Ein"
+      ],
+      "outputs": [
+        "out"
+      ],
+      "amplitude_x": "amplitude_x",
+      "amplitude_y": "amplitude_y",
+      "phase_x_rad": "phase_x_rad",
+      "phase_y_rad": "phase_y_rad",
+      "axis_rad": "axis_rad"
+    }
+  ],
+  "outputs": [
+    "out"
+  ]
+}

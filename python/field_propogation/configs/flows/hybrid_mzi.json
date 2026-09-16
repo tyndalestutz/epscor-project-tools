@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "name": "Hybrid MZI",
+  "description": "PBS -> phase on A -> NPBS1 -> phase on C -> NPBS2. Transmitted-first ports E and F.",
+  "phases": [
+    "phi1",
+    "phi2"
+  ],
+  "input": {
+    "name": "Ein",
+    "jones": [
+      "ax",
+      "ay"
+    ]
+  },
+  "elements": [
+    {
+      "name": "PBS",
+      "type": "pbs",
+      "inputs": [
+        "Ein"
+      ],
+      "outputs": [
+        "A_before_phi1",
+        "B_before"
+      ],
+      "leakage_rad": "pbs_leakage_rad"
+    },
+    {
+      "name": "phase_A",
+      "type": "phase",
+      "inputs": [
+        "A_before_phi1"
+      ],
+      "outputs": [
+        "A_phase"
+      ],
+      "phase": "phi1",
+      "offset_rad": "phi1_offset_rad"
+    },
+    {
+      "name": "loss_A",
+      "type": "attenuator",
+      "inputs": [
+        "A_phase"
+      ],
+      "outputs": [
+        "A_loss"
+      ],
+      "amplitude": "loss_a"
+    },
+    {
+      "name": "retarder_A",
+      "type": "retarder",
+      "inputs": [
+        "A_loss"
+      ],
+      "outputs": [
+        "A_after_phi1"
+      ],
+      "axis_rad": "axis_a",
+      "retardance_rad": "retardance_a"
+    },
+    {
+      "name": "loss_B",
+      "type": "attenuator",
+      "inputs": [
+        "B_before"
+      ],
+      "outputs": [
+        "B_loss"
+      ],
+      "amplitude": "loss_b"
+    },
+    {
+      "name": "retarder_B",
+      "type": "retarder",
+      "inputs": [
+        "B_loss"
+      ],
+      "outputs": [
+        "B"
+      ],
+      "axis_rad": "axis_b",
+      "retardance_rad": "retardance_b"
+    },
+    {
+      "name": "NPBS1",
+      "type": "npbs",
+      "inputs": [
+        "A_after_phi1",
+        "B"
+      ],
+      "outputs": [
+        "C",
+        "D_before"
+      ],
+      "mixing_rad": "npbs1_mixing_rad"
+    },
+    {
+      "name": "phase_C",
+      "type": "phase",
+      "inputs": [
+        "C"
+      ],
+      "outputs": [
+        "C_phase"
+      ],
+      "phase": "phi2",
+      "offset_rad": "phi2_offset_rad"
+    },
+    {
+      "name": "loss_C",
+      "type": "attenuator",
+      "inputs": [
+        "C_phase"
+      ],
+      "outputs": [
+        "C_loss"
+      ],
+      "amplitude": "loss_c"
+    },
+    {
+      "name": "retarder_C",
+      "type": "retarder",
+      "inputs": [
+        "C_loss"
+      ],
+      "outputs": [
+        "C_after_phi2"
+      ],
+      "axis_rad": "axis_c",
+      "retardance_rad": "retardance_c"
+    },
+    {
+      "name": "loss_D",
+      "type": "attenuator",
+      "inputs": [
+        "D_before"
+      ],
+      "outputs": [
+        "D_loss"
+      ],
+      "amplitude": "loss_d"
+    },
+    {
+      "name": "retarder_D",
+      "type": "retarder",
+      "inputs": [
+        "D_loss"
+      ],
+      "outputs": [
+        "D"
+      ],
+      "axis_rad": "axis_d",
+      "retardance_rad": "retardance_d"
+    },
+    {
+      "name": "NPBS2",
+      "type": "npbs",
+      "inputs": [
+        "C_after_phi2",
+        "D"
+      ],
+      "outputs": [
+        "E",
+        "F"
+      ],
+      "mixing_rad": "npbs2_mixing_rad"
+    }
+  ],
+  "outputs": [
+    "E",
+    "F"
+  ]
+}

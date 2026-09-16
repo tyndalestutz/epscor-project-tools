@@ -1,0 +1,9 @@
+*.aux
+*.out
+*.log
+
+# Reproducible simulation output: keep locally, regenerate from source configs.
+/examples/
+/20??-??-??_*/
+/historical_contributors/contributions.pdf
+/historical_contributors/contributions.csv

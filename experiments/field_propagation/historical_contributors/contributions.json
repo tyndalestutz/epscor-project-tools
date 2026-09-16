@@ -1,0 +1,970 @@
+{
+  "phi1_command_rad": 0.73,
+  "phi1_grid_samples": 360,
+  "full": {
+    "ports": {
+      "E": {
+        "visibility": 0.5052773708144573,
+        "mean_visibility": 0.4891268131006475,
+        "min_visibility": 0.4360771228005268,
+        "max_visibility": 0.5339830442508241,
+        "I_min": 0.26867623884680064,
+        "I_max": 0.8174929517120377,
+        "baseline": 0.5430845952794192
+      },
+      "F": {
+        "visibility": 0.4954365557700642,
+        "mean_visibility": 0.47844056054634154,
+        "min_visibility": 0.42842407909515634,
+        "max_visibility": 0.5212163410165805,
+        "I_min": 0.27946348293155937,
+        "I_max": 0.8282801957967965,
+        "baseline": 0.5538718393641779
+      }
+    },
+    "total_phi2_peak_to_peak": 4.440892098500626e-16
+  },
+  "ideal": {
+    "ports": {
+      "E": {
+        "visibility": 5.551115123125783e-17,
+        "mean_visibility": 1.169732164207079e-16,
+        "min_visibility": 0.0,
+        "max_visibility": 3.510833468576701e-16,
+        "I_min": 1.0,
+        "I_max": 1.0,
+        "baseline": 1.0
+      },
+      "F": {
+        "visibility": 2.220446049250313e-16,
+        "mean_visibility": 1.1384808038058818e-16,
+        "min_visibility": 0.0,
+        "max_visibility": 3.3766115072321297e-16,
+        "I_min": 0.9999999999999998,
+        "I_max": 1.0000000000000002,
+        "baseline": 1.0
+      }
+    },
+    "total_phi2_peak_to_peak": 4.440892098500626e-16
+  },
+  "groups": {
+    "Input amplitude ratio": {
+      "parameters": [
+        "ax",
+        "ay"
+      ],
+      "reset_to_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.5029462044357939,
+            "mean_visibility": 0.48527308347328,
+            "min_visibility": 0.43146019454731377,
+            "max_visibility": 0.5312461939643978,
+            "I_min": 0.2607589247531827,
+            "I_max": 0.788459196425009,
+            "baseline": 0.5246090605890958
+          },
+          "F": {
+            "visibility": 0.489745898253271,
+            "mean_visibility": 0.4725366253243011,
+            "min_visibility": 0.42013610735197526,
+            "max_visibility": 0.5173031273763978,
+            "I_min": 0.2748989109186626,
+            "I_max": 0.802599182590489,
+            "baseline": 0.5387490467545758
+          }
+        },
+        "total_phi2_peak_to_peak": 6.661338147750939e-16
+      },
+      "alone_on_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.028366361844845873,
+            "mean_visibility": 0.028366361844845873,
+            "min_visibility": 0.028366361844845752,
+            "max_visibility": 0.028366361844846037,
+            "I_min": 1.0,
+            "I_max": 1.0583890074014013,
+            "baseline": 1.0291945037007006
+          },
+          "F": {
+            "visibility": 0.028366361844845766,
+            "mean_visibility": 0.028366361844845766,
+            "min_visibility": 0.02836636184484563,
+            "max_visibility": 0.028366361844845905,
+            "I_min": 1.0000000000000002,
+            "I_max": 1.058389007401401,
+            "baseline": 1.0291945037007006
+          }
+        },
+        "total_phi2_peak_to_peak": 1.3322676295501878e-15
+      }
+    },
+    "A/B arm amplitudes": {
+      "parameters": [
+        "loss_a",
+        "loss_b"
+      ],
+      "reset_to_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.4712115598794643,
+            "mean_visibility": 0.4795423071409845,
+            "min_visibility": 0.42893921853760125,
+            "max_visibility": 0.5108405577817132,
+            "I_min": 0.5800751361090616,
+            "I_max": 1.6139029923720951,
+            "baseline": 1.0969890642405784
+          },
+          "F": {
+            "visibility": 0.452257763074704,
+            "mean_visibility": 0.4591225567021586,
+            "min_visibility": 0.4127051630651645,
+            "max_visibility": 0.48686333452501107,
+            "I_min": 0.626049156940243,
+            "I_max": 1.659877013203276,
+            "baseline": 1.1429630850717596
+          }
+        },
+        "total_phi2_peak_to_peak": 1.3322676295501878e-15
+      },
+      "alone_on_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.1223341434900446,
+            "mean_visibility": 0.12233414349004461,
+            "min_visibility": 0.12233414349004439,
+            "max_visibility": 0.1223341434900448,
+            "I_min": 0.4296841343233235,
+            "I_max": 0.5494678541839326,
+            "baseline": 0.4895759942536281
+          },
+          "F": {
+            "visibility": 0.1223341434900445,
+            "mean_visibility": 0.12233414349004457,
+            "min_visibility": 0.12233414349004434,
+            "max_visibility": 0.12233414349004483,
+            "I_min": 0.4296841343233236,
+            "I_max": 0.5494678541839326,
+            "baseline": 0.48957599425362813
+          }
+        },
+        "total_phi2_peak_to_peak": 3.3306690738754696e-16
+      }
+    },
+    "C/D arm amplitudes": {
+      "parameters": [
+        "loss_c",
+        "loss_d"
+      ],
+      "reset_to_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.4929859925588728,
+            "mean_visibility": 0.47737676682714103,
+            "min_visibility": 0.42536142605733773,
+            "max_visibility": 0.5213010838828754,
+            "I_min": 0.25996061221232,
+            "I_max": 0.7654967061143567,
+            "baseline": 0.5127286591633383
+          },
+          "F": {
+            "visibility": 0.5072169790929293,
+            "mean_visibility": 0.4899687983168841,
+            "min_visibility": 0.438500192689705,
+            "max_visibility": 0.5339158574892252,
+            "I_min": 0.24557498447322668,
+            "I_max": 0.7511110783752633,
+            "baseline": 0.49834303142424496
+          }
+        },
+        "total_phi2_peak_to_peak": 4.440892098500626e-16
+      },
+      "alone_on_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 1.0192282331155756e-16,
+            "mean_visibility": 1.143953965950052e-16,
+            "min_visibility": 0.0,
+            "max_visibility": 4.2023856617471803e-16,
+            "I_min": 1.0892781307984651,
+            "I_max": 1.0892781307984651,
+            "baseline": 1.0892781307984651
+          },
+          "F": {
+            "visibility": 1.0192282331155756e-16,
+            "mean_visibility": 1.229282257594088e-16,
+            "min_visibility": 0.0,
+            "max_visibility": 3.2230826721942744e-16,
+            "I_min": 1.0892781307984651,
+            "I_max": 1.0892781307984651,
+            "baseline": 1.0892781307984651
+          }
+        },
+        "total_phi2_peak_to_peak": 8.881784197001252e-16
+      }
+    },
+    "PBS leakage": {
+      "parameters": [
+        "pbs_leakage_rad"
+      ],
+      "reset_to_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.5014005671128404,
+            "mean_visibility": 0.4969928378112743,
+            "min_visibility": 0.48742661875946386,
+            "max_visibility": 0.5063524647620573,
+            "I_min": 0.2706250976274206,
+            "I_max": 0.8149160393143339,
+            "baseline": 0.5427705684708772
+          },
+          "F": {
+            "visibility": 0.49063972675856427,
+            "mean_visibility": 0.4863265942214418,
+            "min_visibility": 0.4769656811919267,
+            "max_visibility": 0.49548534893952495,
+            "I_min": 0.2825292854005988,
+            "I_max": 0.826820227087512,
+            "baseline": 0.5546747562440554
+          }
+        },
+        "total_phi2_peak_to_peak": 4.440892098500626e-16
+      },
+      "alone_on_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 7.850462293418876e-17,
+            "mean_visibility": 1.2983958020564438e-16,
+            "min_visibility": 0.0,
+            "max_visibility": 4.335559509131366e-16,
+            "I_min": 0.9999999999999999,
+            "I_max": 1.0,
+            "baseline": 1.0
+          },
+          "F": {
+            "visibility": 5.551115123125783e-17,
+            "mean_visibility": 1.2380484262329521e-16,
+            "min_visibility": 0.0,
+            "max_visibility": 3.510833468576702e-16,
+            "I_min": 1.0,
+            "I_max": 1.0,
+            "baseline": 1.0
+          }
+        },
+        "total_phi2_peak_to_peak": 6.661338147750939e-16
+      }
+    },
+    "NPBS1 splitting": {
+      "parameters": [
+        "npbs1_mixing_rad"
+      ],
+      "reset_to_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.546493003637863,
+            "mean_visibility": 0.5168609679825362,
+            "min_visibility": 0.4987836307956147,
+            "max_visibility": 0.5504786626018229,
+            "I_min": 0.24394548332112093,
+            "I_max": 0.8318724655879812,
+            "baseline": 0.5379089744545511
+          },
+          "F": {
+            "visibility": 0.5220767770702844,
+            "mean_visibility": 0.4926213180269633,
+            "min_visibility": 0.4735994531071097,
+            "max_visibility": 0.5250138093630027,
+            "I_min": 0.26910214220703815,
+            "I_max": 0.8570291244738986,
+            "baseline": 0.5630656333404683
+          }
+        },
+        "total_phi2_peak_to_peak": 6.661338147750939e-16
+      },
+      "alone_on_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 2.0014830212433595e-16,
+            "mean_visibility": 2.011358471513209e-16,
+            "min_visibility": 0.0,
+            "max_visibility": 4.475452091311808e-16,
+            "I_min": 1.0000000000000002,
+            "I_max": 1.0000000000000007,
+            "baseline": 1.0000000000000004
+          },
+          "F": {
+            "visibility": 1.110223024625156e-16,
+            "mean_visibility": 1.2658855005816963e-16,
+            "min_visibility": 0.0,
+            "max_visibility": 3.723801229870908e-16,
+            "I_min": 1.0000000000000004,
+            "I_max": 1.0000000000000004,
+            "baseline": 1.0000000000000004
+          }
+        },
+        "total_phi2_peak_to_peak": 1.1102230246251565e-15
+      }
+    },
+    "NPBS2 splitting": {
+      "parameters": [
+        "npbs2_mixing_rad"
+      ],
+      "reset_to_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.5232906657738701,
+            "mean_visibility": 0.5059435630626774,
+            "min_visibility": 0.4520709596758032,
+            "max_visibility": 0.5517423043379442,
+            "I_min": 0.2614646858170092,
+            "I_max": 0.8354917488265879,
+            "baseline": 0.5484782173217986
+          },
+          "F": {
+            "visibility": 0.5232906657738701,
+            "mean_visibility": 0.5059435630626774,
+            "min_visibility": 0.4520709596758029,
+            "max_visibility": 0.5517423043379444,
+            "I_min": 0.26146468581700927,
+            "I_max": 0.835491748826588,
+            "baseline": 0.5484782173217987
+          }
+        },
+        "total_phi2_peak_to_peak": 6.661338147750939e-16
+      },
+      "alone_on_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.0,
+            "mean_visibility": 9.300576035937137e-17,
+            "min_visibility": 0.0,
+            "max_visibility": 3.510833468576701e-16,
+            "I_min": 1.0,
+            "I_max": 1.0,
+            "baseline": 1.0
+          },
+          "F": {
+            "visibility": 1.1102230246251565e-16,
+            "mean_visibility": 1.708067087038353e-16,
+            "min_visibility": 0.0,
+            "max_visibility": 4.475452091311811e-16,
+            "I_min": 0.9999999999999999,
+            "I_max": 1.0,
+            "baseline": 1.0
+          }
+        },
+        "total_phi2_peak_to_peak": 6.661338147750939e-16
+      }
+    },
+    "C/D retarders": {
+      "parameters": [
+        "axis_c",
+        "retardance_c",
+        "axis_d",
+        "retardance_d"
+      ],
+      "reset_to_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.1362331940276941,
+            "mean_visibility": 0.13744889497098464,
+            "min_visibility": 0.13463190706852257,
+            "max_visibility": 0.14002637181198058,
+            "I_min": 0.4690984462372664,
+            "I_max": 0.617070744321572,
+            "baseline": 0.5430845952794192
+          },
+          "F": {
+            "visibility": 0.1335799074513086,
+            "mean_visibility": 0.13446305774002443,
+            "min_visibility": 0.132338698341705,
+            "max_visibility": 0.13634250214080315,
+            "I_min": 0.479885690322025,
+            "I_max": 0.6278579884063309,
+            "baseline": 0.5538718393641779
+          }
+        },
+        "total_phi2_peak_to_peak": 6.661338147750939e-16
+      },
+      "alone_on_ideal": {
+        "ports": {
+          "E": {
+            "visibility": 0.5232228295472715,
+            "mean_visibility": 0.523462167510634,
+            "min_visibility": 0.5231322284352472,
+            "max_visibility": 0.5237920026390273,
+            "I_min": 0.4767771704527285,
+            "I_max": 1.5232228295472714,
+            "baseline": 1.0
+          },
+          "F": {
+            "visibility": 0.5232228295472715,
+            "mean_visibility": 0.5234621675106341,
+            "min_visibility": 0.5231322284352472,
+            "max_visibility": 0.5237920026390273,
+            "I_min": 0.4767771704527285,
+            "I_max": 1.5232228295472714,
+            "baseline": 1.0
+          }
+        },
+        "total_phi2_peak_to_peak": 8.881784197001252e-16
+      }
+    }
+  },
+  "individual": {
+    "ax": {
+      "ports": {
+        "E": {
+          "visibility": 0.5052773708144573,
+          "mean_visibility": 0.4891268131006475,
+          "min_visibility": 0.4360771228005268,
+          "max_visibility": 0.5339830442508241,
+          "I_min": 0.26867623884680064,
+          "I_max": 0.8174929517120377,
+          "baseline": 0.5430845952794192
+        },
+        "F": {
+          "visibility": 0.4954365557700642,
+          "mean_visibility": 0.47844056054634154,
+          "min_visibility": 0.42842407909515634,
+          "max_visibility": 0.5212163410165805,
+          "I_min": 0.27946348293155937,
+          "I_max": 0.8282801957967965,
+          "baseline": 0.5538718393641779
+        }
+      },
+      "total_phi2_peak_to_peak": 4.440892098500626e-16
+    },
+    "ay": {
+      "ports": {
+        "E": {
+          "visibility": 0.5029462044357939,
+          "mean_visibility": 0.48527308347328,
+          "min_visibility": 0.43146019454731377,
+          "max_visibility": 0.5312461939643978,
+          "I_min": 0.2607589247531827,
+          "I_max": 0.788459196425009,
+          "baseline": 0.5246090605890958
+        },
+        "F": {
+          "visibility": 0.489745898253271,
+          "mean_visibility": 0.4725366253243011,
+          "min_visibility": 0.42013610735197526,
+          "max_visibility": 0.5173031273763978,
+          "I_min": 0.2748989109186626,
+          "I_max": 0.802599182590489,
+          "baseline": 0.5387490467545758
+        }
+      },
+      "total_phi2_peak_to_peak": 6.661338147750939e-16
+    },
+    "loss_a": {
+      "ports": {
+        "E": {
+          "visibility": 0.4657668323644655,
+          "mean_visibility": 0.53095002929982,
+          "min_visibility": 0.4609354761838005,
+          "max_visibility": 0.6032088389616459,
+          "I_min": 0.4419013934171754,
+          "I_max": 1.2124376487392268,
+          "baseline": 0.8271695210782011
+        },
+        "F": {
+          "visibility": 0.42477596628624326,
+          "mean_visibility": 0.48309315677328185,
+          "min_visibility": 0.4209122468312256,
+          "max_visibility": 0.547771164857789,
+          "I_min": 0.5217232236373326,
+          "I_max": 1.292259478959384,
+          "baseline": 0.9069913512983583
+        }
+      },
+      "total_phi2_peak_to_peak": 8.881784197001252e-16
+    },
+    "loss_b": {
+      "ports": {
+        "E": {
+          "visibility": 0.618858817529144,
+          "mean_visibility": 0.5666274214220814,
+          "min_visibility": 0.4967131533316601,
+          "max_visibility": 0.639195191662982,
+          "I_min": 0.30980000393055074,
+          "I_max": 1.3158443408877347,
+          "baseline": 0.8128221724091428
+        },
+        "F": {
+          "visibility": 0.6367456473412423,
+          "mean_visibility": 0.5817355546888827,
+          "min_visibility": 0.5110019032631297,
+          "max_visibility": 0.6557003242647063,
+          "I_min": 0.2869670062868451,
+          "I_max": 1.293011343244029,
+          "baseline": 0.7899891747654372
+        }
+      },
+      "total_phi2_peak_to_peak": 8.881784197001252e-16
+    },
+    "loss_c": {
+      "ports": {
+        "E": {
+          "visibility": 0.4929859925588728,
+          "mean_visibility": 0.47737676682714103,
+          "min_visibility": 0.42536142605733773,
+          "max_visibility": 0.5213010838828754,
+          "I_min": 0.25996061221232,
+          "I_max": 0.7654967061143567,
+          "baseline": 0.5127286591633383
+        },
+        "F": {
+          "visibility": 0.5072169790929293,
+          "mean_visibility": 0.4899687983168841,
+          "min_visibility": 0.438500192689705,
+          "max_visibility": 0.5339158574892252,
+          "I_min": 0.24557498447322668,
+          "I_max": 0.7511110783752633,
+          "baseline": 0.49834303142424496
+        }
+      },
+      "total_phi2_peak_to_peak": 4.440892098500626e-16
+    },
+    "loss_d": {
+      "ports": {
+        "E": {
+          "visibility": 0.5052773708144573,
+          "mean_visibility": 0.4891268131006475,
+          "min_visibility": 0.4360771228005268,
+          "max_visibility": 0.5339830442508241,
+          "I_min": 0.26867623884680064,
+          "I_max": 0.8174929517120377,
+          "baseline": 0.5430845952794192
+        },
+        "F": {
+          "visibility": 0.4954365557700642,
+          "mean_visibility": 0.47844056054634154,
+          "min_visibility": 0.42842407909515634,
+          "max_visibility": 0.5212163410165805,
+          "I_min": 0.27946348293155937,
+          "I_max": 0.8282801957967965,
+          "baseline": 0.5538718393641779
+        }
+      },
+      "total_phi2_peak_to_peak": 4.440892098500626e-16
+    },
+    "pbs_leakage_rad": {
+      "ports": {
+        "E": {
+          "visibility": 0.5014005671128404,
+          "mean_visibility": 0.4969928378112743,
+          "min_visibility": 0.48742661875946386,
+          "max_visibility": 0.5063524647620573,
+          "I_min": 0.2706250976274206,
+          "I_max": 0.8149160393143339,
+          "baseline": 0.5427705684708772
+        },
+        "F": {
+          "visibility": 0.49063972675856427,
+          "mean_visibility": 0.4863265942214418,
+          "min_visibility": 0.4769656811919267,
+          "max_visibility": 0.49548534893952495,
+          "I_min": 0.2825292854005988,
+          "I_max": 0.826820227087512,
+          "baseline": 0.5546747562440554
+        }
+      },
+      "total_phi2_peak_to_peak": 4.440892098500626e-16
+    },
+    "npbs1_mixing_rad": {
+      "ports": {
+        "E": {
+          "visibility": 0.546493003637863,
+          "mean_visibility": 0.5168609679825362,
+          "min_visibility": 0.4987836307956147,
+          "max_visibility": 0.5504786626018229,
+          "I_min": 0.24394548332112093,
+          "I_max": 0.8318724655879812,
+          "baseline": 0.5379089744545511
+        },
+        "F": {
+          "visibility": 0.5220767770702844,
+          "mean_visibility": 0.4926213180269633,
+          "min_visibility": 0.4735994531071097,
+          "max_visibility": 0.5250138093630027,
+          "I_min": 0.26910214220703815,
+          "I_max": 0.8570291244738986,
+          "baseline": 0.5630656333404683
+        }
+      },
+      "total_phi2_peak_to_peak": 6.661338147750939e-16
+    },
+    "npbs2_mixing_rad": {
+      "ports": {
+        "E": {
+          "visibility": 0.5232906657738701,
+          "mean_visibility": 0.5059435630626774,
+          "min_visibility": 0.4520709596758032,
+          "max_visibility": 0.5517423043379442,
+          "I_min": 0.2614646858170092,
+          "I_max": 0.8354917488265879,
+          "baseline": 0.5484782173217986
+        },
+        "F": {
+          "visibility": 0.5232906657738701,
+          "mean_visibility": 0.5059435630626774,
+          "min_visibility": 0.4520709596758029,
+          "max_visibility": 0.5517423043379444,
+          "I_min": 0.26146468581700927,
+          "I_max": 0.835491748826588,
+          "baseline": 0.5484782173217987
+        }
+      },
+      "total_phi2_peak_to_peak": 6.661338147750939e-16
+    },
+    "axis_c": {
+      "ports": {
+        "E": {
+          "visibility": 0.4899324723074041,
+          "mean_visibility": 0.49091178729682594,
+          "min_visibility": 0.42896488869406135,
+          "max_visibility": 0.5425586676153288,
+          "I_min": 0.2770098168421074,
+          "I_max": 0.8091593737167311,
+          "baseline": 0.5430845952794192
+        },
+        "F": {
+          "visibility": 0.4803905155076215,
+          "mean_visibility": 0.4801553799975573,
+          "min_visibility": 0.421632399789393,
+          "max_visibility": 0.5290277489768938,
+          "I_min": 0.2877970609268659,
+          "I_max": 0.8199466178014898,
+          "baseline": 0.5538718393641778
+        }
+      },
+      "total_phi2_peak_to_peak": 6.661338147750939e-16
+    },
+    "retardance_c": {
+      "ports": {
+        "E": {
+          "visibility": 0.3057440776161693,
+          "mean_visibility": 0.3001077191277203,
+          "min_visibility": 0.2548488722756532,
+          "max_visibility": 0.3441083848631439,
+          "I_min": 0.37703969662816267,
+          "I_max": 0.709129493930676,
+          "baseline": 0.5430845952794193
+        },
+        "F": {
+          "visibility": 0.29978938601007277,
+          "mean_visibility": 0.2935188438080195,
+          "min_visibility": 0.2504483741019934,
+          "max_visibility": 0.33557612449021423,
+          "I_min": 0.3878269407129214,
+          "I_max": 0.7199167380154345,
+          "baseline": 0.5538718393641779
+        }
+      },
+      "total_phi2_peak_to_peak": 6.661338147750939e-16
+    },
+    "axis_d": {
+      "ports": {
+        "E": {
+          "visibility": 0.518036245684515,
+          "mean_visibility": 0.4898145352136194,
+          "min_visibility": 0.4325748661487257,
+          "max_visibility": 0.5382761120153196,
+          "I_min": 0.26174709045177463,
+          "I_max": 0.824422100107064,
+          "baseline": 0.5430845952794193
+        },
+        "F": {
+          "visibility": 0.5079469379606094,
+          "mean_visibility": 0.47912305144774503,
+          "min_visibility": 0.4248059144817146,
+          "max_visibility": 0.5258967809854403,
+          "I_min": 0.2725343345365332,
+          "I_max": 0.8352093441918225,
+          "baseline": 0.5538718393641778
+        }
+      },
+      "total_phi2_peak_to_peak": 4.440892098500626e-16
+    },
+    "retardance_d": {
+      "ports": {
+        "E": {
+          "visibility": 0.2997458294950826,
+          "mean_visibility": 0.2583800638342725,
+          "min_visibility": 0.2181738303556362,
+          "max_visibility": 0.3014609532714087,
+          "I_min": 0.3802972527813885,
+          "I_max": 0.7058719377774499,
+          "baseline": 0.5430845952794192
+        },
+        "F": {
+          "visibility": 0.29390796016079085,
+          "mean_visibility": 0.2527847861379892,
+          "min_visibility": 0.2136599703129123,
+          "max_visibility": 0.2952759694351537,
+          "I_min": 0.3910844968661471,
+          "I_max": 0.7166591818622086,
+          "baseline": 0.5538718393641778
+        }
+      },
+      "total_phi2_peak_to_peak": 6.661338147750939e-16
+    }
+  },
+  "inputs": {
+    "flow": {
+      "schema_version": 1,
+      "name": "Hybrid MZI - historical relative fit",
+      "description": "PBS -> phase on A -> NPBS1 -> phase on C -> NPBS2. Transmitted-first ports E and F. Arm amplitudes are relative fitted scales, not calibrated passive transmissions.",
+      "phases": [
+        "phi1",
+        "phi2"
+      ],
+      "input": {
+        "name": "Ein",
+        "jones": [
+          "ax",
+          "ay"
+        ]
+      },
+      "elements": [
+        {
+          "name": "PBS",
+          "type": "pbs",
+          "inputs": [
+            "Ein"
+          ],
+          "outputs": [
+            "A_before_phi1",
+            "B_before"
+          ],
+          "leakage_rad": "pbs_leakage_rad"
+        },
+        {
+          "name": "phase_A",
+          "type": "phase",
+          "inputs": [
+            "A_before_phi1"
+          ],
+          "outputs": [
+            "A_phase"
+          ],
+          "phase": "phi1",
+          "offset_rad": "phi1_offset_rad"
+        },
+        {
+          "name": "loss_A",
+          "type": "attenuator",
+          "inputs": [
+            "A_phase"
+          ],
+          "outputs": [
+            "A_loss"
+          ],
+          "amplitude": "loss_a",
+          "allow_gain": true
+        },
+        {
+          "name": "retarder_A",
+          "type": "retarder",
+          "inputs": [
+            "A_loss"
+          ],
+          "outputs": [
+            "A_after_phi1"
+          ],
+          "axis_rad": "axis_a",
+          "retardance_rad": "retardance_a"
+        },
+        {
+          "name": "loss_B",
+          "type": "attenuator",
+          "inputs": [
+            "B_before"
+          ],
+          "outputs": [
+            "B_loss"
+          ],
+          "amplitude": "loss_b",
+          "allow_gain": true
+        },
+        {
+          "name": "retarder_B",
+          "type": "retarder",
+          "inputs": [
+            "B_loss"
+          ],
+          "outputs": [
+            "B"
+          ],
+          "axis_rad": "axis_b",
+          "retardance_rad": "retardance_b"
+        },
+        {
+          "name": "NPBS1",
+          "type": "npbs",
+          "inputs": [
+            "A_after_phi1",
+            "B"
+          ],
+          "outputs": [
+            "C",
+            "D_before"
+          ],
+          "mixing_rad": "npbs1_mixing_rad"
+        },
+        {
+          "name": "phase_C",
+          "type": "phase",
+          "inputs": [
+            "C"
+          ],
+          "outputs": [
+            "C_phase"
+          ],
+          "phase": "phi2",
+          "offset_rad": "phi2_offset_rad"
+        },
+        {
+          "name": "loss_C",
+          "type": "attenuator",
+          "inputs": [
+            "C_phase"
+          ],
+          "outputs": [
+            "C_loss"
+          ],
+          "amplitude": "loss_c",
+          "allow_gain": true
+        },
+        {
+          "name": "retarder_C",
+          "type": "retarder",
+          "inputs": [
+            "C_loss"
+          ],
+          "outputs": [
+            "C_after_phi2"
+          ],
+          "axis_rad": "axis_c",
+          "retardance_rad": "retardance_c"
+        },
+        {
+          "name": "loss_D",
+          "type": "attenuator",
+          "inputs": [
+            "D_before"
+          ],
+          "outputs": [
+            "D_loss"
+          ],
+          "amplitude": "loss_d",
+          "allow_gain": true
+        },
+        {
+          "name": "retarder_D",
+          "type": "retarder",
+          "inputs": [
+            "D_loss"
+          ],
+          "outputs": [
+            "D"
+          ],
+          "axis_rad": "axis_d",
+          "retardance_rad": "retardance_d"
+        },
+        {
+          "name": "NPBS2",
+          "type": "npbs",
+          "inputs": [
+            "C_after_phi2",
+            "D"
+          ],
+          "outputs": [
+            "E",
+            "F"
+          ],
+          "mixing_rad": "npbs2_mixing_rad"
+        }
+      ],
+      "outputs": [
+        "E",
+        "F"
+      ]
+    },
+    "fitted": {
+      "schema_version": 1,
+      "name": "Historical fitted network",
+      "description": "Imported from experiments/polarization_locking/2026-08-13/192530_field-model-calibration_phi2-power-model-0/physical-jones-fit/physical-jones-fit.json. A fitted model with known held-out disagreement; not individually measured optic parameters. Use hybrid_mzi_relative_fit.json. Detector gains and offsets are not optical elements.",
+      "values": {
+        "ax": 1,
+        "ay": 1.0287803494436512,
+        "pbs_leakage_rad": -0.15334624002497982,
+        "npbs1_mixing_rad": 0.632928296570969,
+        "npbs2_mixing_rad": 0.9341323051816346,
+        "phi1_offset_rad": 0.34518220855019416,
+        "phi2_offset_rad": 1.4358265985227268,
+        "loss_a": 0.6555029628638787,
+        "axis_a": 0,
+        "retardance_a": 0,
+        "loss_b": 0.7412609892500297,
+        "axis_b": 0,
+        "retardance_b": 0,
+        "loss_c": 1.08561331126554,
+        "axis_c": 0.09138101332776251,
+        "retardance_c": 0.5030303129643017,
+        "loss_d": 1.0,
+        "axis_d": -0.045265687540955925,
+        "retardance_d": -0.6101096365046962
+      },
+      "phase_values": {
+        "phi1": 0.73,
+        "phi2": 1.18
+      },
+      "scan": {
+        "points": 81,
+        "start_rad": 0,
+        "stop_rad": "2*pi",
+        "dark_threshold": 1e-12
+      }
+    },
+    "reference": {
+      "schema_version": 1,
+      "name": "Ideal equal input",
+      "description": "Equal effective x/y input amplitudes; lossless ideal network.",
+      "values": {
+        "ax": 1,
+        "ay": 1,
+        "pbs_leakage_rad": 0,
+        "npbs1_mixing_rad": "pi/4",
+        "npbs2_mixing_rad": "pi/4",
+        "phi1_offset_rad": 0,
+        "phi2_offset_rad": 0,
+        "loss_a": 1,
+        "axis_a": 0,
+        "retardance_a": 0,
+        "loss_b": 1,
+        "axis_b": 0,
+        "retardance_b": 0,
+        "loss_c": 1,
+        "axis_c": 0,
+        "retardance_c": 0,
+        "loss_d": 1,
+        "axis_d": 0,
+        "retardance_d": 0
+      },
+      "phase_values": {
+        "phi1": 0.73,
+        "phi2": 1.18
+      },
+      "scan": {
+        "points": 81,
+        "start_rad": 0,
+        "stop_rad": "2*pi",
+        "dark_threshold": 1e-12
+      }
+    }
+  }
+}

@@ -1,0 +1,1030 @@
+HYBRID MZI PHYSICAL-MODEL DIAGNOSTIC / HANDOFF FOR CODEX
+Date: 2026-09-09
+
+PURPOSE
+-------
+
+The goal of the next modeling pass is NOT to fit optical parameters until the simulated output resembles the measured system.
+
+The goal is the opposite:
+
+    MEASURE THE PHYSICAL SYSTEM -> BUILD THE MODEL FROM THOSE MEASUREMENTS
+    -> CHECK WHETHER THE MODEL REPRODUCES THE OBSERVED BEHAVIOR.
+
+We want to determine whether the phase-dependent amplitude observed in the hybrid Mach-Zehnder interferometer can be reproduced from physically accurate, independently measured parameters.
+
+The model should be treated as a forward physical model, not as a curve-fitting device.
+
+A successful outcome is:
+
+1. Each model parameter corresponds to a clearly defined physical quantity.
+2. Each quantity is independently measured whenever practical.
+3. Power measurements are converted correctly to field-amplitude coefficients when inserted into Jones matrices.
+4. Parameters that cannot be independently measured are explicitly labeled as unknown/nuisance parameters rather than silently interpreted as physical optic properties.
+5. The phase-dependent power curves are then PREDICTED from the measured parameter set.
+6. Agreement or disagreement with experiment is evaluated only after the parameter set has been fixed.
+
+The central scientific question is:
+
+    Can the measured physical imperfections of the real hybrid MZI explain the
+    observed phase-dependent output amplitude without fitting the model to that
+    amplitude behavior?
+
+
+======================================================================
+1. WHAT HAS ALREADY BEEN VERIFIED
+======================================================================
+
+The current report is mathematically self-consistent as a Jones-field propagation.
+
+The declared network is:
+
+    PBS
+      -> phase phi1 on A
+      -> A/B scalar amplitude factors
+      -> NPBS1
+      -> phase phi2 on C
+      -> C/D scalar amplitude factors + retarders
+      -> NPBS2
+      -> outputs E and F
+
+Independent re-propagation of the matrices printed in the report reproduces:
+
+Operating point:
+    phi1 = 0.73 rad
+    phi2 = 1.18 rad
+
+Output E:
+    E = (-0.34583 - 0.35935 i,
+          0.009102 + 0.24555 i)
+    I = 0.3091
+
+Output F:
+    E = (-0.10299 - 0.46235 i,
+          0.71212 - 0.23740 i)
+    I = 0.78785
+
+The one-axis phase-scan extrema and visibilities are also reproduced:
+
+phi1 scan:
+    Port E visibility ~ 0.1715
+    Port F visibility ~ 0.0842
+
+phi2 scan:
+    Port E visibility ~ 0.5053
+    Port F visibility ~ 0.4954
+
+Therefore:
+
+    The phase-dependent amplitude shown in the current plots is genuinely
+    produced by the matrices in the current parameter file.
+
+The forward matrix propagation itself is not the main problem.
+
+The main problem is whether the parameters in those matrices are physically
+justified by the measurements that were actually performed.
+
+
+======================================================================
+2. CRITICAL MODELING PRINCIPLE GOING FORWARD
+======================================================================
+
+DO NOT use the measured final power curves to determine nominally physical
+parameters such as:
+
+    - PBS leakage
+    - beam-splitter mixing ratios
+    - arm losses
+    - retarder retardances
+    - retarder axes
+
+and then present the same final power curves as evidence that those physical
+parameters explain the system.
+
+That would be circular.
+
+Instead:
+
+    A. Measure the quantities independently.
+    B. Lock them.
+    C. Propagate the optical fields.
+    D. Compare the resulting prediction to the measured phase-dependent power.
+
+If some parameter cannot be independently measured, either:
+
+    - leave it as an explicitly identified nuisance parameter,
+    - place a physically justified prior/range on it,
+    - or perform a separate dedicated measurement that constrains it.
+
+Do not allow a fit to assign a precise physical meaning to an underconstrained
+parameter.
+
+
+======================================================================
+3. IMPORTANT PROVENANCE PROBLEM IN THE CURRENT REPORT
+======================================================================
+
+The current report itself states that the model is a:
+
+    "historical relative fit"
+
+and says that the optic parameters are:
+
+    "not individually measured optic parameters."
+
+It also states that the arm amplitudes are:
+
+    "relative fitted scales, not calibrated passive transmissions."
+
+This distinction must be preserved in all future code and output.
+
+The current model may be useful as a phenomenological effective model, but it
+has NOT yet established that the fitted values correspond to actual physical
+properties of the apparatus.
+
+
+======================================================================
+4. CURRENT FITTED PARAMETER SET THAT NEEDS TO BE AUDITED
+======================================================================
+
+Current report values:
+
+Input amplitudes:
+    ax = 1
+    ay = 1.0287803494
+
+PBS leakage parameter:
+    epsilon = -0.1533462400 rad
+            = -8.79 deg
+
+NPBS1 mixing angle:
+    mu1 = 0.6329282966 rad
+
+Equivalent scalar model:
+    T1 = cos^2(mu1) ~ 0.650
+    R1 = sin^2(mu1) ~ 0.350
+
+NPBS2 mixing angle:
+    mu2 = 0.9341323052 rad
+
+Equivalent scalar model:
+    T2 = cos^2(mu2) ~ 0.353
+    R2 = sin^2(mu2) ~ 0.647
+
+A/B scalar amplitude factors:
+    loss_a = 0.6555029629
+    loss_b = 0.7412609893
+
+C/D scalar amplitude factors:
+    loss_c = 1.0856133113
+    loss_d = 1.0
+
+C effective retarder:
+    axis_c = 0.0913810133 rad  = +5.24 deg
+    retardance_c = +0.5030303130 rad = +28.82 deg
+
+D effective retarder:
+    axis_d = -0.0452656875 rad = -2.59 deg
+    retardance_d = -0.6101096365 rad = -34.96 deg
+
+Approximate differential C-D retardance:
+    Delta rho ~ 1.11314 rad ~ 63.78 deg
+
+This large effective differential retardance is the dominant reason the current
+model produces approximately 50% phi2-dependent power visibility.
+
+That value was apparently inferred through the fit. It should NOT be treated
+as a measured optic retardance unless there is a direct polarization
+measurement supporting it.
+
+
+======================================================================
+5. RETARDANCE WARNING
+======================================================================
+
+Ordinary scalar power-meter measurements do NOT directly measure the
+retardance of a lossless optical element.
+
+For a unitary Jones retarder:
+
+    ||J E||^2 = ||E||^2
+
+so total power is unchanged.
+
+Retardance can affect a later power measurement only indirectly when the
+polarization state subsequently interacts with:
+
+    - another polarization-dependent optic,
+    - a polarizer/PBS,
+    - or another coherent field at an interferometric recombination.
+
+Therefore, if the input dataset contained only scalar powers, then fitted
+values such as:
+
+    retardance_c = +28.82 deg
+    retardance_d = -34.96 deg
+
+are inferred effective parameters, not direct measurements.
+
+They may be compensating for any combination of:
+
+    - actual retardance,
+    - polarization-dependent beam-splitter phase,
+    - PBS leakage,
+    - spatial mode mismatch,
+    - fiber-coupling mismatch,
+    - beam walk,
+    - incorrect arm-transmission coefficients,
+    - other omitted degrees of freedom.
+
+Codex should trace exactly which measurements constrain each fitted retarder
+parameter and report parameter identifiability.
+
+
+======================================================================
+6. POSSIBLE POWER-VS-FIELD COEFFICIENT ERROR
+======================================================================
+
+Jones matrices multiply FIELD amplitudes.
+
+If a power transmission is measured as:
+
+    T_power = P_out / P_in
+
+then the corresponding scalar field-amplitude coefficient is:
+
+    t_field = sqrt(T_power)
+
+not:
+
+    t_field = T_power.
+
+Historical measurements included approximately:
+
+    P_A ~ 780 uW
+    P_B ~ 880 uW
+
+Power ratio:
+    780 / 880 = 0.88636
+
+Correct field-amplitude ratio:
+    sqrt(780 / 880) = 0.94147
+
+The current model contains:
+
+    loss_a / loss_b
+      = 0.655503 / 0.741261
+      ~ 0.8843
+
+This is suspiciously close to the measured POWER ratio rather than its square
+root.
+
+This does not prove the conversion was done incorrectly, because the origin of
+those fitted values is not documented here.
+
+However, it is important enough that the full parameter-generation path must
+be audited.
+
+For every scalar "loss" or "transmission" parameter, Codex should document:
+
+    1. Original measured quantity.
+    2. Units.
+    3. Measurement plane.
+    4. Whether it is a power quantity or field quantity.
+    5. Exact conversion used before insertion into the Jones matrix.
+
+
+======================================================================
+7. POSSIBLE DOUBLE-COUNTING OF INPUT / ARM IMBALANCE
+======================================================================
+
+The current model separately contains:
+
+    ay / ax = 1.02878
+
+and also different A/B amplitude factors:
+
+    loss_a = 0.65550
+    loss_b = 0.74126
+
+If both sets of parameters encode the same measured A/B power imbalance, then
+the imbalance may be counted twice.
+
+This must be resolved by defining a clear normalization plane.
+
+For example, choose ONE of the following conventions:
+
+OPTION A:
+    ax, ay represent the field amplitudes incident on the PBS.
+    PBS + downstream arm coefficients then describe all measured splitting and
+    attenuation.
+
+OPTION B:
+    ax, ay are effective measured amplitudes at some post-PBS plane.
+    In that case the PBS output imbalance should not be reintroduced through
+    another independent A/B scaling parameter.
+
+Every amplitude parameter needs an explicit physical plane.
+
+
+======================================================================
+8. HISTORICAL ISOLATED-PATH POWER MEASUREMENTS
+======================================================================
+
+Relevant measured powers at one fiber-coupling position:
+
+    AD = 111 uW
+    AC = 111 uW
+    BD = 89 uW
+    BC = 116 uW
+
+Other measured coupling positions:
+
+Off maximum:
+    AD = 76
+    AC = 87
+    BD = 63.5
+    BC = 96
+
+Opposite side:
+    AD = 75
+    AC = 59.4
+    BD = 54.5
+    BC = 56.5
+
+x+:
+    AD = 73.4
+    AC = 85.4
+    BD = 58.0
+    BC = 89.5
+
+x-:
+    AD = 79.5
+    AC = 60.3
+    BD = 65.7
+    BC = 62.0
+
+These measurements contain strong evidence that the four path combinations do
+not couple into the monitored spatial/fiber mode identically.
+
+The current one-spatial-mode Jones model cannot represent that behavior.
+
+A scalar path loss is not sufficient to model a coupling efficiency that
+changes differently for AC, AD, BC, and BD as the fiber position changes.
+
+
+======================================================================
+9. NPBS1 SANITY CHECK FROM ISOLATED-PATH POWERS
+======================================================================
+
+Under a simple separable scalar-loss model, the cross ratio
+
+    (P_AC * P_BD) / (P_AD * P_BC)
+
+cancels the A/B source powers, C/D path losses, and downstream common factors.
+
+For the zero-position data:
+
+    (111 * 89) / (111 * 116)
+      = 0.7672
+
+which corresponds to approximately:
+
+    T1 / R1 = sqrt(0.7672) = 0.876
+
+or approximately a 46.7/53.3 beam splitter, depending on port labeling.
+
+Repeating the same estimate for the other fiber positions gives approximately
+46-47% for one branch, i.e. consistently close to 50/50.
+
+The current fitted NPBS1 is approximately:
+
+    65/35
+
+which is substantially different.
+
+CAVEAT:
+The cross-ratio inference assumes separable scalar path transmission.
+The existing spatial mismatch means that assumption may not be exact.
+
+Still, the discrepancy is large enough that NPBS1 should be DIRECTLY measured
+rather than inferred from the global fit.
+
+
+======================================================================
+10. SPATIAL-MODE PHYSICS IS CURRENTLY MISSING
+======================================================================
+
+This is one of the most important limitations.
+
+The current report explicitly models:
+
+    one spatial mode per path.
+
+It does not model:
+
+    - transverse beam displacement,
+    - angular mismatch,
+    - wavefront curvature mismatch,
+    - different spatial modes for A/B-derived components,
+    - fiber-mode overlap,
+    - position-dependent coupling,
+    - spatially varying polarization.
+
+Historical experimental observations included:
+
+    - two visibly separated spots on a camera,
+    - changing input path changed spot position,
+    - separation became clearer after long free-space propagation,
+    - four isolated path combinations had different fiber-coupling maxima,
+    - off-axis fiber scans changed AC/AD/BC/BD powers differently,
+    - under phase modulation, separated spots showed different blinking
+      behavior.
+
+These are spatial-mode observations.
+
+A pure 2-component Jones-vector model cannot represent them.
+
+At minimum, the model should distinguish:
+
+    polarization overlap
+
+from:
+
+    spatial overlap / detector-mode overlap.
+
+For direct free-space detection, the relevant interference term is related to:
+
+    integral C(r)^dagger D(r) dA
+
+For single-mode fiber detection, the measured field is projected onto the fiber
+mode u_f(r):
+
+    A_p = integral u_f*(r) E_p(r) dA
+
+and the detected power is:
+
+    P_fiber proportional to sum_p |A_p|^2
+
+A small displacement or angular mismatch can therefore produce phase-dependent
+fiber-coupled power even if the total free-space power behaves differently.
+
+The current fit may be forcing omitted spatial physics into effective Jones
+retarders, scalar losses, PBS leakage, or beam-splitter ratios.
+
+
+======================================================================
+11. PHYSICAL INTERPRETATION OF THE CURRENT ~50% PHI2 FRINGE
+======================================================================
+
+The current model generates the large phi2-dependent intensity primarily
+because the fitted C and D Jones transformations create substantial
+polarization overlap at the final NPBS.
+
+In an ideal hybrid MZI, the two relevant polarization components remain
+orthogonal, so changing their relative phase does not strongly modulate total
+port power.
+
+Differential polarization transformation makes:
+
+    C^dagger D != 0
+
+and then the final scalar NPBS produces an interference term.
+
+This is valid physics.
+
+However, in the current model the amount of differential polarization
+transformation was itself fitted.
+
+Therefore the present result shows:
+
+    "A model with this much effective C/D polarization mismatch can reproduce
+     the observed qualitative behavior."
+
+It does NOT yet show:
+
+    "The real C and D paths have independently measured retardances that
+     quantitatively explain the observed behavior."
+
+
+======================================================================
+12. RECOMMENDED REMEASUREMENT PROGRAM
+======================================================================
+
+The next dataset should be organized so every measurement has:
+
+    - clear optical path,
+    - clear blocked/unblocked arms,
+    - measurement plane,
+    - detector type,
+    - polarization state if relevant,
+    - raw power,
+    - uncertainty / repeatability if practical.
+
+Do not collapse measurements into fitted coefficients before saving them.
+
+
+A. INPUT / PBS CHARACTERIZATION
+-------------------------------
+
+Measure known input H and V states separately.
+
+For each input polarization, measure both PBS outputs.
+
+Required results:
+
+    P(A | H)
+    P(B | H)
+    P(A | V)
+    P(B | V)
+
+This directly constrains:
+
+    - PBS extinction/leakage,
+    - output power imbalance,
+    - possible asymmetry between H and V.
+
+If possible, repeat after rotating the input polarization by 90 degrees to
+separate source-power drift from PBS behavior.
+
+The model should use the measured FIELD coefficients:
+
+    field coefficient = sqrt(power fraction).
+
+
+B. NPBS1 DIRECT CHARACTERIZATION
+--------------------------------
+
+Do not infer NPBS1 splitting from the complete interferometer.
+
+Inject one beam into one NPBS1 input port at a time.
+
+Measure both output powers.
+
+Repeat for:
+
+    H input
+    V input
+
+if practical.
+
+Record:
+
+    T_H, R_H
+    T_V, R_V
+
+If H and V differ measurably, the NPBS should not be modeled as a scalar
+polarization-independent splitter.
+
+If only powers are measured, relative reflection/transmission PHASE remains
+unmeasured and should not be silently assumed physical beyond the standard
+chosen beam-splitter convention.
+
+
+C. NPBS2 DIRECT CHARACTERIZATION
+--------------------------------
+
+Repeat the same procedure for NPBS2.
+
+Measure H and V separately if possible.
+
+Again distinguish measured intensity ratios from assumed complex phase
+conventions.
+
+
+D. A/B SCALAR TRANSMISSION
+--------------------------
+
+Define exact planes before and after the A and B path sections.
+
+Block one path at a time.
+
+Measure:
+
+    P_A,in
+    P_A,out
+
+    P_B,in
+    P_B,out
+
+Then compute field transmission:
+
+    t_A = sqrt(P_A,out / P_A,in)
+    t_B = sqrt(P_B,out / P_B,in)
+
+Do not use raw power ratios as Jones amplitude multipliers.
+
+
+E. C/D SCALAR TRANSMISSION
+--------------------------
+
+Likewise define exact planes before and after C and D.
+
+Measure each independently.
+
+Avoid allowing spatially dependent fiber coupling to masquerade as free-space
+arm transmission.
+
+If the existing power meter measurement is taken THROUGH a fiber coupler,
+label it specifically as:
+
+    "effective coupling into monitored fiber mode"
+
+rather than:
+
+    "arm transmission."
+
+
+F. C/D POLARIZATION TRANSFORMATION
+----------------------------------
+
+Use the PAX or equivalent polarimeter immediately before NPBS2.
+
+Measure C alone and D alone.
+
+At minimum, record the output Stokes/Jones state for a known input state.
+
+Preferably perform several known input polarizations, e.g.:
+
+    H
+    V
+    +45 deg linear
+    optionally circular / elliptical if convenient
+
+With multiple independent inputs, reconstruct an effective 2x2 Jones matrix
+for each arm, up to an overall complex scalar.
+
+This is much more defensible than fitting an arbitrary retarder axis and
+retardance from scalar power data.
+
+If the data only support a single output state for each arm, do NOT claim a
+unique retarder Jones matrix.
+
+
+G. SPATIAL CHARACTERIZATION
+---------------------------
+
+Characterize AC, AD, BC, and BD as spatial modes.
+
+Useful measurements include:
+
+    - camera centroid x/y at a fixed plane,
+    - beam angle inferred from centroid at two longitudinal planes,
+    - beam width,
+    - beam ellipticity,
+    - relative displacement,
+    - relative angular mismatch,
+    - fiber-coupling map versus x/y coupler position.
+
+At minimum, store the four isolated fiber-coupling efficiencies at a common
+coupler position.
+
+Better:
+perform a small x/y scan for each of AC, AD, BC, BD and fit the corresponding
+coupling surfaces.
+
+The eventual model should include at least effective complex spatial-overlap
+factors for interfering components.
+
+
+======================================================================
+13. MODEL ARCHITECTURE REQUEST FOR THE NEXT CODE VERSION
+======================================================================
+
+The next code should separate parameter classes.
+
+
+CLASS 1: DIRECTLY MEASURED PHYSICAL PARAMETERS
+----------------------------------------------
+
+Examples:
+
+    measured input powers
+    measured PBS power splitting / extinction
+    measured NPBS1 H/V splitting
+    measured NPBS2 H/V splitting
+    measured arm transmissions
+    measured C/D output Stokes states
+    measured beam displacement / coupling maps
+
+These values should be read from a measurement file and LOCKED.
+
+
+CLASS 2: CONVENTION PARAMETERS
+------------------------------
+
+Examples:
+
+    global phase choices
+    beam-splitter sign convention
+    output-port ordering
+    coordinate-system definitions
+
+These should be clearly labeled as conventions, not measured properties.
+
+
+CLASS 3: UNMEASURED NUISANCE PARAMETERS
+---------------------------------------
+
+Examples may include:
+
+    unknown constant optical phase offsets
+    unknown BS reflection phase deviations
+    unresolved spatial-overlap phase
+    detector gain
+
+These should be minimized.
+
+Any fitted nuisance parameter must have:
+
+    - a physical interpretation,
+    - a documented reason it could not be measured,
+    - a plausible bound/prior,
+    - an identifiability check.
+
+
+======================================================================
+14. SPATIAL EXTENSION RECOMMENDATION
+======================================================================
+
+Do not immediately build a full diffraction simulation unless necessary.
+
+A useful intermediate model may represent each relevant field as:
+
+    Jones vector x scalar spatial-mode amplitude
+
+with pairwise complex overlap coefficients.
+
+For example, at the final NPBS:
+
+    E_E = t C + i r D
+
+but detected power may use:
+
+    I_E =
+        t^2 ||C||^2
+        + r^2 ||D||^2
+        + 2 t r Re[i * Gamma_CD * (C_pol^dagger D_pol)]
+
+where:
+
+    Gamma_CD
+
+is a complex normalized spatial overlap factor.
+
+For a single-mode fiber detector, Gamma should represent overlap after
+projection into the monitored fiber mode.
+
+This separates:
+
+    polarization mismatch
+from
+    spatial mismatch
+
+instead of forcing one to impersonate the other.
+
+If the system requires more detail later, extend to explicit transverse fields.
+
+
+======================================================================
+15. REQUIRED VALIDATION TESTS
+======================================================================
+
+Once the measured parameter set is fixed, run predictions that were NOT used
+to obtain those parameters.
+
+
+TEST 1: phi1 scan
+-----------------
+
+Predict:
+
+    I_E(phi1)
+    I_F(phi1)
+    Stokes_E(phi1)
+    Stokes_F(phi1)
+
+with phi2 fixed at the experimental operating point.
+
+
+TEST 2: phi2 scan
+-----------------
+
+Predict:
+
+    I_E(phi2)
+    I_F(phi2)
+    Stokes_E(phi2)
+    Stokes_F(phi2)
+
+with phi1 fixed.
+
+
+TEST 3: COMPLEMENTARY OUTPUT POWER
+----------------------------------
+
+For a passive final NPBS and fixed incoming C/D powers, check whether:
+
+    I_E + I_F
+
+remains constant during phi2 scan.
+
+Experimentally measure both final outputs simultaneously if possible.
+
+If the measured sum changes substantially with phi2, determine whether this is
+due to:
+
+    - detector-mode coupling,
+    - spatial redistribution,
+    - loss after recombination,
+    - polarization-dependent detection,
+    - or an incorrect model.
+
+
+TEST 4: ISOLATED PATH POWERS
+----------------------------
+
+Predict the independently measured:
+
+    AC
+    AD
+    BC
+    BD
+
+powers/coupling efficiencies.
+
+Do not fit to them after the fact.
+
+
+TEST 5: MULTIPLE DETECTION CONDITIONS
+-------------------------------------
+
+If possible compare:
+
+    total free-space power
+    fiber-coupled power
+    camera-integrated power
+
+A discrepancy between these channels would strongly indicate spatial-mode
+physics rather than a purely Jones-space mechanism.
+
+
+======================================================================
+16. PARAMETER IDENTIFIABILITY REQUIREMENT
+======================================================================
+
+Before reporting a fitted physical parameter, test whether the available data
+uniquely constrain it.
+
+At minimum:
+
+    - report sensitivity/Jacobian,
+    - report strong parameter correlations,
+    - test multiple random initializations,
+    - inspect whether very different parameter sets yield similar residuals,
+    - compute confidence intervals or profile likelihoods if feasible.
+
+If retardance, axis, loss, PBS leakage, and spatial overlap trade off strongly,
+do not assign a unique physical interpretation.
+
+The model should be allowed to conclude:
+
+    "these data do not determine this parameter."
+
+That is preferable to inventing precision.
+
+
+======================================================================
+17. QUESTIONS CODEX SHOULD ANSWER ABOUT THE CURRENT HISTORICAL FIT
+======================================================================
+
+Please trace the original code/data and answer these explicitly:
+
+1. Which exact raw measurements produced:
+       ax
+       ay
+       loss_a
+       loss_b
+       loss_c
+       loss_d?
+
+2. Were any measured POWERS inserted directly as Jones FIELD coefficients?
+
+3. Are ax/ay and loss_a/loss_b encoding distinct physical measurements, or is
+   the same imbalance represented twice?
+
+4. Which measurements constrain:
+       retardance_c
+       retardance_d
+       axis_c
+       axis_d?
+
+5. Were those four retarder parameters determined using scalar power data only?
+
+6. Were the phase-dependent output-power scans included in the fit objective?
+
+7. If yes, which reported plots are genuinely held-out predictions rather than
+   reconstructions of training data?
+
+8. What is the "known held-out disagreement" mentioned in the report?
+
+9. Why does the fitted NPBS1 correspond to approximately 65/35 when simple
+   isolated-path cross-ratio checks appear closer to 50/50?
+
+10. Why is loss_c > 1?
+    Is this purely a relative normalization coefficient, and if so what is the
+    reference plane?
+
+11. What prevents the fitted C/D retarders from absorbing omitted spatial-mode
+    mismatch?
+
+12. Are NPBS1 and NPBS2 assumed to have identical H/V complex coefficients?
+    If so, can the model be upgraded to accept measured polarization-dependent
+    coefficients?
+
+13. Which parameters are mathematically identifiable from the original data?
+
+14. Can the historical model be rerun with fitted retarders disabled so the
+    contribution of directly measured quantities can be isolated?
+
+
+======================================================================
+18. EXPECTED OUTPUT FROM THE NEXT MODEL
+======================================================================
+
+The next report should contain a parameter table with columns similar to:
+
+    parameter
+    numerical value
+    units
+    field or power quantity
+    physical plane
+    source measurement
+    measured / assumed / fitted
+    uncertainty
+    notes
+
+Every parameter must have provenance.
+
+The report should visually distinguish:
+
+    MEASURED
+    ASSUMED
+    FITTED NUISANCE
+    DERIVED
+
+No fitted value should be casually labeled as an optic property unless its
+measurement supports that interpretation.
+
+
+======================================================================
+19. SUCCESS CRITERIA
+======================================================================
+
+The model will be considered physically convincing if:
+
+1. Beam-splitter ratios, PBS leakage, arm transmissions, polarization
+   transformations, and detector/spatial overlap are independently measured.
+
+2. These measurements are entered into the forward model without fitting them
+   to the final phase-dependent power curve.
+
+3. The resulting model predicts the observed phi1- and phi2-dependent
+   amplitudes within experimental uncertainty.
+
+4. It also reproduces independent polarization observations and isolated-path
+   measurements.
+
+5. A materially different set of physical parameters is not equally capable
+   of reproducing all observables.
+
+If the measured model FAILS to reproduce the observed phase-dependent
+amplitude, that is a useful result.
+
+It means an important physical degree of freedom is still missing.
+
+The correct response is then to identify and measure that missing physics,
+not to force existing physical parameters to absorb the discrepancy.
+
+
+======================================================================
+20. CORE PRINCIPLE
+======================================================================
+
+The system should determine the model.
+
+The model should not determine the system.
+
+We are trying to answer:
+
+    "Given what the apparatus physically measures to be, does the predicted
+     optical behavior match what the apparatus actually does?"
+
+We are NOT trying to answer:
+
+    "What set of Jones parameters can be found that makes the plots look like
+     the experiment?"
+
+Those are fundamentally different scientific tasks.
+
+For this project, only the first one is the target.

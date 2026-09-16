@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "name": "Historical fitted network",
+  "description": "Imported from experiments/polarization_locking/2026-08-13/192530_field-model-calibration_phi2-power-model-0/physical-jones-fit/physical-jones-fit.json. A fitted model with known held-out disagreement; not individually measured optic parameters. Use hybrid_mzi_relative_fit.json. Detector gains and offsets are not optical elements.",
+  "values": {
+    "ax": 1,
+    "ay": 1.0287803494436512,
+    "pbs_leakage_rad": -0.15334624002497982,
+    "npbs1_mixing_rad": 0.632928296570969,
+    "npbs2_mixing_rad": 0.9341323051816346,
+    "phi1_offset_rad": 0.34518220855019416,
+    "phi2_offset_rad": 1.4358265985227268,
+    "loss_a": 0.6555029628638787,
+    "axis_a": 0,
+    "retardance_a": 0,
+    "loss_b": 0.7412609892500297,
+    "axis_b": 0,
+    "retardance_b": 0,
+    "loss_c": 1.08561331126554,
+    "axis_c": 0.09138101332776251,
+    "retardance_c": 0.5030303129643017,
+    "loss_d": 1.0,
+    "axis_d": -0.045265687540955925,
+    "retardance_d": -0.6101096365046962
+  },
+  "phase_values": {
+    "phi1": 0.73,
+    "phi2": 1.18
+  },
+  "scan": {
+    "points": 81,
+    "start_rad": 0,
+    "stop_rad": "2*pi",
+    "dark_threshold": 1e-12
+  }
+}

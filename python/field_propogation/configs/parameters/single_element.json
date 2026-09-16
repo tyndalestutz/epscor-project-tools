@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "name": "Illustrative element parameters",
+  "description": "Replace these example values with measurements; field amplitude = sqrt(power transmission).",
+  "values": {
+    "ax": 1,
+    "ay": 1,
+    "amplitude_x": 0.9,
+    "amplitude_y": 0.7,
+    "phase_x_rad": 0,
+    "phase_y_rad": "pi/3",
+    "axis_rad": 0
+  },
+  "phase_values": {}
+}
