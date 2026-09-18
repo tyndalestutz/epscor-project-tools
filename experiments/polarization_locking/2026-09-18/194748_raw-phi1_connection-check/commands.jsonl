@@ -1,1 +1,0 @@
-{"utc": "2026-09-18T18:47:56.577585+00:00", "elapsed_s": 7.977030951000415, "point": 0, "cycle": 0, "direction": "probe", "step_index": 0, "requested_rp_v": 0.0, "asg_offset_readback_v": 0.0, "asg_amplitude_readback_v": 0.0, "asg_frequency_readback_hz": 0.46566128730773926, "asg_waveform": "dc", "asg_output_route": "out1", "out2_offset_readback_v": 0.0}

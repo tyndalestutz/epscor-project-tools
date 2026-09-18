@@ -1,2 +1,0 @@
-point,cycle,direction,step_index,command_v,offset_readback_v,phase_median_rad,phase_min_rad,phase_max_rad,s1_min,s1_max,dop_min,dop_max,sample_count,phase_change_from_pass_start_rad
-0,0,probe,0,0.0,0.0,2.8233579234252724,2.7844630192484803,2.891006048694825,-0.00019556812377063355,0.021323077814454465,0.8445368,0.867252,3,0.0
