@@ -15,7 +15,7 @@ if not __package__:
     __package__='field_propogation'
 
 from .configuration import ConfigurationError
-from .acquisition.session import initialize, register, readiness, compact
+from .acquisition.session import initialize, register, readiness, compact, read_section
 from .acquisition.build import save_build
 from .acquisition.prediction import freeze, predict, compare
 
@@ -23,7 +23,7 @@ from .acquisition.prediction import freeze, predict, compare
 def main():
     parser=argparse.ArgumentParser(description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
     commands=parser.add_subparsers(dest='command',required=True)
-    for name in ('init','status','compact'):
+    for name in ('init','status','compact','inspect-powers'):
         sub=commands.add_parser(name)
         sub.add_argument('session',type=Path)
     sub=commands.add_parser('record'); sub.add_argument('session',type=Path)
@@ -37,6 +37,10 @@ def main():
     try:
         if args.command=='init': initialize(args.session)
         elif args.command=='compact': compact(args.session)
+        elif args.command=='inspect-powers':
+            from .acquisition.reduction import path_power_summary
+            observations = read_section(args.session, 'path_power_observations')
+            print(json.dumps({name: path_power_summary(item['powers_uw']) for name,item in observations.items()}, indent=2))
         elif args.command=='record': print(register(args.session,args.step,args.file))
         elif args.command=='status':
             result=readiness(args.session);print(json.dumps(result,indent=2))

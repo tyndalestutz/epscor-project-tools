@@ -1,0 +1,323 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=22mm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx,microtype,hyperref,array}
+\allowdisplaybreaks
+\title{Temporary fiber probes and spatial mismatch\\A carried-coefficient forward derivation}
+\author{Illustrative spatial scenarios; no fit to final contrast}
+\date{}
+\begin{document}\maketitle
+
+\noindent\textbf{What this test answers.} A temporary fiber probe can constrain
+spatial modes, but its coupling efficiency is not attenuation in the operating
+interferometer after the probe is removed. We test two explicit spatial
+arrangements that give the same example probe efficiencies, @@ETA_A_PERCENT@@\% for A and
+@@ETA_B_PERCENT@@\% for B. We then apply the same illustrative C/D angular mismatch to both
+arrangements. One yields modest contrast and the other high contrast. Thus a
+spatial mechanism can produce high contrast, but the two efficiencies do not
+identify which mechanism the apparatus has. These efficiency values are examples, not
+newly acquired data; the geometric assumptions and tilt are not fitted.
+
+\section{What is measured, assumed, and still unknown}
+The user reports temporary steering mirrors into a fiber z-fold. A/B share one
+probe fiber; C/D share another. The probes are removed from the operating path.
+It is not yet confirmed that each fiber position, focusing relay and calibration
+remain fixed while switching the two paths. All overlap inferences below are
+conditional on that common reference. Independently optimizing each path into
+the fiber does not measure overlap with one fixed reference mode.
+
+\begin{center}\small\begin{tabular}{>{\raggedright\arraybackslash}p{.43\linewidth}>{\raggedright\arraybackslash}p{.50\linewidth}}\toprule
+Quantity & Role in this calculation \\\midrule
+NPBS power ratios & Earlier direct-meter data; C/D completions kept separate \\
+Probe efficiencies $\eta_A=@@ETA_A@@$, $\eta_B=@@ETA_B@@$ & Illustrative input examples \\
+Common probe throughput $\eta_0=@@ETA_0@@$ & Assumed, not measured \\
+Equal Gaussian widths and curvature plane & Explicit geometric approximation \\
+Signs of A/B transverse displacement & Two alternative hypotheses \\
+D-arm slope $q=@@Q@@$ & Chosen example; additionally swept, not fitted \\
+Beam radius $w$, wavelength $\lambda$ & Optional conversion inputs; not measured by probe powers \\
+Input amplitudes $a_x=a_y=1$ & Retained equal-input baseline \\
+\bottomrule\end{tabular}\end{center}
+@@PHYSICAL_GEOMETRY@@
+
+No probe loss, new retarder, polarization mixing or fitted phase offset is added.
+Final detection in this test integrates the full free-space beam in each output.
+Finite apertures, a permanent fiber receiver, or polarization-selective detection
+are different observables.
+
+\section{What a fiber coupling efficiency actually constrains}
+Normalize the transverse mode $u_j$ of path $j$ and the probe fiber mode $f$:
+$\langle u_j,u_j\rangle=\langle f,f\rangle=1$. The complex field coupling is
+\begin{equation}
+h_j=\langle f,u_j\rangle=\iint f^*(\mathbf r)u_j(\mathbf r)\,d^2r,
+\qquad \eta_j=\eta_0|h_j|^2.
+\end{equation}
+For the configured common throughput, the example determines
+$|h_A|=\sqrt{\eta_A/\eta_0}=@@HA@@$ and $|h_B|=\sqrt{\eta_B/\eta_0}=@@HB@@$.
+It does not determine their phases or the mutual free-space overlap
+$\Gamma_{AB}=\langle u_A,u_B\rangle$. To see why, decompose
+\[
+u_j=h_j f+v_j,\qquad\langle f,v_j\rangle=0,\qquad
+\|v_j\|^2=1-|h_j|^2.
+\]
+Then
+\begin{equation}
+\Gamma_{AB}=h_A^*h_B+\langle v_A,v_B\rangle,\qquad
+|\Gamma_{AB}-h_A^*h_B|\le\sqrt{(1-|h_A|^2)(1-|h_B|^2)}.
+\end{equation}
+For the configured values the disk center has magnitude @@GRAM_CENTER@@ and
+radius @@GRAM_RADIUS@@. The allowed magnitude interval is
+$@@GRAM_LOW@@\le|\Gamma_{AB}|\le@@GRAM_HIGH@@$.
+This broad bound allows very different modes. It is not a measured visibility.
+Common lens/Fresnel/instrument losses must be separated from true mode coupling;
+otherwise even the quoted geometrical bound is conditional on $\eta_0$.
+
+\section{A simple geometric model: displacement and angular tilt}
+To construct physically consistent examples, use normalized equal-waist modes
+at one common plane:
+\begin{equation}
+u(\mathbf r;\mathbf d,\boldsymbol\kappa)=\sqrt{\frac{2}{\pi w^2}}
+\exp\left[-\frac{|\mathbf r-\mathbf d|^2}{w^2}\right]
+\exp(i\boldsymbol\kappa\cdot\mathbf r).
+\end{equation}
+Here $w$ is the $1/e$ field radius ($1/e^2$ intensity radius). A small angular
+tilt has $\boldsymbol\kappa\simeq k\boldsymbol\theta$, $k=2\pi/\lambda$.
+Introduce dimensionless $\mathbf D=\mathbf d/w$ and $\mathbf Q=w\boldsymbol\kappa$.
+Completing the square in the Gaussian overlap integral gives
+\begin{equation}
+\boxed{G_{ab}=\langle u_a,u_b\rangle=
+\exp\left[-\frac{|\mathbf D_a-\mathbf D_b|^2}{2}
+-\frac{|\mathbf Q_a-\mathbf Q_b|^2}{8}
++\frac{i}{2}(\mathbf Q_b-\mathbf Q_a)\cdot(\mathbf D_a+\mathbf D_b)\right].}
+\end{equation}
+For the centered, untilted probe mode, this reduces to
+\begin{equation}
+h(\mathbf D,\mathbf Q)=\exp[-|\mathbf D|^2/2-|\mathbf Q|^2/8+i\mathbf Q\cdot\mathbf D/2],
+\quad\boxed{\eta=\eta_0\exp[-|\mathbf D|^2-|\mathbf Q|^2/4].}
+\end{equation}
+One efficiency therefore constrains a combination of displacement and tilt,
+not either individually. If \emph{only displacement} is assumed, then
+\[
+D_A=\sqrt{\ln(\eta_0/\eta_A)}=@@DA@@,\qquad
+|D_B|=\sqrt{\ln(\eta_0/\eta_B)}=@@DB@@.
+\]
+The two hypotheses are $D_B=+@@DB@@$ (same side of the probe mode) and
+$D_B=-@@DB@@$ (opposite sides). Their A/B separations are respectively
+$@@SEP_SAME@@\,w$ and $@@SEP_OPPOSITE@@\,w$. Both give exactly the same probe
+power efficiencies. If tilt instead caused all the loss, it would satisfy
+$|\theta|=2\sqrt{\ln(\eta_0/\eta)}/(kw)$; no numerical angle can be recovered
+without $w$, $\lambda$, and the geometric assumptions.
+\begin{center}\includegraphics[width=\linewidth]{geometry.pdf}\end{center}
+
+\section{Propagate four route modes, without inserting probe loss}
+Keep the existing splitter fields and coefficients. Define
+\[
+\alpha=t_{1x}t_{2x},\quad\beta=r_{1x}r_{2x},\quad
+\gamma=r_{1y}t_{2y},\quad\delta=t_{1y}r_{2y},\quad z=e^{i\phi_2}.
+\]
+The splitter field coefficients are carried from $t=\sqrt{P_t/(P_t+P_r)}$,
+$r=\sqrt{P_r/(P_t+P_r)}$ (all raw powers in $\mu$W):
+\begin{center}\begin{tabular}{lrrr}\toprule
+Input & $\mathcal T=P_t/(P_t+P_r)$ & $t$ & $r$ \\\midrule
+@@SPLITTER_ROWS@@
+\bottomrule\end{tabular}\end{center}
+The C-reference completion uses the C rows for both reciprocal NPBS2 inputs;
+the D-reference completion uses the D rows instead. They are separate lossless
+completions, not an average or fit. Reflection retains the ideal factor $i$.
+The ideal PBS sends x through A and y through B. Each route now carries its
+own normalized spatial mode rather than an assumed identical mode:
+\begin{align}
+E_x(\mathbf r)&=a_xe^{i\phi_1}(\alpha z u_{AC}-\beta u_{AD}),\\
+E_y(\mathbf r)&=ia_y(\gamma z u_{BC}+\delta u_{BD}).
+\end{align}
+The relative angular mismatch is implemented as a spatial phase ramp in D,
+$u_{AD}=e^{i\kappa x}u_A$, $u_{BD}=e^{i\kappa x}u_B$, while
+$u_{AC}=u_A$, $u_{BC}=u_B$. This is a unitary transformation of transverse
+fields: it redistributes spatial phase and removes no power. It represents
+a relative C/D angular mismatch at the common output reference plane, not a
+known measured mirror setting or a specified z-fold geometry.
+
+A full-aperture power meter integrates $|E_x|^2+|E_y|^2$. Define
+$\Gamma_A=\langle u_{AD},u_{AC}\rangle$ and
+$\Gamma_B=\langle u_{BD},u_{BC}\rangle$. Explicit expansion gives
+\begin{align}
+I_{E,x}&=a_x^2[\alpha^2+\beta^2-2\alpha\beta\Re(z\Gamma_A)],\\
+I_{E,y}&=a_y^2[\gamma^2+\delta^2+2\gamma\delta\Re(z\Gamma_B)].
+\end{align}
+Thus, carrying independent input amplitudes,
+\begin{align}
+A_E&=a_x^2(\alpha^2+\beta^2)+a_y^2(\gamma^2+\delta^2),\\
+K_E&=a_y^2\gamma\delta\Gamma_B-a_x^2\alpha\beta\Gamma_A,\\
+\boxed{I_E}&=\boxed{A_E+2\Re(K_Ee^{i\phi_2})
+=A_E+2\Re K_E\cos\phi_2-2\Im K_E\sin\phi_2.}
+\end{align}
+The phase $\phi_1$ still cannot modulate total intensity: x and y are orthogonal.
+Scalar spatial mismatch alone in this restricted optical network does not
+explain a phi1 power fringe. It can alter the polarization and degree of
+polarization through spatial integration.
+
+For the measured C-reference splitter coefficients from the prior report,
+\[
+\alpha\beta=@@X_WEIGHT@@,\quad\gamma\delta=@@Y_WEIGHT@@,\quad
+A_E\big|_{a_x=a_y=1}=@@MEAN@@,
+\]
+so the spatial extension is exactly
+\begin{equation}
+K_E=@@Y_WEIGHT@@\,\Gamma_B-@@X_WEIGHT@@\,\Gamma_A.
+\end{equation}
+No old fitted retarder or fitted contrast coefficient appears here.
+
+For F let $h=t_{1x}r_{2x}$, $j=r_{1x}t_{2x}$,
+$k=t_{1y}t_{2y}$ and $\ell=r_{1y}r_{2y}$. Then
+\begin{align}
+F_x&=ia_xe^{i\phi_1}(hz u_{AC}+ju_{AD}),&
+F_y&=a_y(ku_{BD}-\ell z u_{BC}),\\
+I_F&=a_x^2[h^2+j^2+2hj\Re(z\Gamma_A)]
++a_y^2[k^2+\ell^2-2k\ell\Re(z\Gamma_B)].
+\end{align}
+Since $hj=\alpha\beta$, $k\ell=\gamma\delta$ and all spatial modes have unit
+norm, $I_E+I_F=a_x^2+a_y^2=2$. This assumes complete collection and the same
+mode coordinate convention across the lossless final splitter.
+
+\section{Derive contrast and show how high contrast can appear}
+Write $K_E=|K_E|e^{i\psi}$. Then
+$I_E=A_E+2|K_E|\cos(\phi_2+\psi)$ and
+\begin{equation}
+\boxed{V_E=\frac{I_{\max}-I_{\min}}{I_{\max}+I_{\min}}
+=\frac{2|K_E|}{A_E}},\qquad V_F=\frac{2|K_E|}{2-A_E}.
+\end{equation}
+For the ideal equal-input splitter baseline, $A_E=1$,
+$\alpha\beta=\gamma\delta=1/4$, so
+\begin{equation}
+\boxed{V_E=\frac{|\Gamma_B-\Gamma_A|}{2}.}
+\end{equation}
+\textbf{A shared visibility reduction is insufficient.} If
+$\Gamma_A=\Gamma_B$, the two polarization fringes still cancel. If both overlaps
+are merely nonnegative real numbers, their difference cannot exceed one, so
+$V_E\le1/2$ in the ideal equal-input case. High contrast such as 0.6 requires
+more than a common real overlap reduction in this model.
+
+For the explicit Gaussian D-arm ramp with $q=\kappa w$,
+\[
+\Gamma_A=e^{-q^2/8}e^{-iqD_A},\qquad
+\Gamma_B=e^{-q^2/8}e^{-iqD_B}.
+\]
+Using $|e^{ia}-e^{ib}|=2|\sin[(a-b)/2]|$ gives the carried geometric result
+\begin{equation}
+\boxed{V_E(q)=e^{-q^2/8}
+\left|\sin\!\left(\frac{q(D_A-D_B)}{2}\right)\right|}
+\quad\text{(ideal splitters, equal input).}
+\end{equation}
+The ramp reduces individual overlap magnitudes but also gives the A-derived
+and B-derived interference terms different phases because their beam centers
+differ. Their formerly cancelling fringes need not cancel. No polarization
+rotation is required for this particular spatial mechanism.
+
+At the \emph{chosen, unmeasured} example $q=@@Q@@$, the common overlap magnitude
+is $e^{-q^2/8}=@@GFACT@@$. Substitution into the measured-splitter expression gives:
+@@NUMERICS@@
+The scenario is not selected by optimizing agreement with $V=0.6$. The sweep
+below exposes the full response rather than fitting the tilt.
+\begin{center}\small\begin{tabular}{llrrr}\toprule
+Geometry & Splitter case & $V_E$ & $100V_E$ (\%) & $V_F$ \\\midrule
+@@RESULT_ROWS@@
+\bottomrule\end{tabular}\end{center}
+\begin{center}\includegraphics[width=\linewidth]{visibility.pdf}\end{center}
+
+\section{Carry the spatial overlap into Stokes, not just intensity}
+For integrated detection define the coherency matrix
+$J_{pq}=\iint E_p(\mathbf r)E_q^*(\mathbf r)\,d^2r$.
+Then, with the repository convention,
+\[
+S_0=J_{xx}+J_{yy},\quad S_1=J_{yy}-J_{xx},\quad
+S_2=2\Re J_{xy},\quad S_3=2\Im J_{xy},\quad s_n=S_n/S_0.
+\]
+The diagonal entries are the $I_{E,x}$ and $I_{E,y}$ already derived. Expanding
+the cross term retains all four spatial overlaps:
+\begin{align}
+J_{xy,E}=-ia_xa_ye^{i\phi_1}\big[&
+\alpha\gamma\langle u_{BC},u_{AC}\rangle
++\alpha\delta z\langle u_{BD},u_{AC}\rangle\\
+&-\beta\gamma z^*\langle u_{BC},u_{AD}\rangle
+-\beta\delta\langle u_{BD},u_{AD}\rangle\big].
+\end{align}
+For F the corresponding expression is
+\begin{align}
+J_{xy,F}=ia_xa_ye^{i\phi_1}\big[&hkz\langle u_{BD},u_{AC}\rangle
+-h\ell\langle u_{BC},u_{AC}\rangle\\
+&+jk\langle u_{BD},u_{AD}\rangle
+-j\ell z^*\langle u_{BC},u_{AD}\rangle\big].
+\end{align}
+Insert the explicit Gaussian $G_{ab}$ into these products, then take real and
+imaginary parts and divide by the actual detected $S_0$. These are the plotted
+Stokes parameters; no per-curve scaling or forced unit Stokes norm is applied.
+The degree of polarization is
+\[
+\mathcal P=\sqrt{S_1^2+S_2^2+S_3^2}/S_0\le1.
+\]
+Different polarizations can occupy different spatial modes, so full-plane
+integration can yield $\mathcal P<1$ even for a deterministic coherent laser
+field. A single pure Jones vector then does not describe the integrated state.
+When $\mathcal P>0$, the direction $\mathbf s/\mathcal P$ describes the polarized
+component; its ellipse angles can be obtained from
+$\theta=\tfrac12\operatorname{atan2}(s_2,s_1)$ and
+$\epsilon=\tfrac12\arcsin(s_3/\mathcal P)$ in this convention. At
+$\mathcal P=0$, no unique ellipse exists.
+
+\section{What the second probe fiber can and cannot establish}
+Apply the same overlap formula to C/D at its own calibrated probe plane and
+its own fixed receiver mode. Do not multiply efficiencies from two temporary
+probe stations together as though both fibers stayed in the optical train.
+The relay mapping between the two stations also has to be characterized before
+identifying a common physical displacement or angular mismatch.
+
+With both A and B illuminated, C/D generally contain two polarization-dependent
+spatial profiles. To constrain the overlaps used above, block down to the four
+routes AC, AD, BC, BD and measure each at one unchanged probe alignment, with a
+free-space reference power for that same route. For our illustrative Gaussian
+case the geometric probe efficiencies would be:
+\begin{center}\begin{tabular}{lrr}\toprule
+Route & Same-side geometry & Opposite-side geometry \\\midrule
+@@PROBE_ROWS@@
+\bottomrule\end{tabular}\end{center}
+They are identical in the two geometries even though their free-space contrasts
+differ strongly: scalar probe powers do not supply the displacement signs or
+complex overlap phases. These are hypothetical readings at the common modeled
+plane, not predictions for an uncharacterized second z-fold relay.
+
+Useful next acquisitions are isolated-route free-space/fiber power ratios with
+uncertainty and a fixed fiber reference, coupler x/y scans with signed coordinates,
+and camera centroids at two longitudinal planes. The latter separate displacement
+from angle. Record width convention, relay settings and power calibration.
+Dedicated coherent overlap measurements can further constrain phase. If C/D
+probe data disagree with these illustrative profiles, replace the geometric
+hypothesis using those independent observations; do not tune it to final contrast.
+
+\section{Different question: what if a fiber really stays in the path?}
+A permanent single-mode receiver measures the projected Jones field
+$E_{p,f}=\sum_a h_a e_{a,p}$, not the free-space integral above. If its coefficients
+only distinguish A-origin versus B-origin light, $h_{AC}=h_{AD}=h_A$ and
+$h_{BC}=h_{BD}=h_B$, then for the ideal hybrid network
+\[
+I_{E,f}=\eta_A\sin^2(\phi_2/2)+\eta_B\cos^2(\phi_2/2),\qquad
+V=\frac{|\eta_A-\eta_B|}{\eta_A+\eta_B}=@@INLINE_V@@.
+\]
+That is a @@INLINE_PERCENT@@\% example, and is \emph{not} the correct way to treat the removed
+alignment probes. In an ordinary same-polarization two-arm MZI the corresponding
+balanced-recombination expression instead gives
+$V=2\sqrt{\eta_A\eta_B}/(\eta_A+\eta_B)=@@ORDINARY_V@@$ under perfect coherence.
+Orthogonal polarization, spatial overlap and the detector observable determine
+which formula applies. Coupling imbalance by itself is not a universal visibility.
+
+\section{Reference and checks}
+The overlap-integral definition and Gaussian mode-matching framework are
+consistent with Schwab et al., \emph{Optics Express} 30, 32292 (2022),
+\href{https://doi.org/10.1364/OE.465101}{doi:10.1364/OE.465101}, Sec.~2.3.
+The equal-waist overlap and carried-coefficient interferometer formulas above
+are evaluated explicitly here. Tests compare analytical overlaps with numerical
+integration, harmonic visibility with direct propagation, total power conservation,
+probe ambiguity and partial-polarization Stokes. Figures use optical phase in
+degrees; $q$ is a dimensionless spatial phase slope, not another swept arm phase.
+All retained spatial numbers are labeled hypotheses until acquired independently.
+
+\clearpage\begin{center}\includegraphics[width=\linewidth,height=.92\textheight,keepaspectratio]{phase-E.pdf}\end{center}
+\clearpage\begin{center}\includegraphics[width=\linewidth,height=.92\textheight,keepaspectratio]{phase-F.pdf}\end{center}
+\end{document}

@@ -12,6 +12,7 @@ from field_propogation.acquisition.plan import make_plan
 from field_propogation.acquisition.session import initialize, register, readiness, write_json, read_section, write_section
 from field_propogation.acquisition.reduction import power_fraction, field_transmission, reconstruct_jones
 from field_propogation.acquisition.reduction import state_matrix
+from field_propogation.acquisition.reduction import path_power_summary
 from field_propogation.acquisition.build import build_parameters
 from field_propogation.acquisition.prediction import freeze, predict, compare, verify_bundle
 from field_propogation.configuration import ConfigurationError, from_dicts
@@ -19,6 +20,7 @@ from field_propogation.detection import coherency, observables
 from field_propogation.observables import STOKES_MATRICES
 from field_propogation.propagation import compile_network
 from field_propogation.provenance import validate_provenance
+from field_propogation.splitter_study import configurations
 
 
 def synthetic_campaign(path):
@@ -73,6 +75,78 @@ def synthetic_campaign(path):
 
 
 class MeasurementTests(unittest.TestCase):
+    def test_report_carried_stokes_coefficients_match_jones_fields(self):
+        from field_propogation.observables import describe
+        powers=dict(AC=421,AD=343,BC=380,BD=380,ACE=215,ADE=151,
+                    BCE=194,BDE=172,ACF=180,ADF=183,BCF=169,BDF=201)
+        flow,cases=configurations(powers)
+        for name in ('C_reference','D_reference'):
+            params=cases[name]
+            params['values'].update(ax=.7,ay=1.3)
+            values=params['values']
+            angles=[values[k] for k in ('mu1_x','mu1_y','mu2_x','mu2_y')]
+            tx,ty,ux,uy=np.cos(angles)
+            rx,ry,vx,vy=np.sin(angles)
+            a,b,c,d=tx*ux,rx*vx,ry*uy,ty*vy
+            h,j,k,l=tx*vx,rx*ux,ty*uy,ry*vy
+            phi1=np.linspace(-.4,7,17)[:,None]
+            phi2=np.linspace(-1,8,23)[None,:]
+            ax,ay=.7,1.3
+            ue=a*c-b*d+(a*d-b*c)*np.cos(phi2)
+            ve=(a*d+b*c)*np.sin(phi2)
+            uf=j*k-h*l+(h*k-j*l)*np.cos(phi2)
+            vf=(h*k+j*l)*np.sin(phi2)
+            ex2=ax**2*(a*a+b*b-2*a*b*np.cos(phi2))
+            ey2=ay**2*(c*c+d*d+2*c*d*np.cos(phi2))
+            fx2=ax**2*(h*h+j*j+2*h*j*np.cos(phi2))
+            fy2=ay**2*(k*k+l*l-2*k*l*np.cos(phi2))
+            formulas={
+                'E':[ex2+ey2,ey2-ex2,2*ax*ay*(ve*np.cos(phi1)+ue*np.sin(phi1)),2*ax*ay*(ve*np.sin(phi1)-ue*np.cos(phi1))],
+                'F':[fx2+fy2,fy2-fx2,-2*ax*ay*(vf*np.cos(phi1)+uf*np.sin(phi1)),2*ax*ay*(uf*np.cos(phi1)-vf*np.sin(phi1))]}
+            fields=compile_network(from_dicts(flow,params)).evaluate({'phi1':phi1,'phi2':phi2})
+            for port,field in fields.items():
+                expected=np.stack(np.broadcast_arrays(*formulas[port]),axis=-1)
+                np.testing.assert_allclose(describe(field)['raw_stokes'],expected,atol=2e-15)
+
+    def test_splitter_only_study_is_passive_unfitted_and_matches_direct_formula(self):
+        powers=dict(AC=421,AD=343,BC=380,BD=380,ACE=215,ADE=151,
+                    BCE=194,BDE=172,ACF=180,ADF=183,BCF=169,BDF=201)
+        flow,cases=configurations(powers)
+        self.assertEqual(len(flow['elements']),5)
+        axis=np.linspace(0,2*np.pi,91)
+        for label,params in cases.items():
+            self.assertEqual(set(params['values']),{'ax','ay','mu1_x','mu1_y','mu2_x','mu2_y'})
+            self.assertEqual(params['values']['ax'],params['values']['ay'])
+            network=compile_network(from_dicts(flow,params))
+            values=params['values']
+            tx,ty,ux,uy=[np.cos(values[k])**2 for k in ('mu1_x','mu1_y','mu2_x','mu2_y')]
+            mean=tx*ux+(1-tx)*(1-ux)+(1-ty)*uy+ty*(1-uy)
+            fringe=2*(np.sqrt(ty*(1-ty)*uy*(1-uy))-np.sqrt(tx*(1-tx)*ux*(1-ux)))
+            fields=network.evaluate({'phi1':axis[:,None],'phi2':axis[None,:]})
+            intensity={port:np.sum(abs(field)**2,axis=-1) for port,field in fields.items()}
+            np.testing.assert_allclose(intensity['E'],np.broadcast_to(mean+fringe*np.cos(axis),intensity['E'].shape),atol=1e-14)
+            np.testing.assert_allclose(intensity['E']+intensity['F'],2,atol=1e-14)
+            if label=='C_reference':
+                self.assertAlmostEqual(ux,215/395)
+                self.assertAlmostEqual(uy,194/363)
+                self.assertAlmostEqual(abs(fringe)/mean,.003366627722300142)
+            elif label=='D_reference':
+                self.assertAlmostEqual(ux,183/334)
+                self.assertAlmostEqual(uy,201/373)
+            else:
+                np.testing.assert_allclose(intensity['E'],1,atol=1e-14)
+
+    def test_isolated_route_ratios_use_correct_transmitted_ports(self):
+        powers=dict(AC=421,AD=343,BC=380,BD=380,ACE=215,ADE=151,
+                    BCE=194,BDE=172,ACF=180,ADF=183,BCF=169,BDF=201)
+        result=path_power_summary(powers)
+        self.assertAlmostEqual(result['npbs1_collected_splits']['A']['transmitted_fraction'],421/764)
+        self.assertAlmostEqual(result['npbs1_collected_splits']['B']['transmitted_fraction'],.5)
+        self.assertAlmostEqual(result['downstream_routes']['AD']['transmitted_fraction'],183/334)
+        self.assertAlmostEqual(result['downstream_routes']['BC']['downstream_collected_ratio'],363/380)
+        self.assertEqual(result['incoherent_route_sums']['A']['sum_isolated_outputs_uw'],729)
+        with self.assertRaises(ConfigurationError): path_power_summary({'AC':421})
+
     def test_power_is_square_rooted_and_background_drift_checked(self):
         reading = dict(power_unit='uW', values=dict(power_in_before=881.,power_in_after=881.,power_out=782.,dark_in=1.,dark_out=2.),
                        uncertainties={key: .1 for key in ('power_in_before','power_in_after','power_out','dark_in','dark_out')})

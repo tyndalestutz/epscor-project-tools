@@ -1656,5 +1656,41 @@
     "projection_F_AD": [],
     "projection_F_AC": []
   },
-  "legacy_record_ids": {}
+  "legacy_record_ids": {},
+  "path_power_observations": {
+    "direct_meter_user_2026_09_16": {
+      "source": "User-provided direct-path power-meter readings in conversation, received 2026-09-16",
+      "acquired_utc": null,
+      "power_unit": "uW",
+      "detector_type": "power meter placed directly in the path; not fiber-coupled",
+      "detector_id": null,
+      "wavelength_nm": null,
+      "input_polarization": null,
+      "uncertainty_uw": null,
+      "dark_power_uw": null,
+      "route_isolation_confirmed": true,
+      "source_and_alignment_stability_confirmed": null,
+      "planes": {
+        "two_letter_routes": "User describes meter in NPBS1 transmitted/reflected output path; exact position not yet confirmed",
+        "three_letter_routes": "User describes meter in NPBS2 output path; exact position and blocker configuration not yet confirmed"
+      },
+      "path_convention": "A->C transmitted, A->D reflected; B->D transmitted, B->C reflected. C->E transmitted, C->F reflected; D->F transmitted, D->E reflected.",
+      "powers_uw": {
+        "AC": 421,
+        "AD": 343,
+        "BC": 380,
+        "BD": 380,
+        "ACE": 215,
+        "ADE": 151,
+        "BCE": 194,
+        "BDE": 172,
+        "ACF": 180,
+        "ADF": 183,
+        "BCF": 169,
+        "BDF": 201
+      },
+      "model_use": "Retain as preliminary route-power constraints. Do not overwrite calibrated Jones parameters: incident powers, uncertainties, polarization states, phases and setup confirmations are missing.",
+      "route_isolation_note": "User confirmed: only the named route was open; no two routes were measured at once."
+    }
+  }
 }

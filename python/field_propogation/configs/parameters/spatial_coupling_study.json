@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "name": "Temporary fiber probe: spatial-overlap scenarios",
+  "status": "ILLUSTRATIVE; efficiencies are the user's example, not new measurements",
+  "probe": {
+    "efficiency_a": 0.5,
+    "efficiency_b": 0.4,
+    "common_throughput": 1.0,
+    "in_operating_path": false,
+    "same_fixed_alignment_confirmed": false,
+    "notes": "A/B use one probe fiber; C/D use another via temporary steering mirrors. Fixed reference alignment and calibrated relay losses are still unconfirmed. Unit common throughput is a scenario assumption."
+  },
+  "gaussian_model": {
+    "profile": "Equal-waist Gaussian modes at one transverse reference plane; initial displacement only along x",
+    "width_definition": "w is the 1/e field radius, equivalently the 1/e^2 intensity radius",
+    "w_m": null,
+    "wavelength_m": null,
+    "geometries": ["same_side", "opposite_sides"],
+    "d_arm_tilt_q": 1.5,
+    "tilt_sweep_q_max": 4.0,
+    "notes": "q=k*w*theta is a dimensionless D-arm phase slope relative to C, not a fitted or measured tilt. Displacement signs are alternative scenarios with identical probe power efficiencies."
+  },
+  "scan": {
+    "points": 361,
+    "phi1_fixed_deg": 0,
+    "phi2_fixed_deg": 90
+  }
+}

@@ -1,0 +1,316 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=22mm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx,microtype,hyperref}
+\allowdisplaybreaks
+\newcommand{\ee}{\mathrm e}
+\newcommand{\ii}{\mathrm i}
+\title{From measured splitter powers to output intensity and polarization}
+\author{An explicit Jones derivation with carried coefficients; no fitting}
+\date{}
+\begin{document}\maketitle
+
+\noindent\textbf{Result and scope.} With equal input amplitudes and all optics
+otherwise ideal, the measured split fractions give $V_E=@@VE@@$,
+or $@@VE_PERCENT@@\%$. A measured visibility $V=0.6$ means $60\%$, so this
+splitter-only calculation is about $@@RATIO@@$ times smaller in visibility.
+This comparison assumes the experimental number uses the same max/min definition
+and the same total-power observable, without an analyzer selecting polarization.
+We derive this result below without assigning unmeasured retardance, phase
+errors, arm loss, leakage or spatial-mode corrections.
+
+\section{Which angles are these?}
+\begin{itemize}
+\item $\phi_1$: swept optical phase applied to arm A before NPBS1.
+\item $\phi_2$: swept optical phase applied to arm C before NPBS2.
+\item $\mu_{kp}$ in the software: shorthand for a splitter's power ratio,
+$t_{kp}=\cos\mu_{kp}$ and $r_{kp}=\sin\mu_{kp}$. It is \emph{not} an optic's
+mount angle or an extra measured retardance. We use $t,r$ directly throughout
+this derivation to avoid confusing it with the swept phases.
+\end{itemize}
+An optical phase is the argument in $\ee^{\ii\phi}$: one complete fringe cycle is
+$2\pi$ radians, equivalently $360^\circ$. Thus
+\[
+0\ \mathrm{rad}=0^\circ,\quad \pi/2\ \mathrm{rad}=90^\circ,\quad
+\pi\ \mathrm{rad}=180^\circ,\quad 2\pi\ \mathrm{rad}=360^\circ.
+\]
+The previous plots used $\phi_1=0.73\,\mathrm{rad}=41.83^\circ$ and
+$\phi_2=1.18\,\mathrm{rad}=67.61^\circ$ as example held-fixed phases, not
+measured or fitted offsets. For clearer figures here, a $\phi_1$ sweep holds
+$\phi_2=90^\circ$, and a $\phi_2$ sweep holds $\phi_1=0^\circ$.
+Axes now show degrees. This changes the displayed polarization cuts, not the
+model or its intensity visibility. No voltage-to-phase calibration is inferred.
+The factor $\ii=\ee^{\ii\pi/2}$ on reflection retains the ideal splitter
+convention; power readings alone do not measure that phase.
+
+\section{Measured powers become field coefficients}
+Let $P_t,P_r$ be the isolated transmitted and reflected powers, measured in
+$\mu$W. For this \emph{splitting-only} test define
+\begin{equation}
+\mathcal T=\frac{P_t}{P_t+P_r},\qquad
+\mathcal R=\frac{P_r}{P_t+P_r}=1-\mathcal T,\qquad
+\boxed{t=\sqrt{\mathcal T},\quad r=\sqrt{\mathcal R}.}
+\end{equation}
+The denominator is the collected output sum, not an independently measured
+incident power. Consequently this isolates the split fraction; it does not
+measure insertion loss. Power coefficients are never used as field multipliers.
+An ideal PBS assigns A to x polarization and B to y polarization. That
+assignment is the retained baseline, not additional measured polarimetry.
+
+\begin{center}\small
+\begin{tabular}{lrrr}\toprule
+Isolated splitter input & $P_t$ & $P_r$ & $\mathcal T$ \\\midrule
+@@POWER_ROWS@@
+\bottomrule\end{tabular}\end{center}
+The convention is A$\to$C transmitted, B$\to$D transmitted; at NPBS2,
+C$\to$E transmitted and D$\to$F transmitted. In particular ADE is reflected,
+whereas ADF is transmitted.
+
+\paragraph{Why two versions of NPBS2?}
+The C-side and D-side measured fractions differ slightly. A reciprocal lossless
+splitter requires the same transmission magnitude for its two input ports at
+a given polarization. Normalizing each measured column independently and
+inserting ideal reflection phases would give maximum field singular values
+@@SX@@ (x) and @@SY@@ (y), greater than one: an unphysical gain for some coherent
+inputs. We do not fit these readings together or add an unmeasured attenuation.
+The main derivation uses the C-side fractions and ideal reciprocal lossless
+completion. The D-side fractions give a separate cross-check later. Neither
+completion claims to be a uniquely measured full complex splitter matrix.
+
+For the main, C-reference calculation the coefficients carried below are
+\begin{center}\small
+\begin{tabular}{lll}\toprule
+Coefficient & From measured powers & Field value \\\midrule
+@@COEFFICIENT_ROWS@@
+\bottomrule\end{tabular}\end{center}
+
+\section{Propagate the Jones fields, one element at a time}
+Keep the two real nonnegative input amplitudes independent initially:
+\[
+\mathbf E_{\rm in}=\begin{pmatrix}a_x\\a_y\end{pmatrix},\qquad
+\mathbf A=\begin{pmatrix}a_x\ee^{\ii\phi_1}\\0\end{pmatrix},\qquad
+\mathbf B=\begin{pmatrix}0\\a_y\end{pmatrix}.
+\]
+An input relative phase, if introduced, would shift $\phi_1$ in the polarization
+calculation; none is added here. Each splitter acts on its two incident ports as
+\begin{equation}
+\begin{pmatrix}\mathbf U\\\mathbf V\end{pmatrix}
+=\begin{pmatrix}\mathbf T_k&\mathbf R_k\\\mathbf R_k&\mathbf T_k\end{pmatrix}
+\begin{pmatrix}\mathbf L\\\mathbf M\end{pmatrix},\qquad
+\mathbf T_k=\begin{pmatrix}t_{kx}&0\\0&t_{ky}\end{pmatrix},\quad
+\mathbf R_k=\ii\begin{pmatrix}r_{kx}&0\\0&r_{ky}\end{pmatrix}.
+\end{equation}
+The zero off-diagonal entries retain the ideal no-polarization-conversion
+assumption. At NPBS1 this gives, explicitly,
+\begin{align}
+\mathbf C&=\mathbf T_1\mathbf A+\mathbf R_1\mathbf B
+=\begin{pmatrix}a_xt_{1x}\ee^{\ii\phi_1}\\\ii a_yr_{1y}\end{pmatrix},\\
+\mathbf D&=\mathbf R_1\mathbf A+\mathbf T_1\mathbf B
+=\begin{pmatrix}\ii a_xr_{1x}\ee^{\ii\phi_1}\\a_yt_{1y}\end{pmatrix}.
+\end{align}
+After applying phase $\phi_2$ to C, set $q=\ee^{\ii\phi_2}$. At NPBS2,
+\begin{align}
+\mathbf E&=\mathbf T_2(q\mathbf C)+\mathbf R_2\mathbf D
+=\begin{pmatrix}
+a_x\ee^{\ii\phi_1}(t_{1x}t_{2x}q-r_{1x}r_{2x})\\
+\ii a_y(r_{1y}t_{2y}q+t_{1y}r_{2y})
+\end{pmatrix},\\
+\mathbf F&=\mathbf R_2(q\mathbf C)+\mathbf T_2\mathbf D
+=\begin{pmatrix}
+\ii a_x\ee^{\ii\phi_1}(t_{1x}r_{2x}q+r_{1x}t_{2x})\\
+a_y(t_{1y}t_{2y}-r_{1y}r_{2y}q)
+\end{pmatrix}.
+\end{align}
+The minus signs come from two reflections, $\ii^2=-1$; they are not fitted phases.
+
+\section{Square the fields, retaining every coefficient}
+For port E define four path-product amplitudes, not new parameters:
+\[
+\alpha=t_{1x}t_{2x},\quad\beta=r_{1x}r_{2x},\quad
+\gamma=r_{1y}t_{2y},\quad\delta=t_{1y}r_{2y}.
+\]
+\begin{center}\small
+\begin{tabular}{lll}\toprule
+Path product & Exact power-ratio expression & Field value \\\midrule
+@@PRODUCT_ROWS@@
+\bottomrule\end{tabular}\end{center}
+Thus $E_x=a_x\ee^{\ii\phi_1}(\alpha q-\beta)$ and
+$E_y=\ii a_y(\gamma q+\delta)$. Expand the modulus square before simplifying:
+\begin{align}
+|E_x|^2&=a_x^2(\alpha q-\beta)(\alpha q^*-\beta)
+=a_x^2[\alpha^2+\beta^2-\alpha\beta(q+q^*)]\\
+&=a_x^2[\alpha^2+\beta^2-2\alpha\beta\cos\phi_2],\\
+|E_y|^2&=a_y^2(\gamma q+\delta)(\gamma q^*+\delta)
+=a_y^2[\gamma^2+\delta^2+2\gamma\delta\cos\phi_2].
+\end{align}
+Here $qq^*=1$, $q+q^*=2\cos\phi_2$, and
+$|\ee^{\ii\phi_1}|^2=1$. A power meter summing both orthogonal polarizations
+measures $I_E=|E_x|^2+|E_y|^2$, with no x--y interference term. Therefore
+\begin{equation}
+\boxed{I_E=\underbrace{a_x^2(\alpha^2+\beta^2)+a_y^2(\gamma^2+\delta^2)}_{A_E}
++\underbrace{2(a_y^2\gamma\delta-a_x^2\alpha\beta)}_{B_E}\cos\phi_2.}
+\end{equation}
+This proves that $\phi_1$ cannot change total intensity in this restricted model.
+It still changes x--y relative phase and hence polarization.
+
+\subsection{Only now substitute the measured coefficients}
+The measured ratios give
+\begin{align}
+\alpha^2+\beta^2&=@@X_DC_EXPR@@=@@X_DC@@,\\
+2\alpha\beta&=@@X_AC_EXPR@@=@@X_AC@@,\\
+\gamma^2+\delta^2&=@@Y_DC_EXPR@@=@@Y_DC@@,\\
+2\gamma\delta&=@@Y_AC_EXPR@@=@@Y_AC@@.
+\end{align}
+Consequently, still keeping input amplitudes independent,
+\begin{equation}
+I_E=a_x^2(@@X_DC@@-@@X_AC@@\cos\phi_2)
++a_y^2(@@Y_DC@@+@@Y_AC@@\cos\phi_2).
+\end{equation}
+For the requested equal-input test, set $a_x=a_y=1$:
+\begin{align}
+I_E&=(@@X_DC@@+@@Y_DC@@)
++(@@Y_AC@@-@@X_AC@@)\cos\phi_2\\
+&=\boxed{@@MEAN@@+@@COSINE@@\cos\phi_2}.
+\end{align}
+\textbf{The key cancellation:} each polarization separately has a strong
+fringe, with cosine coefficients near $0.5$, but opposite signs. The detector
+adds their powers. Their small mismatch, not either large fringe by itself,
+is the remaining total-power fringe.
+
+\subsection{Derive the complementary output, rather than assume it}
+Write $h=t_{1x}r_{2x}$, $j=r_{1x}t_{2x}$,
+$k=t_{1y}t_{2y}$ and $\ell=r_{1y}r_{2y}$. The explicit F field gives
+\begin{equation}
+I_F=a_x^2[h^2+j^2+2hj\cos\phi_2]
++a_y^2[k^2+\ell^2-2k\ell\cos\phi_2].
+\end{equation}
+Since $hj=\alpha\beta$, $k\ell=\gamma\delta$, and
+$t_{kp}^2+r_{kp}^2=1$, the cosine terms cancel in $I_E+I_F$ and the constant
+terms sum to $a_x^2+a_y^2$. Hence
+\[
+I_F=a_x^2+a_y^2-I_E
+\quad\xrightarrow{a_x=a_y=1}\quad
+\boxed{I_F=@@FMEAN@@-@@COSINE@@\cos\phi_2=2-I_E.}
+\]
+These intensities are relative: input power is 2, not 2 watts or 2 microwatts.
+We did not use the observed A/B total-power difference to change the equal-input
+assumption. No absolute output power is claimed without an input reference.
+
+\section{Why this is a visibility of 0.34 percent}
+For $I=A+B\cos\phi$, extrema over a full phase cycle are
+$I_{\max}=A+|B|$ and $I_{\min}=A-|B|$. The standard fringe visibility is
+\begin{equation}
+\boxed{V=\frac{I_{\max}-I_{\min}}{I_{\max}+I_{\min}}
+=\frac{(A+|B|)-(A-|B|)}{(A+|B|)+(A-|B|)}
+=\frac{2|B|}{2A}=\frac{|B|}{A}.}
+\end{equation}
+For E, substitution gives
+\begin{align*}
+I_{\max}&=@@MEAN@@+@@COSINE@@=@@IMAX@@,\\
+I_{\min}&=@@MEAN@@-@@COSINE@@=@@IMIN@@,\\
+V_E&=\frac{@@IMAX@@-@@IMIN@@}{@@IMAX@@+@@IMIN@@}
+=\frac{@@COSINE@@}{@@MEAN@@}
+=@@VE@@=\boxed{@@VE_PERCENT@@\%}.
+\end{align*}
+Peak-to-peak modulation divided by the mean is $2V=@@PTP@@\%$;
+this is a different convention from visibility. For F, $V_F=@@VF@@$, or
+$@@VF_PERCENT@@\%$. A value $V=0.6$ is \emph{60 percent}, not 0.6 percent.
+It implies $I_{\max}/I_{\min}=(1+V)/(1-V)=4$, whereas the model gives
+$I_{\max}/I_{\min}=@@MAXMIN@@$ at E. These are nowhere near agreement.
+At the same mean $A_E$, $V=0.6$ would require a cosine amplitude $0.6A_E
+=@@NEEDED@@$, compared with the calculated $@@COSINE@@$.
+
+If the experimental ``contrast'' uses a different normalization, subtracts a
+background, or selects one polarization with an analyzer, compare matching
+observables before interpreting the discrepancy. Under the stated total-power
+visibility definition, the measured splitter ratios alone do not explain
+$V\simeq0.6$. No historical fitted retarder is reinstated to make them do so.
+
+\section{Carry the same coefficients into Stokes and polarization}
+We use the repository convention, including its S3 sign:
+\[
+S_0=|E_x|^2+|E_y|^2,\quad S_1=|E_y|^2-|E_x|^2,\quad
+S_2=2\Re(E_xE_y^*),\quad S_3=2\Im(E_xE_y^*),\quad s_n=S_n/S_0.
+\]
+From the powers already derived,
+\begin{equation}
+S_{1,E}=a_y^2(\gamma^2+\delta^2+2\gamma\delta\cos\phi_2)
+-a_x^2(\alpha^2+\beta^2-2\alpha\beta\cos\phi_2).
+\end{equation}
+For the other two components, explicitly multiply the cross term:
+\begin{align}
+E_xE_y^*&=-\ii a_xa_y\ee^{\ii\phi_1}
+(\alpha q-\beta)(\gamma q^*+\delta)\\
+&=-\ii a_xa_y\ee^{\ii\phi_1}
+[\alpha\gamma-\beta\delta+\alpha\delta q-\beta\gamma q^*].
+\end{align}
+Define the real coefficient functions
+\[
+u_E=\alpha\gamma-\beta\delta+(\alpha\delta-\beta\gamma)\cos\phi_2,
+\qquad v_E=(\alpha\delta+\beta\gamma)\sin\phi_2.
+\]
+Then $E_xE_y^*=a_xa_y\ee^{\ii\phi_1}(v_E-\ii u_E)$, so taking real and
+imaginary parts yields
+\begin{align}
+S_{2,E}&=2a_xa_y(v_E\cos\phi_1+u_E\sin\phi_1),\\
+S_{3,E}&=2a_xa_y(v_E\sin\phi_1-u_E\cos\phi_1).
+\end{align}
+With the measured coefficients and equal input,
+\begin{align*}
+u_E&=@@U0@@+@@UC@@\cos\phi_2, &v_E&=@@VS@@\sin\phi_2,\\
+S_{0,E}&=@@MEAN@@+@@COSINE@@\cos\phi_2, &
+S_{1,E}&=@@S1DC@@+@@S1AC@@\cos\phi_2.
+\end{align*}
+Divide \emph{each} $S_{1,E},S_{2,E},S_{3,E}$ by the same actual $S_{0,E}$ to
+obtain the plotted normalized Stokes parameters. There is no per-curve
+amplitude rescaling.
+
+For F the same expansion, with the $h,j,k,\ell$ above, gives
+\begin{align*}
+S_{1,F}&=a_y^2(k^2+\ell^2-2k\ell\cos\phi_2)
+-a_x^2(h^2+j^2+2hj\cos\phi_2),\\
+u_F&=jk-h\ell+(hk-j\ell)\cos\phi_2,\qquad
+v_F=(hk+j\ell)\sin\phi_2,\\
+S_{2,F}&=-2a_xa_y(v_F\cos\phi_1+u_F\sin\phi_1),\\
+S_{3,F}&=2a_xa_y(u_F\cos\phi_1-v_F\sin\phi_1),\qquad
+s_{n,F}=S_{n,F}/I_F.
+\end{align*}
+The Jones states remain pure, $s_1^2+s_2^2+s_3^2=1$. In this convention,
+$s_3=0$ is linear polarization, $|s_3|=1$ is circular, and intermediate values
+are elliptical. Ellipse orientation and ellipticity can be written
+$\theta=\tfrac12\operatorname{atan2}(s_2,s_1)$ and
+$\eta=\tfrac12\arcsin(s_3)$ using the repository's basis convention. Poincare
+angular distance compares two Stokes vectors; it is not directly an ellipse
+orientation angle.
+
+\subsection{Recover the ideal model as a check}
+When all $t=r=1/\sqrt2$, the four E products are
+$\alpha=\beta=\gamma=\delta=1/2$. For equal input,
+\[
+I_E=I_F=1,\qquad
+\mathbf s_E=(\cos\phi_2,\ \sin\phi_2\cos\phi_1,\ \sin\phi_2\sin\phi_1),
+\qquad \mathbf s_F=-\mathbf s_E.
+\]
+The intensity terms cancel exactly while the polarization still moves. The
+measured coefficients perturb both cancellation and polarization motion;
+small total-power contrast does not imply an unchanged polarization state.
+
+\section{D-side cross-check and the plotted comparison}
+Repeat the same derivation, replacing only the NPBS2 transmission fractions by
+$\mathcal T_{2x}=@@DTX@@$ and $\mathcal T_{2y}=@@DTY@@$. Then
+\[
+I_E=@@DMEAN@@+@@DCOS@@\cos\phi_2,\qquad V_E=@@DVE@@\%.
+\]
+This is a separate direct-calibration completion, not a fit or an uncertainty
+bound. Both versions predict about 0.34 percent visibility. The maximum sampled
+Poincare displacement from ideal is about 10.9--11.3 degrees at E and
+4.0--4.5 degrees at F. Missing measured phases, uncertainty and full input-state
+characterization prevent either version from being a complete identified
+physical model. They do suffice for the explicitly restricted splitter-only test.
+
+The figures compare identical phase settings across all cases. Top rows show
+actual output intensity, followed by normalized Stokes. The intensity axis is
+zoomed near 1; the small plotted ripple is not a large absolute modulation.
+\clearpage\begin{center}\includegraphics[width=\linewidth,height=.91\textheight,keepaspectratio]{comparison-E.pdf}\end{center}
+\clearpage\begin{center}\includegraphics[width=\linewidth,height=.91\textheight,keepaspectratio]{comparison-F.pdf}\end{center}
+\clearpage\begin{center}\includegraphics[width=\linewidth,height=.91\textheight,keepaspectratio]{deviation.pdf}\end{center}
+\end{document}

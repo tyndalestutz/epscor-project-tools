@@ -160,3 +160,47 @@ runner describes the coherent Jones baseline; `acquire.py predict` applies the
 explicit detector model. Full diffraction, spectral averaging and spatially
 varying polarization are outside this extension. The directory spelling
 `field_propogation` is retained for existing imports.
+
+## Isolate the measured splitter ratios
+
+```bash
+python python/field_propogation/splitter_study.py
+```
+
+Reads the 2026-09-16 direct-meter route powers from the compact campaign. Keeps
+ax=ay=1 and all other optics ideal. Generates one comparison PDF and reusable
+flow/parameter files for the shared runner, with ideal and two measured-ratio
+cases. The two cases use NPBS2 C-input or D-input measurements separately;
+no averaging, fitted phases or unmeasured loss is introduced. Reflection phase
+and reciprocal lossless completion remain explicit ideal assumptions. Output
+ratios are conditional collected split fractions, not absolute transmissions.
+
+The C/D readings are slightly inconsistent with one exact lossless matrix;
+showing both completions preserves that ambiguity. The model assumes the ideal
+PBS assigns A to x and B to y. It does not claim these power readings measured
+the complete H/V complex splitter matrices. Generated reports remain ignored
+by Git; the script and campaign are the reproducible sources.
+
+## Temporary fiber probes and spatial mismatch
+
+```bash
+python python/field_propogation/spatial_study.py
+```
+
+Edit one [spatial scenario file](configs/parameters/spatial_coupling_study.json).
+It currently uses the illustrative 50%/40% coupling example, not new experimental
+readings. Temporary steering mirrors and fibers are removed from the operating
+path, so their efficiencies are not inserted as arm losses. The study compares
+two equal-waist Gaussian geometries consistent with the same probe powers,
+then sweeps a relative C/D angular phase ramp without fitting anything.
+
+The generated `spatial-derivation.pdf` carries spatial overlaps through Jones
+fields, integrated coherency/Stokes, degree of polarization and fringe
+visibility, with measured-splitter and ideal-splitter comparisons. All outputs
+remain under ignored dated experiment folders. The settings file labels the
+unknown fixed-probe alignment, common throughput and unmeasured geometry.
+Measurements through different temporary probe fibers cannot be multiplied
+as serial losses; use independent relay calibration and isolated-route data.
+
+[Local report requirements](AGENTS.md) preserve the requested symbolic-first,
+numerical-substitution-afterward PDF format for future studies.

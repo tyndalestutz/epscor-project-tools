@@ -145,3 +145,41 @@ def reconstruct_jones(states: dict[str, np.ndarray], tolerance: float) -> tuple[
             raise ConfigurationError(f'{label} response disagrees with the reconstructed section Jones matrix')
     return matrix, dict(relative_phase_rad=float(phase), singular_values=singular.tolist(), validation_errors=errors,
                         global_phase='unmeasured; reference gauge here, physical inter-arm phase remains in phase offsets')
+
+
+def path_power_summary(powers_uw: dict[str, float]) -> dict:
+    """Descriptive isolated-route power ratios; not a splitter/Jones calibration.
+
+    Ratios use collected output sums because input reference powers are absent.
+    Downstream ratios include section transmission and collection, not just NPBS2.
+    Interpretation requires route isolation and a stable source/alignment.
+    """
+    required = {'AC', 'AD', 'BC', 'BD', 'ACE', 'ACF', 'ADE', 'ADF',
+                'BCE', 'BCF', 'BDE', 'BDF'}
+    if set(powers_uw) != required or any(type(v) not in (int, float) or not np.isfinite(v) or v <= 0
+                                       for v in powers_uw.values()):
+        raise ConfigurationError('Supply all twelve positive, finite route powers in uW')
+    first, second, totals = {}, {}, {}
+    for source in ('A', 'B'):
+        c, d = powers_uw[source+'C'], powers_uw[source+'D']
+        first[source] = dict(collected_sum_uw=c+d, c_fraction=c/(c+d), d_fraction=d/(c+d),
+                             transmitted_fraction=(c if source=='A' else d)/(c+d))
+        e_sum = f_sum = 0.0
+        for branch in ('C', 'D'):
+            route = source + branch
+            e, f = powers_uw[route+'E'], powers_uw[route+'F']
+            first_power = powers_uw[route]
+            second[route] = dict(e_uw=e, f_uw=f, collected_sum_uw=e+f,
+                                transmitted_fraction=(e if branch=='C' else f)/(e+f),
+                                downstream_collected_ratio=(e+f)/first_power,
+                                effective_e_power_ratio=e/first_power,
+                                effective_f_power_ratio=f/first_power)
+            e_sum += e
+            f_sum += f
+        totals[source] = dict(sum_isolated_e_uw=e_sum, sum_isolated_f_uw=f_sum,
+                              sum_isolated_outputs_uw=e_sum+f_sum)
+    return dict(npbs1_collected_splits=first, downstream_routes=second, incoherent_route_sums=totals,
+                interpretation='Single-reading descriptive ratios; no uncertainty supplied. Requires stable source and isolated routes. '
+                'Output-normalized splits are not absolute transmissions. Downstream ratios include intervening optics. '
+                'Sums of isolated-route powers are not predictions for coherently recombined open paths. '
+                'No phases, Jones matrices, or independent H/V splitter coefficients are identified.')

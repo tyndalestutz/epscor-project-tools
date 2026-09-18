@@ -12,6 +12,30 @@ from .configuration import ConfigurationError, numeric
 from .observables import STOKES_MATRICES
 
 
+def gaussian_mode_overlaps(displacements, tilts) -> tuple[np.ndarray, np.ndarray]:
+    """Normalized equal-waist 2D Gaussian modes, specified without choosing w.
+
+    Each row of displacements is (dx/w, dy/w). Each tilt is (kx*w, ky*w),
+    where the phase ramp is exp(i*kx*x+i*ky*y). All modes share the same waist
+    and curvature plane. Return G_ab=<u_a,u_b> and h_a=<u_0,u_a> for a centered,
+    untilted Gaussian reference. A physical tilt angle is kx/k in the paraxial
+    limit. These are scenario geometries, not a unique inversion of probe powers.
+    """
+    d, q = np.asarray(displacements, dtype=float), np.asarray(tilts, dtype=float)
+    if d.ndim != 2 or d.shape[1] != 2 or q.shape != d.shape or not len(d):
+        raise ConfigurationError('Gaussian displacements and tilts must be matching nonempty N by 2 arrays')
+    if not np.isfinite(d).all() or not np.isfinite(q).all():
+        raise ConfigurationError('Gaussian geometry must be finite')
+    delta_d = d[None, :, :] - d[:, None, :]
+    delta_q = q[None, :, :] - q[:, None, :]
+    midpoint = (d[None, :, :] + d[:, None, :]) / 2
+    gram = np.exp(-np.sum(delta_d**2, axis=-1)/2 - np.sum(delta_q**2, axis=-1)/8
+                  + 1j*np.sum(delta_q*midpoint, axis=-1))
+    projection = np.exp(-np.sum(d**2, axis=-1)/2 - np.sum(q**2, axis=-1)/8
+                        + .5j*np.sum(q*d, axis=-1))
+    return checked_gram(gram, len(d)), projection
+
+
 def checked_gram(values, count: int) -> np.ndarray:
     matrix = np.array([[numeric(v) for v in row] for row in values], dtype=complex)
     if matrix.shape != (count, count) or not np.isfinite(matrix).all() or not np.allclose(matrix, matrix.conj().T, atol=1e-12, rtol=0):

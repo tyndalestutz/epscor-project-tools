@@ -48,11 +48,11 @@ The repository uses
 
 \[
  S_0=|E_x|^2+|E_y|^2,\quad S_1=|E_y|^2-|E_x|^2,\quad
- S_2=2\Re(E_x^*E_y),\quad S_3=2\Im(E_x^*E_y).
+ S_2=2\Re(E_x^*E_y),\quad S_3=2\Im(E_x E_y^*).
 \]
 
 Thus H=(1,0) has s1=-1; V=(0,1) has s1=+1; D=(1,1)/√2 has
-s2=+1; the label R here means the vector (1,i)/√2 and has s3=+1.
+s2=+1; the label R here means the vector (1,i)/√2 and has s3=-1.
 Check these against actual instrument signs and every reflection's coordinate
 basis. Do not rely on the name “right circular” alone. Here s_j=S_j/S0,
 and DOP is a fraction, not percent. Angle-derived unit Stokes cannot substitute

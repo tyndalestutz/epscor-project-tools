@@ -82,7 +82,10 @@ def initialize(path: Path) -> None:
 def read_section(path: Path, name: str):
     """Read the compact campaign; retain support for existing split campaigns."""
     if (path / 'campaign.json').exists():
-        return read_json(path / 'campaign.json')[name]
+        campaign = read_json(path / 'campaign.json')
+        if name not in campaign:
+            raise ConfigurationError(f'Campaign has no {name} section yet')
+        return campaign[name]
     return read_json(path / (name + '.json'))
 
 
