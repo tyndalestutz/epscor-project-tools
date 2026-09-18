@@ -1,0 +1,10 @@
+numpy
+matplotlib
+# Hardware access (use the established bench environment for instrument drivers).
+pyrpl
+yaqc
+yaqd-core
+yaqd-thorlabs
+pyvisa
+pyvisa-py
+pyusb

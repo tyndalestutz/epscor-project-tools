@@ -1,120 +1,163 @@
-# Polarization rough-alignment test framework
+# Polarization diagnostics
 
-This package tests the open-loop voltage model and a conservative, logged PID
-experiment before any production stabilization is introduced. Its control path is:
+A bench diagnostics suite with 23 numbered tests, editable defaults,
+JSON recipes, and one folder per run. Start from the repository root:
 
-`PAX theta/eta -> Stokes -> hybrid-MZ u/v -> phase increment -> RP command`
+```bash
+python python/polarization_locking/lock.py
+```
 
-## Coordinate convention
+Use your instrument Python environment for hardware runs (currently `jl-env`).
+Browsing, editing, saving recipes, `--list`, and `--show` need only Python 3.10+.
+Hardware/report dependencies are in `requirements.txt`; the optional live sphere
+also needs `pyvista` and `pyvistaqt`. The bundled PAX daemon configuration is
+[hardware/pax1000.toml](hardware/pax1000.toml); edit its serial number for another PAX.
 
-The PAX reports polarization-ellipse angles `(theta, eta)`. They are converted
-to normalized Stokes coordinates:
+1. Enter a test number or its name to see its purpose, required optical setup,
+   run options, and acquisition parameters.
+2. Choose **r** to run with those values, or **e** to edit selected parameters by
+   number/name. Enter keeps a value; **b** cancels or goes back. **all** exposes
+   every configuration field. Numeric arrays use JSON, e.g. `[0.2, 0.1]`;
+   booleans use `true`/`false`; nullable values accept `null`.
+3. **s** saves a recipe; **l** loads one. Edits survive Back and repeat runs in
+   the current session and are independent per test. Save to retain them after
+quitting. **d** restores that test's defaults.
+4. **b** returns to the list; **q** quits. Ctrl+C cancels an edit or stops a run.
+   During manual beam-block/setup prompts, **b** cancels the run.
 
-`S = (cos(2eta) cos(2theta), cos(2eta) sin(2theta), sin(2eta))`.
+Only Run connects instruments. A run initializes RP outputs to zero and attempts
+to return them to zero on completion, cancellation, or failure. Connection and
+acquisition failures return to the menu with an error; cleanup failure closes the
+menu and reports that the outputs need checking. The PAX monitor is continuous
+until Ctrl+C. Duration on path comparisons means **per path condition**.
 
-The hybrid-MZ coordinates use S1 as the polar axis:
+Repeat a recipe without re-entering parameters:
 
-`u = atan2(S3, S2)`
+```bash
+python python/polarization_locking/lock.py --list
+python python/polarization_locking/lock.py --show sweep
+python python/polarization_locking/lock.py --profile path/to/recipe.json --dry-run
+python python/polarization_locking/lock.py --profile path/to/recipe.json
+# Explicit hardware execution:
+python python/polarization_locking/lock.py --profile path/to/recipe.json --run sweep
+```
 
-`v = acos(S1)`.
+The equivalent package entry point is `PYTHONPATH=python python -m polarization_locking`.
+An editable minimal recipe is provided in [profiles/sweep-example.json](profiles/sweep-example.json).
+`--dry-run` prints and validates a recipe without hardware access. It does not
+simulate PAX measurements. Each run creates `experiments/polarization_locking/YYYY-MM-DD/time_test_label/`
+(or an explicitly edited `results_directory`) with:
 
-For the current ideal hybrid-MZ model, `u = phi1 + pi` and `v = phi2`; hence
-the controller uses `d_phi1 = wrap(u_target - u_measured)` and
-`d_phi2 = v_target - v_measured`.
+- `recipe.json`: complete input configuration and test options, loadable for replay.
+- `run.json`: status, timestamps, code fingerprint, Python version, required setup,
+  effective configuration including a captured target, and any failure.
+- `data.csv`: readings, including partial data if interrupted; the one-shot rough
+  move instead records its measurements in `console.log`.
+- `console.log` and **`report.pdf` for every test**, including stopped monitors and
+  interrupted scans. Reports contain a run summary, the existing specialized plots
+  where available, raw telemetry, and active parameter tables. Incomplete scans
+  retain a PDF with raw data even when a specialized fit cannot be calculated.
+  `report_status` and any plotting failure are recorded separately in `run.json`.
 
-## Voltage chain
+Recipes reproduce commands and settings, not the bench's physical state. With
+`target_mode=current`, each run captures a new target through the DOP gate. Use
+`target_mode=explicit` and set `target_u`/`target_v` in radians to repeat a fixed
+target; a captured target is recorded in `run.json`. Existing PI diagnostic loops
+retain their historical behavior of logging DOP without gating feedback.
 
-`phi1_v_lambda = 12.2 V` (current candidate) and `phi2_v_lambda = 30 V` are actuator-side voltages
-for a 2pi phase shift. The RP command increments are:
+The current bench note records **PAX in front of NPBS 1 at C**, the chain
+**RP → Thorlabs MDT690 → piezo**, and an **expected Vπ ≈ 13 V at the terminals**.
+This is an expectation, not a measured calibration. RP commands stay within
+**0–1 V**. `phi*_v_lambda` is terminal voltage for **2π**, so a 13 V Vπ would imply
+26 V Vλ. The historical gains 16.875 and 150 terminal V / RP command V and old
+Vλ candidates remain editable; they have not been established for this hookup.
+The suite does not infer MDT690 gain from its model name or silently replace an
+existing calibration. Check the actual channel and transfer gain before a new
+scan. D-port tests explicitly require a different PAX location.
 
-`dV_RP1 = 12.2 * d_phi1 / (2pi * 16.875)`
+The explicit-range **Single-axis voltage sweep** now exposes start, stop, point
+count, repeats, and settling time. It is a data collector, not a Vπ fit. The
+existing **D-port phi1 step map** retains its D-port-specific interpretation.
+For direct calibration without fits, use the dedicated raw acquisition command:
 
-`dV_RP2 = 30 * d_phi2 / (2pi * 150)`.
+```bash
+PYTHONPATH=python python -m polarization_locking.raw_calibration --stop 0.8 --step 0.02 --repeats 3 --settle 1 --samples 5 --label repeatability
+PYTHONPATH=python python -m polarization_locking.raw_calibration --hold-voltage 0.4 --hold-points 30 --samples 10 --label fixed-voltage
+```
 
-The configured chains are OUT1 -> phi1 with gain `16.875` actuator V/RP command
-V, and OUT2 -> phi2 with gain `150`. RP commands are constrained to 0–1 V.
+Use `--pax-location` and `--input-connections` to record the actual wiring.
+`--levels 0,0.2,0.3,0.35,0.4,0.6,0.8` supplies an explicit ascending grid;
+the command also visits it in reverse. All voltages are RP commands within 0–1 V.
+Each run saves `data.csv`, exact PAX records in `pax_raw.jsonl`, command/register
+readbacks in `commands.jsonl`, full scope snapshots in one `scope.npz`, active settings
+in `run.json`, and a PDF in the dated experiments folder. Fixed-voltage mode
+writes the command once and observes successive blocks without rewriting it.
+During acquisition, snapshots are written incrementally; on exit they are packed
+into the single archive and verified byte for byte before the temporary snapshots
+are removed. Archive keys preserve the original point and array names, for example
+`0000/samples`, `0000/analog_in1_samples` and `cleanup-zero/samples`.
 
-## Scripts
+The report shows every measurement and discrete π-change brackets from labelled
+step medians, with wider brackets including the observed endpoint sample spread.
+There are no fits, interpolated crossings, drift corrections, or assumed driver
+gains. `atan2(S3, -S2)` is a projected equatorial phase; if S1 departs from zero,
+its π-change is not an independent calibration of actuator retardance.
+Internal OUT1 scope traces establish the digital pre-DAC signal, not an electrical
+measurement of the RP BNC or piezo terminals. A verified electrical monitor is
+needed to complete that voltage-chain mapping.
 
-[Offline bench diagnostics](analysis/README.md) contains the first-NPBS and
-phi1-step analysis scripts invoked by the lock CLI.
-[Jones models and independent measurement acquisition](../field_propogation/README.md) live in
-`../field_propogation/`; old fitted-data workflows are archived in its
-`archive/effective_fits/` folder. Start new physical characterization with its
-[measurement protocol](../field_propogation/docs/measurement_acquisition.md).
+Regenerate these raw reports with their dedicated, fit-free report command:
 
-- `lock.py`: interactive one-shot rough move and live PAX monitor. Targets are
-  entered directly as `u v`; it includes a bounded PID test mode. Every command
-  that records data creates a dated experiment folder containing `data.csv` and,
-  when requested with the final `pdf` token, `report.pdf`. Use `live` for
-  console-only monitoring or `live <label>` to log raw PAX data and converted
-  `u,v` into its own folder.
-- `calibration.py`: reusable one-axis sweep collector that writes raw PAX,
-  Stokes, DOP, and converted `u,v` data to CSV. It also supports cross-sweeps
-  and forward/reverse sweeps that hold one phase at a fixed bias.
-- `control.py`: coordinate conversion and voltage-chain math only.
-- `pax_interface.py` and `rp_interface.py`: instrument wrappers with DOP and
-  0–1 V safety checks.
-- `test_control.py`: offline coordinate and voltage-chain tests.
-- `plot_pid_tests.py`: creates a multi-page PDF report from PID-test CSVs,
-  including target tracking, errors, actuator commands, PI state, DOP, and
-  phase-period recenter events.
+```bash
+PYTHONPATH=python python -m polarization_locking.reports.raw_calibration experiments/polarization_locking/YYYY-MM-DD/raw-run-folder
+```
 
-## Hardware test sequence
+On the installed FPGA, the PyRPL `scope.voltage_out1/2` properties address trigger
+timestamp registers, so this collector does not use them. It captures the scope
+with an explicitly selected `out1` source instead. Similarly, scope register
+inputs follow the selected source; physical IN1/IN2 are recorded only after
+explicitly routing those sources. Earlier connection probes carry validity notes
+in their `run.json`; do not treat their invalid register fields as voltages.
 
-1. Run `live` and confirm high, stable DOP at the operating point.
-2. Run `sweep phi1 phi1.csv`. A 0.01 V RP command step predicts roughly
-   0.0964 rad of azimuthal (`u`) motion.
-3. Run `sweep phi2 phi2.csv`. A 0.01 V RP command step predicts roughly
-   0.3142 rad of polar (`v`) motion while staying on one canonical branch.
-4. Run `cross-sweep phi1 phi1-cross pdf` and `cross-sweep phi2 phi2-cross pdf`.
-   Each scan covers one V_lambda of the selected phase axis: 0–0.7230 V RP
-   command for phi1 and 0–0.2000 V for phi2. For each full fine sweep, the
-   other axis steps through eleven equally spaced biases spanning its own full
-   V_lambda (ten intervals, including zero and one V_lambda). Append `pdf` to
-   any sweep, diagnostic, or PID test command to automatically create a report
-   beside its CSV in the same dated run folder.
-5. Inspect the CSVs for the dominant predicted axis and cross-coupling. Confirm
-   polarity and effective Vlambda before attempting a target move.
-6. Run `bidirectional-sweep phi1 phi1-hysteresis.csv` and
-   `bidirectional-sweep phi2 phi2-hysteresis.csv`. They cover one V_lambda in
-   both directions with a 0.5 s dwell, holding phi2=0.1 V for phi1 and
-   phi1=0.2 V for phi2. The CSV `direction` column identifies the branch.
-7. Run `diagnostic-suite static-diagnostic.csv` to record 60-second PAX holds
-   at baseline and at 0, 1/4, 1/2, 3/4, and 1 V_lambda for each phase. It
-   records the commanded RP outputs alongside every PAX reading, so stable
-   state-dependent DOP can be separated from motion artifacts. The default
-   suite takes about 11.5 minutes including 3-second settling at each state.
-8. Run `intensity-diagnostic final-port-amplitude pdf` with the final-output
-   photodiode connected to Red Pitaya `in1`. It independently sweeps phi1 with
-   phi2=0 and phi2 with phi1=0, logging PD mean/noise and PAX Stokes/DOP at
-   every point. The PD arm's OD 2.0 filter is recorded and corrected as a
-   100x pre-filter-equivalent PD signal; PAX `ptotal` is logged separately.
-   Its report directly plots final-port amplitude and DOP correlation,
-   providing a check of the equal-amplitude assumption behind the ideal
-   hybrid-MZ model.
-9. Set a target with `set <u> <v>` (or create one with `capture`), then issue
-   `rough`. It performs one measure -> move -> settle -> verify operation.
-10. For a bounded feedback experiment, set a target and run
-   `pid-test 120 pid-test.csv`. It seeds both outputs at mid-range, performs
-   one 70%-scaled rough correction, then applies conservative incremental PI
-   corrections for 120 seconds. The CSV includes every error, integral,
-   correction, output, saturation flag, and raw PAX reading for gain tuning.
-   If an actuator is rail-limited with a substantial remaining error, the test
-   can recenter it by one V_lambda (recorded as `pid-recenter`) to regain
-   headroom without changing the ideal phase state.
-   With the current raw-DOP issue, use `capture-unchecked` to capture the
-   present angular target for this diagnostic experiment; ordinary `capture`
-   and `rough` still retain their DOP safety gate.
-11. Use `pid-live 600 pid-live.csv` for the same PID test with the PyVista
-    Poincare sphere. The visualizer receives the PID loop's PAX readings—it
-    never opens a second PAX client. Cyan marks the target, red marks the live
-    state and trace; move the `u`/`v` sliders or use J/L and I/K while locking
-    to change the target, R to clear the trace, and Q to stop.
-    The live renderer is decoupled from control sampling so rendering cannot
-    throttle the feedback loop. The PAX daemon configuration uses an 80 Hz
-    waveplate velocity; restart the daemon after changing `pax1000.toml`.
+Code organization is intentionally small:
 
-Avoid using a target at an S1 pole during the first test: phi1 azimuth is
-unobservable there, so a PAX reading alone cannot identify the absolute phi1
-phase required to leave that pole.
+| Location | Responsibility |
+|---|---|
+| `cli.py`, `catalog.py` | Menu, test descriptions, relevant settings, dispatch metadata |
+| `settings.py`, `config.py` | JSON recipes, type/range validation, defaults |
+| `runner.py`, `app.py`, `control.py` | Run lifecycle, instrument session, coordinate math |
+| `routines/` | Sweep collection, diagnostics, feedback experiments |
+| `hardware/` | RP/PAX adapters and local PAX daemon/configuration |
+| `analysis/`, `reports/` | Offline analysis and plots |
+| `profiles/` | Saved recipes; generated runs live under `experiments/polarization_locking/` |
+| `tests/` | Automated software tests; never connect to hardware |
+| `docs/` | Historical bench notes and checkpoint report source |
+
+To add a bench test, implement its method in `routines/`, add parameters to
+`PolarizationLockConfig`, and add one `TestCase` to `catalog.py`. `groups` controls
+which configuration prefixes appear on its detail page; shared connection and
+voltage-chain settings always appear. The runner handles saving and cleanup.
+
+Run the offline regression suite:
+
+```bash
+python -m pip install -r python/polarization_locking/requirements-dev.txt
+python -m pytest python/polarization_locking/tests
+```
+
+Tests cover navigation, editing/defaults, JSON round trips, dispatch of every bench
+test, cancellation, invalid voltages, connection failures, reports, and cleanup.
+Both historical and new data live in dated folders under `experiments/polarization_locking/`.
+Recipes using the temporary suite-local `results/` default are migrated on load.
+PDF output is mandatory; legacy `report=none` becomes `pdf`, and `png` becomes
+`both`. Tests with PNG support can request both formats. Historical command syntax is replaced by the menu;
+`lock.py` remains a launch shim. Imports move from `pax_interface`/`rp_interface`
+to `hardware.*`, `calibration` to `routines.calibration`, and plots to `reports.*`.
+See [historical bench notes](docs/bench_reference.md) for coordinate conventions
+and prior experiments, and [offline analysis](analysis/README.md) for report tools.
+
+Regenerate a report from an existing run, without connecting instruments:
+
+```bash
+PYTHONPATH=python python -m polarization_locking.reports.run_report experiments/polarization_locking/YYYY-MM-DD/run-folder
+```

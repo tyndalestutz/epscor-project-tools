@@ -23,11 +23,9 @@ def _values(rows: list[dict[str, str]], key: str) -> np.ndarray:
     return np.asarray([float(row[key]) for row in rows], dtype=float)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("csv", type=Path)
-    parser.add_argument("--format", choices=("png", "pdf", "both"), default="png")
-    args = parser.parse_args()
+def create_report(csv_file: Path, output_format: str = "pdf", document=None) -> None:
+    from types import SimpleNamespace
+    args = SimpleNamespace(csv=Path(csv_file), format=output_format)
     with args.csv.open(newline="") as handle:
         rows = list(csv.DictReader(handle))
     required = {"condition", "elapsed_s", "s1", "s2", "s3", "dop", "pax_ptotal"}
@@ -84,11 +82,21 @@ def main() -> None:
     fig.suptitle("First-NPBS D-port A/B isolation — both RP outputs held at zero")
     if args.format in {"png", "both"}:
         fig.savefig(output / "d-port-isolation-analysis.png", dpi=180)
-    if args.format in {"pdf", "both"}:
+    if document is not None:
+        document.savefig(fig)
+    elif args.format in {"pdf", "both"}:
         with PdfPages(output / "d-port-isolation-report.pdf") as pdf:
             pdf.savefig(fig)
     plt.close(fig)
     print(f"Wrote D-port isolation analysis to {output}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("csv", type=Path)
+    parser.add_argument("--format", choices=("png", "pdf", "both"), default="pdf")
+    args = parser.parse_args()
+    create_report(args.csv, args.format)
 
 
 if __name__ == "__main__":

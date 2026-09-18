@@ -1,0 +1,16 @@
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+First-NPBS D-port polarization test
+  Connect and align the PAX at D: the REFLECTED output of the first NPBS, before the phi2/C arm and final NPBS.
+  Static: phi1=phi2=0 for 60 s.
+  Driven: OUT1/phi1 sine = 0.3615 +/- 0.3615 RP V (0..one V_lambda) at 0.50 Hz for 60 s; OUT2/phi2 remains 0.
+Ideal D prediction: S1=0 and (S2,S3)=(-sin(phi1+delta), cos(phi1+delta)); the unknown static delta rotates this equator but does not change its shape.
+When the PAX is aligned at D and stable, press Enter to begin. [Enter = ready, b = cancel] First-NPBS D-port test saved to /home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/results/2026-09-18/191733_first-npbs-d-test_first-npbs-d-test/data.csv

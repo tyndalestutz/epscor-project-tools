@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "test": "sweep",
+  "options": {"label": "sweep-example", "axis": "phi1", "report": "pdf"},
+  "config": {
+    "sweep_start_rp_v": 0.0,
+    "sweep_stop_rp_v": 0.1,
+    "sweep_points": 11,
+    "sweep_repeats": 1,
+    "sweep_settle_s": 1.0
+  }
+}

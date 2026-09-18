@@ -40,10 +40,9 @@ def _fit_sine(time: np.ndarray, signal: np.ndarray, frequency_hz: float) -> tupl
                     "r_squared": float(1 - np.sum((signal - fitted) ** 2) / variance) if variance else float("nan")}
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("csv", type=Path); parser.add_argument("--format", choices=("png", "pdf", "both"), default="png")
-    args = parser.parse_args()
+def create_report(csv_file: Path, output_format: str = "pdf", document=None) -> None:
+    from types import SimpleNamespace
+    args = SimpleNamespace(csv=Path(csv_file), format=output_format)
     with args.csv.open(newline="") as handle: rows = list(csv.DictReader(handle))
     required = {"stage", "elapsed_s", "phi1_rp_command_estimated_v", "phi1_ideal_rad", "sine_frequency_hz", "pd_mean_v", "pax_ptotal", "s1", "s2", "s3", "dop"}
     if not rows or not required.issubset(rows[0]): raise ValueError("Expected d-polarizer-phi1-test data.csv")
@@ -101,10 +100,19 @@ def main() -> None:
     axes[1, 1].legend(fontsize=8)
     fig.suptitle(f"Phi1 authority test — C-arm polarizer, raw PAX at D, final-F PD; drive = {frequency:.3f} Hz")
     if args.format in {"png", "both"}: fig.savefig(out / "c-polarizer-phi1-analysis.png", dpi=180)
-    if args.format in {"pdf", "both"}:
+    if document is not None:
+        document.savefig(fig)
+    elif args.format in {"pdf", "both"}:
         with PdfPages(out / "c-polarizer-phi1-report.pdf") as pdf: pdf.savefig(fig)
     plt.close(fig)
     print(f"Wrote C-polarizer / D-port time-domain analysis to {out}")
     print(f"PD-F: contrast={pd_metrics['contrast']:.3f}, R2={pd_metrics['r_squared']:.3f}; PAX-D command coherence={d_coherence:.3f}")
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("csv", type=Path); parser.add_argument("--format", choices=("png", "pdf", "both"), default="pdf")
+    args = parser.parse_args()
+    create_report(args.csv, args.format)
+
 
 if __name__ == "__main__": main()

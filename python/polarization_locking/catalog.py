@@ -1,0 +1,66 @@
+"""The bench-test catalog: descriptions, parameters, and method dispatch in one place."""
+from dataclasses import dataclass, fields
+
+from .config import PolarizationLockConfig
+
+
+@dataclass(frozen=True)
+class TestCase:
+    key: str
+    title: str
+    description: str
+    setup: str
+    method: str
+    groups: tuple[str, ...] = ()
+    axis: bool = False
+    timed: bool = False
+    report: str = "overview"
+    target: bool = False
+    flags: tuple[str, ...] = ()
+
+    def config_names(self) -> list[str]:
+        common = ("bench_", "rp_", "pax_", "phi1_v_lambda", "phi2_v_lambda", "phi1_actuator_", "phi2_actuator_", "phase_output_", "minimum_dop", "results_directory")
+        return [f.name for f in fields(PolarizationLockConfig) if f.name.startswith(common + self.groups)]
+
+
+FINAL = "PAX at final output; both paths open unless prompted."
+PD = FINAL + " Photodiode connected to configured RP input."
+D = "PAX at first-NPBS D port (requires moving it from the current C position)."
+TESTS = (
+    TestCase("live", "PAX monitor", "Log raw PAX angles, Stokes, DOP and u/v until Ctrl+C. No actuator scan; RP outputs are initialized to zero.", "PAX at the location recorded in bench_pax_location.", "_run_live_monitor", ("live_",)),
+    TestCase("sweep", "Single-axis voltage sweep", "Step one output through an explicit RP voltage range; hold the other at zero. Log PAX response. This collects data; it does not fit V_pi.", "PAX must observe the selected actuator's optical response; record its location.", "_run_calibration_sweep", ("sweep_",), axis=True, report="sweep"),
+    TestCase("bidirectional-sweep", "Forward / reverse sweep", "Sweep one configured V_lambda in both directions with the other actuator at a fixed bias; compare hysteresis.", FINAL, "_run_bidirectional_sweep", ("bidirectional_",), axis=True, report="bidirectional"),
+    TestCase("cross-sweep", "Cross-coupling sweep", "Sweep one V_lambda at each fixed-axis bias across the other V_lambda.", FINAL, "_run_cross_sweep", ("cross_sweep_",), axis=True, report="cross"),
+    TestCase("diagnostic-suite", "Static stability holds", "Record baseline and held fractions of each V_lambda to distinguish drift from motion effects.", FINAL, "_run_diagnostic_suite", ("diagnostic_",), report="diagnostic"),
+    TestCase("intensity-diagnostic", "Intensity versus polarization", "Sweep each axis independently; record PAX and photodiode mean/noise with ND correction.", PD, "_run_intensity_diagnostic", ("intensity_", "pd_"), report="intensity"),
+    TestCase("phi2-path-test", "Phi2 path isolation", "Sweep phi2 for A only, B only and both paths; pause for manual beam-block changes.", PD, "_run_phi2_path_balance_test", ("intensity_", "pd_"), report="phi2-path-test"),
+    TestCase("pax-path-hold", "PAX path stability", "Hold both outputs at zero and record PAX/PD for each manual path condition. Duration is per condition.", PD, "_run_pax_path_hold", ("pax_path_", "pd_"), timed=True, report="pax-path-hold"),
+    TestCase("power-balance", "Phi2 power balance", "Drive a bounded phi2 sine over one V_lambda for each manual path condition. Duration is per condition.", PD, "_run_phi2_power_balance", ("power_balance_", "pd_"), timed=True, report="power"),
+    TestCase("first-npbs-d-test", "D-port static / driven", "Compare static polarization with a phi1 sine at first NPBS D.", D + " Photodiode at final F on the configured RP input.", "_run_first_npbs_d_test", ("first_npbs_d_static_duration_s", "first_npbs_d_driven_duration_s", "first_npbs_d_phi1_frequency_hz", "first_npbs_d_sample_period_s", "pd_"), report="analyze_first_npbs_d"),
+    TestCase("first-npbs-d-isolation", "D-port path isolation", "Measure static polarization for manual blocked-path conditions.", D + " Photodiode at final F on the configured RP input.", "_run_first_npbs_d_isolation", ("first_npbs_d_isolation_duration_s", "first_npbs_d_sample_period_s", "pd_"), report="analyze_first_npbs_d_isolation"),
+    TestCase("d-polarizer-phi1-test", "D-port analyzer test", "Compare raw D-port polarization and final-F photodiode response with a linear polarizer in C.", D + " No polarizer before PAX. Linear polarizer in C before final NPBS; PD at final F; both paths open.", "_run_first_npbs_d_polarizer_test", ("first_npbs_d_polarizer_", "pd_"), report="analyze_first_npbs_d_polarizer"),
+    TestCase("phi1-step-map", "D-port phi1 step map", "Acquire settled forward/reverse voltage steps for phase-slope and hysteresis analysis.", D + " Photodiode at final F on the configured RP input.", "_run_phi1_step_map", ("phi1_step_", "pd_"), report="analyze_phi1_step_map"),
+    TestCase("field-model-calibration", "Field-model data collection", "Sweep phi2 at phi1 biases for A, B and both paths, repeating in reverse order to bracket drift.", PD, "_run_field_model_calibration", ("field_model_", "pd_")),
+    TestCase("phi1-fringe-map", "Phi1 fringe map", "Forward/reverse phi1 biases with a phi2 sweep at each bias; log both PAX and PD.", PD, "_run_phi1_fringe_map", ("phi1_fringe_", "pd_")),
+    TestCase("single-axis-pid", "Single-axis PI hold", "Calibrate one axis and hold its midpoint coordinate with PI; the other output stays zero. DOP is logged without gating feedback.", FINAL, "_run_single_axis_pid_test", ("single_axis_", "pid_"), axis=True, timed=True, report="single-axis-pid"),
+    TestCase("phi1-lock-test", "D-port phi1 PI hold", "Use settled steps to estimate slope, then hold a local PAX target. DOP is logged without gating feedback.", D, "_run_phi1_d_lock_test", ("phi1_d_lock_", "pid_pax_average_count", "pid_pre_acquisition_settle_s"), timed=True, report="phi1-d-lock"),
+    TestCase("phi1-pd-lock-test", "Photodiode FPGA lock", "Calibrate the local PD slope and hold a fringe branch with the RP FPGA PID.", PD, "_run_phi1_pd_lock_test", ("phi1_pd_", "phi1_d_lock_", "pd_", "pid_pax_average_count"), timed=True, report="phi1-pd-lock"),
+    TestCase("phi1-pd-hybrid-test", "Hybrid PD / PAX lock", "Run the FPGA photodiode loop with slow PAX correction of the PD setpoint.", PD, "_run_phi1_pd_lock_test", ("phi1_pd_", "phi1_d_lock_", "pd_", "pid_pax_average_count"), timed=True, report="phi1-pd-lock", flags=("hybrid_outer",)),
+    TestCase("phi1-pd-gain-scan", "Photodiode gain comparison", "Hold each configured gain on the same fringe branch and log PAX validation.", PD, "_run_phi1_pd_lock_test", ("phi1_pd_", "phi1_d_lock_", "pd_", "pid_pax_average_count"), flags=("gain_scan",)),
+    TestCase("pid-test", "Two-axis PI hold", "Apply a rough correction followed by bounded PI feedback. DOP is logged without gating feedback; current-target capture uses the DOP gate.", FINAL, "_run_pid_test", ("pid_", "target_", "sphere_"), timed=True, report="pid", target=True),
+    TestCase("pid-live", "Two-axis PI with sphere view", "Run the two-axis PI experiment with an interactive Poincare sphere. Requires PyVista; DOP behavior matches the two-axis PI hold.", FINAL, "_run_pid_live", ("pid_", "target_", "sphere_"), timed=True, report="pid", target=True),
+    TestCase("rough", "One-shot target move", "Measure, make one bounded target correction, settle, and report the residual. Uses the DOP gate; summary goes to the run log.", FINAL, "rough_align_once", ("rough_", "target_", "sphere_"), target=True),
+)
+BY_KEY = {case.key: case for case in TESTS}
+
+
+def default_options(case: TestCase) -> dict:
+    options = {"label": case.key}
+    if case.axis:
+        options["axis"] = "phi1"
+    if case.timed:
+        options["duration_s"] = 60.0
+    options["report"] = "pdf"
+    if case.target:
+        options["target_mode"] = "current"
+    return options

@@ -1,0 +1,219 @@
+"""Consistent PDF reports for every bench test; reuse the established plotters."""
+from collections import Counter
+import csv
+from importlib import import_module
+import json
+import os
+from pathlib import Path
+import textwrap
+
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib-polarization-reports")
+os.environ.setdefault("XDG_CACHE_HOME", "/tmp")
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import numpy as np
+
+NAVY = "#18354b"
+TEAL = "#007f86"
+
+
+class ReportPages:
+    """Add consistent page numbers without altering existing scientific plots."""
+    def __init__(self, pdf):
+        self.pdf, self.page = pdf, 0
+
+    def savefig(self, fig):
+        self.page += 1
+        fig.text(.985, .008, f"Polarization diagnostics  |  {self.page}", ha="right", fontsize=7, color=NAVY)
+        self.pdf.savefig(fig)
+
+
+def text_page(pdf, title, sections):
+    """Fixed margins and bounded text blocks keep summaries away from plots."""
+    fig = None
+    y = 0.0
+    for heading, content in sections:
+        lines = [(heading.upper(), True)]
+        for line in str(content).splitlines():
+            lines.extend((wrapped, False) for wrapped in (textwrap.wrap(line, width=110) or [""]))
+        for line, is_heading in lines:
+            if fig is None or y < .095:
+                if fig is not None:
+                    pdf.savefig(fig)
+                    plt.close(fig)
+                fig = plt.figure(figsize=(11.7, 8.3), facecolor="white")
+                fig.text(.065, .92, title, fontsize=21, weight="bold", color=NAVY)
+                y = .84
+            fig.text(.065, y, line, fontsize=9 if is_heading else 10,
+                     weight="bold" if is_heading else "normal", color=TEAL if is_heading else NAVY, va="top")
+            y -= .029 if is_heading else .024
+        y -= .017
+    if fig is not None:
+        pdf.savefig(fig)
+        plt.close(fig)
+
+
+def column(rows, key):
+    values = []
+    for row in rows:
+        try:
+            values.append(float(row.get(key, "nan")))
+        except (TypeError, ValueError):
+            values.append(float("nan"))
+    return np.asarray(values)
+
+
+def add_overview(pdf, case, paths, config, options, state, rows):
+    stages = Counter(row.get("stage", row.get("condition", "acquisition")) for row in rows)
+    samples = f"{len(rows):,} recorded samples"
+    if stages:
+        samples += "; " + ", ".join(f"{k}: {v:,}" for k, v in stages.items())
+    sections = [
+        ("Run", f"{paths.directory.name}\nStatus: {state.get('status', 'unknown')} | Started: {state.get('started_at', 'not recorded')}"),
+        ("Purpose", case.description),
+        ("Required optical setup", case.setup),
+        ("Recorded bench context (recipe)", f"{config.bench_pax_location}\n{config.bench_voltage_chain}"),
+        ("Data", samples + "\nSource: data.csv; full acquisition settings: recipe.json; status: run.json"),
+    ]
+    if rows and any(np.isfinite(column(rows, "dop"))):
+        dop = column(rows, "dop")
+        finite = dop[np.isfinite(dop)]
+        sections.append(("Raw DOP", f"Mean {finite.mean():.4f}; range {finite.min():.4f} to {finite.max():.4f}. "
+                         f"{np.sum((finite < 0) | (finite > 1))} samples outside 0–1. Telemetry is not a new calibration."))
+    if "D port" in case.setup and "C port" in config.bench_pax_location:
+        sections.append(("Placement note", "The recipe records C, but this test's instructions specify D. Actual placement was not independently logged; confirm it before interpreting the D-port model."))
+    if state.get("error") or state.get("cleanup_error"):
+        sections.append(("Run issue", state.get("error", state.get("cleanup_error"))))
+    text_page(pdf, case.title + " — run report", sections)
+
+
+def add_parameters(pdf, case, config, options):
+    shared = ("phi1_v_lambda", "phi2_v_lambda", "phi1_actuator_volts_per_rp_volt", "phi2_actuator_volts_per_rp_volt", "rp_output_min_voltage", "rp_output_max_voltage", "pax_rotation_velocity_hz", "pax_measurement_mode", "pax_wavelength_nm")
+    names = [name for name in case.config_names() if name in shared or name.startswith(case.groups)]
+    items = [(k, json.dumps(v)) for k, v in options.items()]
+    items += [(name, json.dumps(getattr(config, name))) for name in names]
+    for start in range(0, len(items), 24):
+        fig, ax = plt.subplots(figsize=(11.7, 8.3))
+        ax.axis("off")
+        fig.text(.065, .92, "Active parameters", fontsize=21, weight="bold", color=NAVY)
+        fig.text(.065, .86, "RP commands: volts, bounded to 0–1. V_lambda: terminal volts for 2π. Gains: terminal V / RP V.", fontsize=10)
+        table = ax.table(cellText=items[start:start+24], colLabels=["Parameter", "Recorded value"], colWidths=[.64, .36], cellLoc="left", loc="upper left", bbox=[0, 0, 1, .94])
+        table.auto_set_font_size(False)
+        table.set_fontsize(9)
+        for (row, _), cell in table.get_celld().items():
+            cell.set_edgecolor("white")
+            cell.set_facecolor(NAVY if row == 0 else ("#edf4f7" if row % 2 else "#ffffff"))
+            if row == 0:
+                cell.set_text_props(color="white", weight="bold")
+        fig.subplots_adjust(left=.065, right=.94, top=.81, bottom=.075)
+        pdf.savefig(fig)
+        plt.close(fig)
+
+
+def add_telemetry(pdf, rows):
+    if not rows:
+        return
+    groups = [
+        ("Normalized Stokes", ("s1", "s2", "s3"), "Stokes"),
+        ("Raw degree of polarization", ("dop",), "DOP"),
+        ("Actuator command history", ("rp_out1_v", "rp_out2_v", "phi1_rp_voltage", "phi2_rp_voltage", "phi1_rp_command_estimated_v"), "RP command (V)"),
+        ("Photodiode signal", ("pd_mean_v", "pd_v"), "PD (V)"),
+        ("PAX total power", ("pax_ptotal", "ptotal"), "PAX native power units"),
+        ("Sphere coordinates", ("u", "v"), "Angle (rad)"),
+    ]
+    fig, axes = plt.subplots(3, 2, figsize=(11.7, 8.3))
+    fig.subplots_adjust(top=.88, bottom=.09, left=.08, right=.97, hspace=.65, wspace=.3)
+    fig.suptitle("Recorded telemetry", fontsize=19, weight="bold", color=NAVY, y=.96)
+    fig.text(.08, .92, "Acquisition order preserves stage changes; no timing alignment or transfer gain is inferred.", fontsize=9)
+    for ax, (title, fields, unit) in zip(axes.flat, groups):
+        plotted = False
+        for field in fields:
+            values = column(rows, field)
+            if np.any(np.isfinite(values)):
+                ax.plot(np.arange(len(rows)), values, linewidth=.85, label=field)
+                plotted = True
+        ax.set(title=title, xlabel="Sample index", ylabel=unit)
+        ax.grid(alpha=.2)
+        if plotted:
+            ax.legend(fontsize=7, loc="best")
+        else:
+            ax.text(.5, .5, "Not recorded", transform=ax.transAxes, ha="center", color="gray")
+    pdf.savefig(fig)
+    plt.close(fig)
+
+
+def add_specialized(pdf, case, paths, options):
+    kind = case.report
+    if kind.startswith("analyze_"):
+        analyzer = import_module(f"polarization_locking.analysis.{kind}")
+        analyzer.create_report(paths.csv, options.get("report", "pdf"), document=pdf)
+    elif kind == "power":
+        from .plot_power_balance import add_scope_page, add_summary_table_page
+        add_scope_page(pdf, paths.csv, paths.directory / "normalized-scope.png" if options.get("report") == "both" else None)
+        add_summary_table_page(pdf, paths.csv, paths.directory / "power-summary.png" if options.get("report") == "both" else None)
+    elif kind in {"pid", "single-axis-pid", "phi1-d-lock", "phi1-pd-lock", "cross"}:
+        modules = {"pid": "plot_pid_tests", "single-axis-pid": "plot_single_axis_pid", "phi1-d-lock": "plot_phi1_d_lock", "phi1-pd-lock": "plot_phi1_pd_lock", "cross": "plot_cross_tests"}
+        module = import_module(f"polarization_locking.reports.{modules[kind]}")
+        getattr(module, "add_report" if kind == "cross" else "add_page")(pdf, paths.csv)
+    elif kind != "overview":
+        from . import plot_calibration_tests as plots
+        methods = {"sweep": "add_axis_sweep_page", "bidirectional": "add_bidirectional_page", "diagnostic": "add_diagnostic_page", "intensity": "add_intensity_diagnostic_page", "phi2-path-test": "add_phi2_path_balance_page", "pax-path-hold": "add_pax_path_hold_page"}
+        args = (options["axis"],) if kind == "sweep" else ()
+        getattr(plots, methods[kind])(pdf, paths.csv, *args)
+
+
+def create_run_report(case, paths, config, options, state):
+    rows = []
+    if paths.csv.exists():
+        with paths.csv.open(newline="") as handle:
+            rows = list(csv.DictReader(handle))
+    temporary = paths.pdf.with_suffix(".tmp.pdf")
+    plot_error = None
+    with PdfPages(temporary, metadata={"Title": case.title, "Subject": paths.directory.name, "Author": "Polarization diagnostics"}) as document:
+        pdf = ReportPages(document)
+        add_overview(pdf, case, paths, config, options, state, rows)
+        if rows:
+            try:
+                add_specialized(pdf, case, paths, options)
+            except Exception as exc:
+                plot_error = f"{type(exc).__name__}: {exc}"
+                plt.close("all")
+                text_page(pdf, "Specialized analysis unavailable", [("Reason", plot_error), ("Data retained", "Raw telemetry follows. The original CSV and recipe remain available for reanalysis.")])
+            add_telemetry(pdf, rows)
+        else:
+            log = paths.directory / "console.log"
+            lines = log.read_text().splitlines() if log.exists() else []
+            for start in range(0, len(lines), 18):
+                text_page(pdf, "Run log", [("Recorded output", "\n".join(lines[start:start+18]))])
+        add_parameters(pdf, case, config, options)
+    temporary.replace(paths.pdf)
+    print(f"PDF report saved to {paths.pdf}")
+    if plot_error:
+        print(f"Report contains raw data; specialized analysis unavailable: {plot_error}")
+    return {"report_file": paths.pdf.name, "report_status": "partial" if plot_error else "completed", **({"report_error": plot_error} if plot_error else {})}
+
+
+def main(argv=None):
+    import argparse
+    from types import SimpleNamespace
+    from ..catalog import BY_KEY, default_options
+    from ..config import PolarizationLockConfig
+    from ..settings import write_json
+    parser = argparse.ArgumentParser(description="Generate report.pdf from an existing run; no instrument access.")
+    parser.add_argument("run_directory", type=Path)
+    args = parser.parse_args(argv)
+    directory = args.run_directory.resolve()
+    saved = json.loads((directory / "recipe.json").read_text())
+    state = json.loads((directory / "run.json").read_text())
+    case = BY_KEY[saved["test"]]
+    config = PolarizationLockConfig(**state.get("effective_config", saved["config"]))
+    options = default_options(case) | saved.get("options", {}) | {"report": "pdf"}
+    paths = SimpleNamespace(directory=directory, csv=directory / "data.csv", pdf=directory / "report.pdf")
+    state.update(create_run_report(case, paths, config, options, state))
+    write_json(directory / "run.json", state)
+
+
+if __name__ == "__main__":
+    main()

@@ -33,11 +33,9 @@ def _float(rows: list[dict[str, str]], key: str) -> np.ndarray:
     return np.asarray([float(row[key]) for row in rows], dtype=float)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("csv", type=Path, help="first-npbs-d-test data.csv")
-    parser.add_argument("--format", choices=("png", "pdf", "both"), default="png", help="report output format (default: png)")
-    args = parser.parse_args()
+def create_report(csv_file: Path, output_format: str = "pdf", document=None) -> None:
+    from types import SimpleNamespace
+    args = SimpleNamespace(csv=Path(csv_file), format=output_format)
     with args.csv.open(newline="") as handle:
         rows = list(csv.DictReader(handle))
     required = {"stage", "phi1_ideal_rad", "s1", "s2", "s3", "dop", "pax_ptotal", "elapsed_s"}
@@ -97,8 +95,10 @@ def main() -> None:
     output.mkdir(exist_ok=True)
     (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
 
-    fig, axes = plt.subplots(2, 2, figsize=(11, 7), constrained_layout=True)
-    axes[0, 0].plot(time, s1, ".", ms=3, label=r"measured $S_1$")
+    fig, axes = plt.subplots(2, 2, figsize=(11.7, 8.3))
+    fig.subplots_adjust(left=.08, right=.96, bottom=.13, top=.85, hspace=.48, wspace=.28)
+    axes[0, 0].plot(time[static], s1[static], ".", ms=3, label="static")
+    axes[0, 0].plot(time[driven], s1[driven], ".", ms=3, label="driven")
     axes[0, 0].axhline(0.0, color="k", lw=1, ls="--", label="ideal equator")
     axes[0, 0].set(xlabel="stage-local time (s)", ylabel="Stokes", title=r"Equator test: ideal $S_1=0$")
     axes[0, 0].legend(fontsize=8)
@@ -108,25 +108,30 @@ def main() -> None:
     axes[0, 1].set(aspect="equal", xlim=(-1.1, 1.1), ylim=(-1.1, 1.1), xlabel=r"$S_2$", ylabel=r"$S_3$", title="D-port equatorial trajectory")
     axes[0, 1].legend(fontsize=8)
     points = axes[1, 0].scatter(phi1[driven], s2[driven], c=driven_time, s=9, cmap="viridis", label=r"measured $S_2$")
-    axes[1, 0].plot(phi1[driven], ideal_s2[driven], "-", lw=1.4, label=r"$-\sin(\phi_1+\delta)$")
-    axes[1, 0].scatter(phi1[driven], s3[driven], c=driven_time, s=9, cmap="viridis", label=r"measured $S_3$")
-    axes[1, 0].plot(phi1[driven], ideal_s3[driven], "-", lw=1.4, label=r"$\cos(\phi_1+\delta)$")
+    order = np.argsort(phi1[driven])
+    axes[1, 0].plot(phi1[driven][order], ideal_s2[driven][order], "-", lw=1.4, label=r"$-\sin(\phi_1+\delta)$")
+    axes[1, 0].scatter(phi1[driven], s3[driven], c=driven_time, s=12, marker="x", linewidths=.6, cmap="viridis", label=r"measured $S_3$")
+    axes[1, 0].plot(phi1[driven][order], ideal_s3[driven][order], "-", lw=1.4, label=r"$\cos(\phi_1+\delta)$")
     axes[1, 0].set(xlabel=r"logged $phi_1$ command (rad)", ylabel="Stokes", title="Command-to-polarization transfer")
     axes[1, 0].legend(fontsize=8, ncol=2)
+    fig.colorbar(points, ax=axes[1, 0], pad=.02, label="Driven time (s)")
     axes[1, 1].plot(frequencies, coherence, lw=1.4, label="measured equatorial-phase coherence")
     axes[1, 1].axvline(commanded_frequency, color="tab:orange", ls="--", label=f"command: {commanded_frequency:.2f} Hz")
     axes[1, 1].axvline(observed_peak_hz, color="tab:red", ls=":", label=f"strongest: {observed_peak_hz:.2f} Hz")
-    axes[1, 1].set(xlabel="test frequency (Hz)", ylabel="phasor coherence", title="Does D follow the phi1 drive?")
+    axes[1, 1].set(xlabel="test frequency (Hz)", ylabel="phasor coherence", title="Equatorial phasor frequency diagnostic")
     axes[1, 1].legend(fontsize=8)
-    fig.suptitle(
-        f"First-NPBS D-port — equator RMS {equator_rms:.3f}; command coherence {command_coherence:.3f}; "
-        f"strongest response {observed_peak_hz:.3f} Hz"
-    )
+    fig.suptitle("First-NPBS D-port: polarization response", fontsize=18, fontweight="bold", y=.95)
+    fig.text(.08, .90, f"Drive: {commanded_frequency:.2f} Hz | Equator S1 RMS: {equator_rms:.4f} | Nominal trajectory RMS: {trajectory_rms:.4f}", fontsize=10)
+    fig.text(.08, .055, "Command phase uses the configured V_lambda and estimated waveform timing; this is not a measured V_pi fit.", fontsize=9)
+    for ax in axes.flat:
+        ax.grid(alpha=.2)
     png = output / "d-port-polarization-analysis.png"
     pdf = output / "d-port-polarization-report.pdf"
     if args.format in {"png", "both"}:
         fig.savefig(png, dpi=180)
-    if args.format in {"pdf", "both"}:
+    if document is not None:
+        document.savefig(fig)
+    elif args.format in {"pdf", "both"}:
         with PdfPages(pdf) as report:
             report.savefig(fig)
     plt.close(fig)
@@ -135,6 +140,14 @@ def main() -> None:
         f"equator S1 RMS={equator_rms:.4f}; S2/S3 trajectory RMS={trajectory_rms:.4f}; delta={delta:.4f} rad; "
         f"command coherence={command_coherence:.3f}; strongest phase response={observed_peak_hz:.3f} Hz"
     )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("csv", type=Path, help="first-npbs-d-test data.csv")
+    parser.add_argument("--format", choices=("png", "pdf", "both"), default="pdf", help="report output format (default: pdf)")
+    args = parser.parse_args()
+    create_report(args.csv, args.format)
 
 
 if __name__ == "__main__":

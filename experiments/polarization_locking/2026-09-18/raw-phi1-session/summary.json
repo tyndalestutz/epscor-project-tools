@@ -1,0 +1,443 @@
+{
+  "method": "Direct raw observations and explicitly labelled medians/ranges. No fits or interpolations.",
+  "source_runs": [
+    "195031_raw-phi1_repeatability-1s",
+    "200038_raw-phi1_fixed-0p4-drift",
+    "200242_raw-phi1_fine-brackets-3s"
+  ],
+  "observations": [
+    {
+      "readings": 1230,
+      "s1_range": [
+        -0.03941338502358293,
+        0.19417552327312237
+      ],
+      "dop_range": [
+        0.8130471,
+        0.9306174
+      ],
+      "max_internal_command_error_v": 0.00011718750000000444
+    },
+    {
+      "readings": 300,
+      "s1_range": [
+        0.09740234666979464,
+        0.1938473787183659
+      ],
+      "dop_range": [
+        0.8556652,
+        0.9345542
+      ],
+      "max_internal_command_error_v": 9.76562500000222e-05
+    },
+    {
+      "readings": 381,
+      "s1_range": [
+        -0.03713921953625742,
+        0.2091449600452199
+      ],
+      "dop_range": [
+        0.8339278,
+        0.9487264
+      ],
+      "max_internal_command_error_v": 0.00011718750000000444
+    }
+  ],
+  "fixed_voltage": {
+    "duration_s": 74.40658265500133,
+    "phase_peak_to_peak_rad": 0.4191683326210015,
+    "first_to_last_block_median_change_rad": -0.18815523214460805,
+    "last_45s_phase_peak_to_peak_rad": 0.31122835294582285
+  },
+  "pi_brackets": {
+    "195031_raw-phi1_repeatability-1s": [
+      {
+        "cycle": 1,
+        "direction": "forward",
+        "reference_command_v": 0.0,
+        "reference_point": 0,
+        "phase_excursion_end_rad": -7.547281912841569,
+        "crossings": [
+          {
+            "rp_command_delta_bracket_v": [
+              0.36,
+              0.38
+            ],
+            "command_levels_v": [
+              0.36,
+              0.38
+            ],
+            "phase_excursion_at_bracket_rad": [
+              3.0268723345021926,
+              3.2808333913584984
+            ],
+            "points": [
+              18,
+              19
+            ]
+          }
+        ],
+        "observed_sample_spread_bracket": {
+          "rp_command_delta_bracket_v": [
+            0.36,
+            0.38
+          ],
+          "points": [
+            18,
+            19
+          ],
+          "endpoint_excursion_ranges_rad": [
+            [
+              2.9993668198796914,
+              3.0650457327434384
+            ],
+            [
+              3.244461416604331,
+              3.320044119564171
+            ]
+          ]
+        },
+        "note": "Brackets from adjacent observed step medians; no interpolation. Includes drift and hysteresis."
+      },
+      {
+        "cycle": 1,
+        "direction": "reverse",
+        "reference_command_v": 0.8,
+        "reference_point": 41,
+        "phase_excursion_end_rad": 7.42974565326872,
+        "crossings": [
+          {
+            "rp_command_delta_bracket_v": [
+              0.34,
+              0.36000000000000004
+            ],
+            "command_levels_v": [
+              0.46,
+              0.44
+            ],
+            "phase_excursion_at_bracket_rad": [
+              3.068360308184742,
+              3.4293200957948358
+            ],
+            "points": [
+              58,
+              59
+            ]
+          }
+        ],
+        "observed_sample_spread_bracket": {
+          "rp_command_delta_bracket_v": [
+            0.34,
+            0.36000000000000004
+          ],
+          "points": [
+            58,
+            59
+          ],
+          "endpoint_excursion_ranges_rad": [
+            [
+              3.002869903293446,
+              3.1223961750011417
+            ],
+            [
+              3.329688403415031,
+              3.509486671816706
+            ]
+          ]
+        },
+        "note": "Brackets from adjacent observed step medians; no interpolation. Includes drift and hysteresis."
+      },
+      {
+        "cycle": 2,
+        "direction": "forward",
+        "reference_command_v": 0.0,
+        "reference_point": 82,
+        "phase_excursion_end_rad": -7.375902889253619,
+        "crossings": [
+          {
+            "rp_command_delta_bracket_v": [
+              0.38,
+              0.4
+            ],
+            "command_levels_v": [
+              0.38,
+              0.4
+            ],
+            "phase_excursion_at_bracket_rad": [
+              3.0761419166396315,
+              3.2392860265015337
+            ],
+            "points": [
+              101,
+              102
+            ]
+          }
+        ],
+        "observed_sample_spread_bracket": {
+          "rp_command_delta_bracket_v": [
+            0.38,
+            0.4
+          ],
+          "points": [
+            101,
+            102
+          ],
+          "endpoint_excursion_ranges_rad": [
+            [
+              3.015477867655008,
+              3.118190877927716
+            ],
+            [
+              3.198385701686463,
+              3.3602451578843153
+            ]
+          ]
+        },
+        "note": "Brackets from adjacent observed step medians; no interpolation. Includes drift and hysteresis."
+      },
+      {
+        "cycle": 2,
+        "direction": "reverse",
+        "reference_command_v": 0.8,
+        "reference_point": 123,
+        "phase_excursion_end_rad": 8.465021227128764,
+        "crossings": [
+          {
+            "rp_command_delta_bracket_v": [
+              0.32000000000000006,
+              0.34
+            ],
+            "command_levels_v": [
+              0.48,
+              0.46
+            ],
+            "phase_excursion_at_bracket_rad": [
+              3.1259856396716463,
+              3.311206173354143
+            ],
+            "points": [
+              139,
+              140
+            ]
+          }
+        ],
+        "observed_sample_spread_bracket": {
+          "rp_command_delta_bracket_v": [
+            0.30000000000000004,
+            0.34
+          ],
+          "points": [
+            138,
+            140
+          ],
+          "endpoint_excursion_ranges_rad": [
+            [
+              2.827584149526095,
+              2.939316730851697
+            ],
+            [
+              3.279616761570854,
+              3.33242439921073
+            ]
+          ]
+        },
+        "note": "Brackets from adjacent observed step medians; no interpolation. Includes drift and hysteresis."
+      },
+      {
+        "cycle": 3,
+        "direction": "forward",
+        "reference_command_v": 0.0,
+        "reference_point": 164,
+        "phase_excursion_end_rad": -7.3299626872907275,
+        "crossings": [
+          {
+            "rp_command_delta_bracket_v": [
+              0.38,
+              0.4
+            ],
+            "command_levels_v": [
+              0.38,
+              0.4
+            ],
+            "phase_excursion_at_bracket_rad": [
+              3.0774432408615193,
+              3.1804418685957008
+            ],
+            "points": [
+              183,
+              184
+            ]
+          }
+        ],
+        "observed_sample_spread_bracket": {
+          "rp_command_delta_bracket_v": [
+            0.36,
+            0.42
+          ],
+          "points": [
+            182,
+            185
+          ],
+          "endpoint_excursion_ranges_rad": [
+            [
+              2.8432061663258352,
+              3.1249765945654566
+            ],
+            [
+              3.3538085275717724,
+              3.556398681524658
+            ]
+          ]
+        },
+        "note": "Brackets from adjacent observed step medians; no interpolation. Includes drift and hysteresis."
+      },
+      {
+        "cycle": 3,
+        "direction": "reverse",
+        "reference_command_v": 0.8,
+        "reference_point": 205,
+        "phase_excursion_end_rad": 7.098252656498017,
+        "crossings": [
+          {
+            "rp_command_delta_bracket_v": [
+              0.32000000000000006,
+              0.34
+            ],
+            "command_levels_v": [
+              0.48,
+              0.46
+            ],
+            "phase_excursion_at_bracket_rad": [
+              3.0097467588874642,
+              3.1556548099843407
+            ],
+            "points": [
+              221,
+              222
+            ]
+          }
+        ],
+        "observed_sample_spread_bracket": {
+          "rp_command_delta_bracket_v": [
+            0.32000000000000006,
+            0.36000000000000004
+          ],
+          "points": [
+            221,
+            223
+          ],
+          "endpoint_excursion_ranges_rad": [
+            [
+              2.962011191683484,
+              3.0977502334104554
+            ],
+            [
+              3.4106794378787653,
+              3.572423486725105
+            ]
+          ]
+        },
+        "note": "Brackets from adjacent observed step medians; no interpolation. Includes drift and hysteresis."
+      }
+    ],
+    "200242_raw-phi1_fine-brackets-3s": [
+      {
+        "cycle": 1,
+        "direction": "forward",
+        "reference_command_v": 0.0,
+        "reference_point": 0,
+        "phase_excursion_end_rad": -7.3356918664506905,
+        "crossings": [
+          {
+            "rp_command_delta_bracket_v": [
+              0.35,
+              0.355
+            ],
+            "command_levels_v": [
+              0.35,
+              0.355
+            ],
+            "phase_excursion_at_bracket_rad": [
+              3.04540318645724,
+              3.150300910661035
+            ],
+            "points": [
+              9,
+              10
+            ]
+          }
+        ],
+        "observed_sample_spread_bracket": {
+          "rp_command_delta_bracket_v": [
+            0.35,
+            0.36
+          ],
+          "points": [
+            9,
+            11
+          ],
+          "endpoint_excursion_ranges_rad": [
+            [
+              2.944481008899041,
+              3.114391653082932
+            ],
+            [
+              3.2322006046998144,
+              3.4187736582289183
+            ]
+          ]
+        },
+        "note": "Brackets from adjacent observed step medians; no interpolation. Includes drift and hysteresis."
+      },
+      {
+        "cycle": 1,
+        "direction": "reverse",
+        "reference_command_v": 0.8,
+        "reference_point": 40,
+        "phase_excursion_end_rad": 4.732685619954098,
+        "crossings": [
+          {
+            "rp_command_delta_bracket_v": [
+              0.32500000000000007,
+              0.33000000000000007
+            ],
+            "command_levels_v": [
+              0.475,
+              0.47
+            ],
+            "phase_excursion_at_bracket_rad": [
+              3.0766872960196245,
+              3.2088256012325074
+            ],
+            "points": [
+              45,
+              46
+            ]
+          }
+        ],
+        "observed_sample_spread_bracket": {
+          "rp_command_delta_bracket_v": [
+            0.32000000000000006,
+            0.33000000000000007
+          ],
+          "points": [
+            44,
+            46
+          ],
+          "endpoint_excursion_ranges_rad": [
+            [
+              2.943868712496851,
+              3.108663765533911
+            ],
+            [
+              3.149358669793659,
+              3.276745294930963
+            ]
+          ]
+        },
+        "note": "Brackets from adjacent observed step medians; no interpolation. Includes drift and hysteresis."
+      }
+    ]
+  },
+  "status": "Actuator-to-polarization response demonstrated. Drift is accepted; terminal-voltage mapping remains unmeasured."
+}

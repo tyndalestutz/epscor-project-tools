@@ -53,11 +53,9 @@ def fit_phase(voltage: np.ndarray, phase: np.ndarray) -> dict[str, float | list[
     }
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("csv", type=Path, help="phi1-step-map data.csv")
-    parser.add_argument("--format", choices=("png", "pdf", "both"), default="png")
-    args = parser.parse_args()
+def create_report(csv_file: Path, output_format: str = "pdf", document=None) -> None:
+    from types import SimpleNamespace
+    args = SimpleNamespace(csv=Path(csv_file), format=output_format)
     with args.csv.open(newline="") as handle:
         rows = list(csv.DictReader(handle))
     required = {"direction", "step_index", "phi1_rp_voltage", "s1", "s2", "s3", "equatorial_phase_rad", "pd_mean_v"}
@@ -142,7 +140,9 @@ def main() -> None:
     png, pdf = output / "phi1-step-map-report.png", output / "phi1-step-map-report.pdf"
     if args.format in {"png", "both"}:
         fig.savefig(png, dpi=180)
-    if args.format in {"pdf", "both"}:
+    if document is not None:
+        document.savefig(fig)
+    elif args.format in {"pdf", "both"}:
         with PdfPages(pdf) as document:
             document.savefig(fig)
     plt.close(fig)
@@ -150,6 +150,14 @@ def main() -> None:
     for direction, values in series.items():
         fit = values["fit"]
         print(f"{direction}: fitted phi1 V_lambda={fit['fitted_vlambda_rp_v']:.5f} RP V; phase residual RMS={fit['circular_residual_rms_rad']:.4f} rad")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("csv", type=Path, help="phi1-step-map data.csv")
+    parser.add_argument("--format", choices=("png", "pdf", "both"), default="pdf")
+    args = parser.parse_args()
+    create_report(args.csv, args.format)
 
 
 if __name__ == "__main__":

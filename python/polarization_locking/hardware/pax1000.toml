@@ -1,0 +1,12 @@
+[thorlabs-pax1000]
+serial = "M01303584"
+model = "PAX1000IR1"
+autorange = true
+# Match the known-good Thorlabs Windows configuration captured in
+# data/Logfile2.txt: Basic Scan Rate = 60 Hz with the external supply present.
+# The lock client reasserts this value when connecting to an already-running
+# daemon as well, so it cannot silently retain an old 80 Hz setting.
+velocity = 60
+measurement_mode = 5
+port = 38400
+log_level = "debug"

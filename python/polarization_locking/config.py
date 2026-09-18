@@ -5,6 +5,17 @@ from typing import Optional
 
 @dataclass
 class PolarizationLockConfig:
+    results_directory: str = str(Path(__file__).resolve().parents[2] / "experiments" / "polarization_locking")
+    bench_pax_location: str = "In front of NPBS 1, C port"
+    bench_voltage_chain: str = "Red Pitaya (0-1 V command) -> Thorlabs MDT690 -> piezo"
+    bench_expected_v_pi_terminal_v: float = 13.0
+    bench_notes: str = "V_pi expectation only; verify channel and measured driver gain before calibration."
+    sweep_start_rp_v: float = 0.0
+    sweep_stop_rp_v: float = 0.1
+    sweep_points: int = 11
+    sweep_repeats: int = 1
+    sweep_settle_s: float = 1.0
+    live_sample_period_s: float = 0.5
     rp_hostname: str = "192.168.1.98"
     rp_config: str = "scope_config"
     pax_host: str = "localhost"
@@ -12,7 +23,7 @@ class PolarizationLockConfig:
     # Match the existing PAX live-plot behavior: use an already-running daemon
     # when available, otherwise start this local configuration automatically.
     pax_autostart_daemon: bool = True
-    pax_daemon_config_path: str = str(Path(__file__).resolve().parents[1] / "PAX1000" / "pax1000.toml")
+    pax_daemon_config_path: str = str(Path(__file__).resolve().parent / "hardware" / "pax1000.toml")
     pax_daemon_start_timeout_s: float = 5.0
     # Match the proven PAX live-plot acquisition sequence: trigger, wait 60
     # ms, then fetch the newest completed record. A 10-ms wait can retrieve a
