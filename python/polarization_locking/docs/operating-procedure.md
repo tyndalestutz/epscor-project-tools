@@ -36,10 +36,14 @@ The last recorded PAX location was C; D-port/final-output tests require actual
 relocation and updated notes.
 
 RP commands are bounded to 0–1 V. `phi*_v_lambda` is **terminal** voltage for 2π,
-twice Vπ; actuator gain is terminal volts per RP command volt. Historical
-12.2/30 V Vλ and 16.875/150 gain candidates are not a verified new-hookup
-calibration. A driver model name is not a gain measurement. Use a bounded
-explicit `sweep` when the conversion is unknown.
+twice Vπ; actuator gain is terminal volts per RP command volt. Both arms now use
+matching piezos and the same configured calibration: **Vλ = 12.2 V, Vπ = 6.1 V,
+and 16.875 actuator V per RP command V**. These are phi1's existing calibration
+candidates applied to both axes, not a new measurement. The former phi2 defaults
+of 30 V and 150 V/V describe the previous setup. Saved full recipes retain their
+explicit values; update both axis fields before reusing an old recipe on this
+setup. A driver model name is not a gain measurement. Use a bounded explicit
+`sweep` when the conversion is unknown.
 
 ## 3. Check instrument ownership and output behavior
 

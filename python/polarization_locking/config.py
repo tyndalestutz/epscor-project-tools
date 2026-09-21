@@ -43,18 +43,18 @@ class PolarizationLockConfig:
     target_u: Optional[float] = None
     target_v: Optional[float] = None
 
-    # Rough alignment: measured actuator volts for a 2*pi phase shift. phi1's
-    # 12.2 V value is the current candidate from the static diagnostic; retain
-    # it as a tunable calibration until a repeat forward/reverse test confirms it.
+    # Actuator volts for a 2*pi phase shift (V_pi = V_lambda / 2).
+    # Both arms now use matching piezos: apply phi1's current calibration
+    # candidate to both axes. Keep explicit per-axis recipe overrides possible.
     phi1_v_lambda: Optional[float] = 12.2
-    phi2_v_lambda: Optional[float] = 30.0
+    phi2_v_lambda: Optional[float] = 12.2
 
     # Electrical transfer from an RP command voltage to actuator voltage, in
     # actuator-volts / RP-command-volt. At a 1.0 V command the measured RP
-    # output is 1.125 V. OUT1 -> phi1 goes through the x15 voltage controller;
-    # OUT2 -> phi2 also passes through the x8.89 preamp before that controller.
+    # output is 1.125 V. Both arms now use the same configured x15 conversion;
+    # the former extra x8.89 phi2 preamp factor no longer applies.
     phi1_actuator_volts_per_rp_volt: Optional[float] = 16.875  # 1.125 * 15
-    phi2_actuator_volts_per_rp_volt: Optional[float] = 150.0  # 1.125 * 8.89 * 15
+    phi2_actuator_volts_per_rp_volt: Optional[float] = 16.875  # 1.125 * 15
 
     # The RP commands are unipolar 0–1 V. Physical cabling is OUT1 -> phi1 and
     # OUT2 -> phi2.
