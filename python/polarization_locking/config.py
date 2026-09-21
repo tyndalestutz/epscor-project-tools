@@ -20,8 +20,8 @@ class PolarizationLockConfig:
     rp_config: str = "scope_config"
     pax_host: str = "localhost"
     pax_port: int = 38400
-    # Match the existing PAX live-plot behavior: use an already-running daemon
-    # when available, otherwise start this local configuration automatically.
+    # Local Linux connections stop lingering PAX daemons before reconnecting.
+    # Start this project configuration automatically when no daemon is reachable.
     pax_autostart_daemon: bool = True
     pax_daemon_config_path: str = str(Path(__file__).resolve().parent / "hardware" / "pax1000.toml")
     pax_daemon_start_timeout_s: float = 5.0
@@ -155,6 +155,10 @@ class PolarizationLockConfig:
     # not calibrate the PD against PAX ``ptotal`` units, but it prevents an
     # accidental 100x error when comparing their *relative* responses.
     pd_input: str = "in1"
+    # Passive visibility acquisition: external drive, DC-coupled PD.
+    rp_scope_port: int = 2223
+    visibility_frequency_hz: float = 0.5
+    visibility_dark_voltage_v: Optional[float] = None
     pd_nd_optical_density: float = 2.0
     pd_scope_duration_s: float = 0.01
     pd_scope_decimation: int = 64

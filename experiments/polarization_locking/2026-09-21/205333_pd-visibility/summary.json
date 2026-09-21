@@ -1,0 +1,22 @@
+{
+  "started_at": "2026-09-21T19:53:33.614142+00:00",
+  "axis": "phi2",
+  "pd_input": "in2",
+  "frequency_hz": 0.5,
+  "duration_s": 12.0,
+  "offset_v": 0.4,
+  "amplitude_v": 0.4,
+  "scope_duration_s": 2.0,
+  "scope_decimation": 16384,
+  "visibility_definition": "(high-low)/(high+low)",
+  "finished_at": "2026-09-21T19:53:52.106481+00:00",
+  "captures": 6,
+  "raw_visibility_mean": NaN,
+  "raw_visibility_min": NaN,
+  "raw_visibility_max": NaN,
+  "robust_visibility_mean": NaN,
+  "robust_visibility_min": NaN,
+  "robust_visibility_max": NaN,
+  "measurement_csv": "measurements.csv",
+  "scope_archive": "scope_traces.npz"
+}

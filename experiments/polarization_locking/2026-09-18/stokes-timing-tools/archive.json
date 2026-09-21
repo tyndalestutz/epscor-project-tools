@@ -1,0 +1,17 @@
+{
+  "reason": "One-off development tools moved out of the supported suite; file contents unchanged.",
+  "files": {
+    "live_stokes_plot.py": {
+      "original_path": "python/polarization_locking/live_stokes_plot.py",
+      "sha256": "0d5eb2beb6d5fe7828959fb1b555b0bcfee410d4b850c4a6e6eb02bd7833f676"
+    },
+    "live_stokes_diagnostic.py": {
+      "original_path": "python/polarization_locking/live_stokes_diagnostic.py",
+      "sha256": "1a86dd42c205e10d6e8bd280e4f134a6a3ac265108e5ae0cd2c94d9175208924"
+    },
+    "acquire_stokes_timing_test.py": {
+      "original_path": "python/polarization_locking/acquire_stokes_timing_test.py",
+      "sha256": "e7e7ee83cbf9ffc7c3f9cc94f6bf106aff9f3335f4a0c48b5ac20179b8b8f061"
+    }
+  }
+}

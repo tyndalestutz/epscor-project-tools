@@ -14,6 +14,10 @@ from .prompts import prepare_setup
 
 
 class DiagnosticsMixin:
+    def _run_pd_visibility(self, output_file: str, duration_s: float) -> None:
+        from .visibility import acquire_visibility
+        acquire_visibility(self.rp.p.rp.scope, self.config, output_file, duration_s)
+
     def _run_live_monitor(self, output_file: str | None = None) -> None:
         """Print PAX readings continuously and optionally persist them to CSV."""
         output = None
@@ -594,4 +598,3 @@ class DiagnosticsMixin:
                 print(f"Phi1 C-arm polarizer / D-port PAX test saved to {output_file}")
             else:
                 print("D-port phi1 analyzer test aborted; outputs were returned to zero.")
-

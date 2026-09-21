@@ -1,0 +1,33 @@
+Polarization-transfer analysis summary
+=====================================
+
+Dynamic electrical frequency from measured IN1 crossings: 0.465671 Hz
+Usable dynamic monotonic half-sweeps: 27
+Dynamic mean V_2pi: 0.708893 V
+Dynamic std V_2pi: 0.009811 V
+Dynamic mean per-sweep R^2: 0.996612
+
+Static phase calibration:
+  rising:
+    slope = -9.054578 rad/V
+    V_pi = 0.346962 V
+    V_2pi = 0.693924 V
+    R^2 = 0.995406
+    RMS phase residual = 8.312 deg
+  falling:
+    slope = -9.301020 rad/V
+    V_pi = 0.337769 V
+    V_2pi = 0.675537 V
+    R^2 = 0.996935
+    RMS phase residual = 6.969 deg
+
+Static mean |great-circle latitude|: 5.105 deg
+Static 95th percentile |latitude|: 11.346 deg
+Dynamic mean |great-circle latitude|: 3.600 deg
+Dynamic 95th percentile |latitude|: 9.853 deg
+
+Metadata:
+  started_at: 2026-09-18T21:57:51.925288+00:00
+  finished_at: 2026-09-18T21:59:28.380221+00:00
+  actuator_gain_v_per_v: 16.875
+  loopback: OUT1 -> phi1 actuator and OUT1 -> IN1

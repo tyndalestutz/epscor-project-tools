@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "test": "pd-visibility",
+  "options": {
+    "label": "visibility-in2",
+    "duration_s": 12.0,
+    "report": "pdf"
+  },
+  "config": {
+    "pd_input": "in2",
+    "visibility_frequency_hz": 0.5,
+    "visibility_dark_voltage_v": null,
+    "bench_notes": "Template: record operator, optical paths/analyzer, PD location/gain/DC coupling, external drive source/range/frequency, other connected RP outputs, and dark-offset measurement. 0.5 Hz is an example, not a measured frequency."
+  }
+}

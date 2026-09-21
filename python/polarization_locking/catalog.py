@@ -17,8 +17,11 @@ class TestCase:
     report: str = "overview"
     target: bool = False
     flags: tuple[str, ...] = ()
+    scope_only: bool = False
 
     def config_names(self) -> list[str]:
+        if self.scope_only:
+            return ["bench_notes", "rp_hostname", "rp_config", "rp_scope_port", "pd_input", "visibility_frequency_hz", "visibility_dark_voltage_v", "results_directory"]
         common = ("bench_", "rp_", "pax_", "phi1_v_lambda", "phi2_v_lambda", "phi1_actuator_", "phi2_actuator_", "phase_output_", "minimum_dop", "results_directory")
         return [f.name for f in fields(PolarizationLockConfig) if f.name.startswith(common + self.groups)]
 
@@ -50,6 +53,7 @@ TESTS = (
     TestCase("pid-test", "Two-axis PI hold", "Apply a rough correction followed by bounded PI feedback. DOP is logged without gating feedback; current-target capture uses the DOP gate.", FINAL, "_run_pid_test", ("pid_", "target_", "sphere_"), timed=True, report="pid", target=True),
     TestCase("pid-live", "Two-axis PI with sphere view", "Run the two-axis PI experiment with an interactive Poincare sphere. Requires PyVista; DOP behavior matches the two-axis PI hold.", FINAL, "_run_pid_live", ("pid_", "target_", "sphere_"), timed=True, report="pid", target=True),
     TestCase("rough", "One-shot target move", "Measure, make one bounded target correction, settle, and report the residual. Uses the DOP gate; summary goes to the run log.", FINAL, "rough_align_once", ("rough_", "target_", "sphere_"), target=True),
+    TestCase("pd-visibility", "Passive photodiode visibility", "Measure fringe contrast on the selected PD input under external drive. No RP output initialization or PAX connection.", "DC-coupled PD on the selected RP input; external drive must span complete fringes. Set its frequency and, when known, the blocked-light voltage offset. RP must already have the Pyrpl FPGA loaded.", "_run_pd_visibility", ("visibility_", "pd_input"), timed=True, report="visibility", scope_only=True),
 )
 BY_KEY = {case.key: case for case in TESTS}
 
@@ -59,7 +63,7 @@ def default_options(case: TestCase) -> dict:
     if case.axis:
         options["axis"] = "phi1"
     if case.timed:
-        options["duration_s"] = 60.0
+        options["duration_s"] = 12.0 if case.scope_only else 60.0
     options["report"] = "pdf"
     if case.target:
         options["target_mode"] = "current"

@@ -1,0 +1,20 @@
+{
+  "started_at": "2026-09-21T19:55:49.798542+00:00",
+  "pd_input": "in2",
+  "frequency_hz": 0.5,
+  "duration_s": 12.0,
+  "drive_source": "external piezo drive; RP outputs untouched",
+  "scope_duration_s": 2.0,
+  "scope_decimation": 16384,
+  "visibility_definition": "polarity-corrected (high-low)/(high+low)",
+  "finished_at": "2026-09-21T19:56:08.200029+00:00",
+  "captures": 6,
+  "raw_visibility_mean": 1.156917146631996,
+  "raw_visibility_min": 1.048780487804878,
+  "raw_visibility_max": 1.3125,
+  "robust_visibility_mean": 0.4857142857142857,
+  "robust_visibility_min": 0.4857142857142857,
+  "robust_visibility_max": 0.4857142857142857,
+  "measurement_csv": "measurements.csv",
+  "scope_archive": "scope_traces.npz"
+}

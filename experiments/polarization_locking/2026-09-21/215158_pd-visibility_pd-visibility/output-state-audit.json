@@ -1,0 +1,32 @@
+{
+  "output_routes_raw": {
+    "asg0": 1,
+    "asg1": 2,
+    "pid0": 0,
+    "pid1": 0,
+    "pid2": 1,
+    "iq0": 0,
+    "iq1": 0,
+    "iq2": 0
+  },
+  "asg_registers_raw": [
+    34669073,
+    0,
+    1073741823,
+    0,
+    4,
+    0,
+    0,
+    0,
+    0,
+    214699213,
+    1073741823,
+    536870912,
+    4,
+    0,
+    0,
+    0,
+    0
+  ],
+  "note": "Read only; existing outputs were not changed."
+}

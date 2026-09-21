@@ -1,0 +1,3 @@
+WARNING:pyrpl.redpitaya_client:Socket error during connection attempt 0.
+Run failed: RuntimeError: Cannot attach to existing RP monitor server; scope-only mode never starts a server or reloads the FPGA
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-21/214714_pd-visibility_pd-visibility/report.pdf

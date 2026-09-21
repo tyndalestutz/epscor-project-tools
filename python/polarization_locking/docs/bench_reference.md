@@ -1,8 +1,11 @@
 # Historical polarization bench reference
 
 These notes preserve the earlier command interface and calibration candidates.
-Use the [current suite README](../README.md) for operation and the C-port setup.
-New runs use the numbered menu and suite-local results folder.
+Use the [current suite README](../README.md) and
+[operating procedure](operating-procedure.md) for new measurements.
+The commands, physical placements, and calibration values below are historical;
+they are not operating instructions. New runs use the menu and write to
+`experiments/polarization_locking/`, outside the source package.
 
 
 This package tests the open-loop voltage model and a conservative, logged PID

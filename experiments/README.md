@@ -1,32 +1,25 @@
-# Experiment data layout
+# Experiment records
 
-New polarization-locking commands create one self-contained run directory:
+Reusable acquisition, analysis, and test code lives under `python/`. This tree
+holds recorded runs, physical setup/validity notes, run-local analysis, and
+clearly identified historical development scripts.
 
-```text
-experiments/polarization_locking/YYYY-MM-DD/
-  HHMMSS_<test-kind>_<your-label>/
-    data.csv
-    report.pdf       # only when the command ends with `pdf`
-```
+| Project | Records and instructions |
+| --- | --- |
+| Polarization locking | [Run index](polarization_locking/README.md) and [suite operating procedure](../python/polarization_locking/docs/operating-procedure.md) |
+| Polarization visualization | [Experiment notes](polarization_visualization/README.md) |
+| Field propagation | [Experiment notes](field_propagation/README.md) and [measurement protocol](../python/field_propogation/docs/measurement_acquisition.md) |
 
-For example:
+The polarization-locking menu writes one dated folder per run, containing the
+recipe, status/provenance, console log, measurements, and a PDF when reporting
+succeeds. The old positional `... pdf` command syntax is historical; use named
+tests and recipes as documented in the suite README.
 
-```text
-cross-sweep phi1 phi1-full pdf
-```
+Preserve raw data and original metadata, including failed/partial runs. Put new
+interpretations in separate analysis files and label limitations. Do not infer
+missing completion status or wiring from a folder name. Acquisition success,
+report generation, and physical validity are separate judgments.
 
-creates a dated folder containing `data.csv` and `report.pdf`; the supplied
-name is a human-readable label, not a path to manage manually. The CLI prints
-the folder before a measurement starts.
-
-`polarization_locking/legacy/flat-archive/` contains earlier results retained
-with their original names. Existing `data/MMDD/` directories hold the separate
-VNA/transfer-function data and are already organized by acquisition date.
-
-## Analyze a recorded run
-
-Use the [bench diagnostics](../python/polarization_locking/analysis/README.md)
-for first-NPBS and phi1-step measurements, or the
-[Independent Jones measurement acquisition](../python/field_propogation/docs/measurement_acquisition.md)
-for interference fits and model validation. Pass the recorded run’s `data.csv`
-to the appropriate script; use `--help` for its input requirements.
+Earlier polarization results remain in `polarization_locking/legacy/flat-archive/`.
+The repository's `data/MMDD/` directories contain separate VNA/transfer-function
+data. Neither location is the destination for new suite runs.

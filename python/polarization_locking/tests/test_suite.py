@@ -132,7 +132,9 @@ def test_all_catalog_entries_dispatch_and_persist(case, tmp_path, monkeypatch):
     app.disconnect.assert_called_once()
     path = next(tmp_path.rglob("recipe.json"))
     assert load_recipe(path)[0] == case
-    assert json.loads(path.with_name("run.json").read_text())["status"] == "completed"
+    recorded = json.loads(path.with_name("run.json").read_text())
+    assert recorded["status"] == "completed"
+    assert "provenance" in recorded and "packages" in recorded["provenance"]
     assert path.with_name("console.log").exists()
 
 

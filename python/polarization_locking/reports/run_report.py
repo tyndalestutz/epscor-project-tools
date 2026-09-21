@@ -74,7 +74,8 @@ def add_overview(pdf, case, paths, config, options, state, rows):
         ("Run", f"{paths.directory.name}\nStatus: {state.get('status', 'unknown')} | Started: {state.get('started_at', 'not recorded')}"),
         ("Purpose", case.description),
         ("Required optical setup", case.setup),
-        ("Recorded bench context (recipe)", f"{config.bench_pax_location}\n{config.bench_voltage_chain}"),
+        ("Recorded bench context (recipe)", f"PD: {config.pd_input}; external drive: {config.visibility_frequency_hz:g} Hz; RP outputs unchanged" if case.scope_only else f"{config.bench_pax_location}\n{config.bench_voltage_chain}"),
+        ("Operator setup notes", config.bench_notes),
         ("Data", samples + "\nSource: data.csv; full acquisition settings: recipe.json; status: run.json"),
     ]
     if rows and any(np.isfinite(column(rows, "dop"))):
@@ -98,7 +99,7 @@ def add_parameters(pdf, case, config, options):
         fig, ax = plt.subplots(figsize=(11.7, 8.3))
         ax.axis("off")
         fig.text(.065, .92, "Active parameters", fontsize=21, weight="bold", color=NAVY)
-        fig.text(.065, .86, "RP commands: volts, bounded to 0–1. V_lambda: terminal volts for 2π. Gains: terminal V / RP V.", fontsize=10)
+        fig.text(.065, .86, "Passive acquisition; voltage at the selected PD input. No actuator commands." if case.scope_only else "RP commands: volts, bounded to 0–1. V_lambda: terminal volts for 2π. Gains: terminal V / RP V.", fontsize=10)
         table = ax.table(cellText=items[start:start+24], colLabels=["Parameter", "Recorded value"], colWidths=[.64, .36], cellLoc="left", loc="upper left", bbox=[0, 0, 1, .94])
         table.auto_set_font_size(False)
         table.set_fontsize(9)
@@ -146,7 +147,28 @@ def add_telemetry(pdf, rows):
 
 def add_specialized(pdf, case, paths, options):
     kind = case.report
-    if kind.startswith("analyze_"):
+    if kind == "visibility":
+        summary = json.loads((paths.directory / "visibility.json").read_text())
+        text_page(pdf, "Photodiode visibility", [(key.replace("_", " "), str(value)) for key, value in summary.items()])
+        captures = sorted(paths.directory.glob("capture-*.npz"))
+        for start in range(0, len(captures), 3):
+            fig, axes = plt.subplots(3, 1, figsize=(11.7, 8.3), constrained_layout=True)
+            for ax, path in zip(axes, captures[start:start + 3]):
+                from ..routines.visibility import analyze_trace
+                with np.load(path) as data:
+                    t, v = data["time_s"], data["voltage_v"]
+                dt = float(np.median(np.diff(t)))
+                result, means = analyze_trace(v, dt, summary["external_frequency_hz"], summary["dark_voltage_v"])
+                ax.plot(t, v * 1000, color="0.7", lw=.4, label="Recorded samples (FPGA averaging on)")
+                ax.plot(t[0] + (np.arange(len(means)) + .5) * result["bin_s"], means * 1000, color=TEAL, label="1/64-period averages")
+                ax.set(title=f"{summary['pd_input']} / {path.stem}: {result['status']}", xlabel="Capture time (s)", ylabel="PD voltage (mV)")
+                ax.legend(fontsize=8)
+                ax.grid(alpha=.2)
+            for ax in axes[len(captures[start:start + 3]):]:
+                ax.set_visible(False)
+            pdf.savefig(fig)
+            plt.close(fig)
+    elif kind.startswith("analyze_"):
         analyzer = import_module(f"polarization_locking.analysis.{kind}")
         analyzer.create_report(paths.csv, options.get("report", "pdf"), document=pdf)
     elif kind == "power":
@@ -181,7 +203,8 @@ def create_run_report(case, paths, config, options, state):
                 plot_error = f"{type(exc).__name__}: {exc}"
                 plt.close("all")
                 text_page(pdf, "Specialized analysis unavailable", [("Reason", plot_error), ("Data retained", "Raw telemetry follows. The original CSV and recipe remain available for reanalysis.")])
-            add_telemetry(pdf, rows)
+            if not case.scope_only:
+                add_telemetry(pdf, rows)
         else:
             log = paths.directory / "console.log"
             lines = log.read_text().splitlines() if log.exists() else []

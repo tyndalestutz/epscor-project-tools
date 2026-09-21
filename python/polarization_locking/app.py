@@ -43,7 +43,12 @@ class PolarizationLockApp(DiagnosticsMixin, FeedbackMixin):
                 raise ValueError("Set both target_u and target_v, or neither")
             self.set_target(self.config.target_u, self.config.target_v)
 
-    def connect(self) -> None:
+    def connect(self, *, scope_only: bool = False) -> None:
+        self._scope_only = scope_only
+        if scope_only:
+            self.rp.connect_scope_only()
+            self.running = True
+            return
         self.rp.connect()
         self.pax.connect()
         self._applied_rp_voltages[:] = 0.0
@@ -51,6 +56,9 @@ class PolarizationLockApp(DiagnosticsMixin, FeedbackMixin):
 
     def disconnect(self) -> None:
         self.running = False
+        if getattr(self, "_scope_only", False):
+            self.rp.disconnect_scope_only()
+            return
         try:
             self.rp.disconnect()
         finally:

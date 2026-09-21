@@ -1,0 +1,24 @@
+{
+  "started_at": "2026-09-18T21:57:51.925288+00:00",
+  "configuration": {
+    "max_voltage": 0.8,
+    "min_voltage": 0.0,
+    "dynamic_frequency": 0.5,
+    "dynamic_duration": 30.0,
+    "static_step_voltage": 0.01,
+    "static_cycles": 1,
+    "samples_per_step": 2,
+    "settle_time": 0.05,
+    "turnaround_settle_time": 0.1,
+    "output": null,
+    "dynamic_only": false,
+    "static_only": false
+  },
+  "dynamic_csv": "/home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-18/225751_stokes-timing-test-phi1/dynamic.csv",
+  "static_csv": "/home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-18/225751_stokes-timing-test-phi1/static.csv",
+  "actuator_gain_v_per_v": 16.875,
+  "loopback": "OUT1 -> phi1 actuator and OUT1 -> IN1",
+  "synchronization_note": "IN1 and PAX have independent midpoint timestamps; no correction or fitting is applied.",
+  "finished_at": "2026-09-18T21:59:28.380221+00:00",
+  "status": "completed"
+}

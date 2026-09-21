@@ -1,0 +1,7 @@
+WARNING:pyrpl.modules:Register decimation of module scope has value 16384, which does not correspond to selected option 8192. Setting to '8192'. 
+Passive visibility on in2; external drive 0.5 Hz; RP outputs untouched.
+DC coupling and a full fringe excursion are required. Extrema use 1/64-period bin averages.
+Dark voltage not measured: reporting apparent contrast assuming zero offset.
+WARNING:pyrpl.modules:Trying to load attribute decimation of module scope that are invalid setup_attributes.
+Run failed: ValueError: Capture must contain at least two external-drive periods
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-21/214942_pd-visibility_pd-visibility/report.pdf

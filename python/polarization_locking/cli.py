@@ -28,7 +28,8 @@ class DiagnosticsMenu:
 
     def show(self, case, config, options, *, all_fields=False):
         self.print(f"\n{case.title} [{case.key}]\n{case.description}\nRequired setup: {case.setup}")
-        self.print("Voltages ending in rp_v/rp_voltage are RP commands (0-1 V). V_lambda is terminal voltage for 2pi; V_pi is half of V_lambda. Historical gains are editable candidates.")
+        if not case.scope_only:
+            self.print("Voltages ending in rp_v/rp_voltage are RP commands (0-1 V). V_lambda is terminal voltage for 2pi; V_pi is half of V_lambda. Historical gains are editable candidates.")
         entries = [("option", key, value) for key, value in options.items()]
         names = list(TYPES) if all_fields else case.config_names()
         entries += [("config", key, getattr(config, key)) for key in names]
@@ -168,6 +169,9 @@ def main(argv=None):
     group.add_argument("--run", choices=BY_KEY, metavar="TEST", help="explicitly start a hardware run")
     parser.add_argument("--profile", type=Path, help="load a saved recipe (or a previous run's recipe.json)")
     parser.add_argument("--dry-run", action="store_true", help="validate and print recipe; never connect")
+    parser.add_argument("--pd-input", choices=("in1", "in2"), help="PD input for passive visibility")
+    parser.add_argument("--frequency", type=float, help="external drive frequency in Hz for passive visibility")
+    parser.add_argument("--dark-voltage", type=float, help="blocked-light PD voltage for passive visibility")
     args = parser.parse_args(argv)
     menu = DiagnosticsMenu()
     case = None
@@ -180,6 +184,13 @@ def main(argv=None):
             if case and case.key != requested:
                 raise ValueError("Requested test does not match the recipe")
             case = BY_KEY[requested]
+        if any(value is not None for value in (args.pd_input, args.frequency, args.dark_voltage)):
+            if case is None or case.key != "pd-visibility":
+                raise ValueError("--pd-input, --frequency and --dark-voltage require pd-visibility")
+            config, options = menu.settings(case)
+            for name, value in (("pd_input", args.pd_input), ("visibility_frequency_hz", args.frequency), ("visibility_dark_voltage_v", args.dark_voltage)):
+                if value is not None:
+                    setattr(config, name, value)
         if args.list:
             for index, item in enumerate(TESTS, 1):
                 print(f"{index:2}. {item.key}: {item.title}")

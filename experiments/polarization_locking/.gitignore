@@ -1,0 +1,4 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+# Raw data, console.log, recipes, and reports are intentional run artifacts.

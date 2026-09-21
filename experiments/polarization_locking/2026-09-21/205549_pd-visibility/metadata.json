@@ -1,0 +1,10 @@
+{
+  "started_at": "2026-09-21T19:55:49.798542+00:00",
+  "pd_input": "in2",
+  "frequency_hz": 0.5,
+  "duration_s": 12.0,
+  "drive_source": "external piezo drive; RP outputs untouched",
+  "scope_duration_s": 2.0,
+  "scope_decimation": 16384,
+  "visibility_definition": "polarity-corrected (high-low)/(high+low)"
+}

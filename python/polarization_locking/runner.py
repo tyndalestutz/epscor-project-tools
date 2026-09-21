@@ -3,8 +3,10 @@ from contextlib import redirect_stdout, redirect_stderr
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
 import hashlib
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 import platform
+import subprocess
 import sys
 
 from .settings import recipe, validate, write_json
@@ -18,6 +20,27 @@ def source_fingerprint():
             digest.update(str(path.relative_to(root)).encode())
             digest.update(path.read_bytes())
     return digest.hexdigest()
+
+
+def runtime_provenance():
+    """Record local code and dependency versions without importing drivers."""
+    root = Path(__file__).resolve().parent
+    packages = {}
+    for name in ("numpy", "scipy", "matplotlib", "pyrpl", "yaqc", "yaqd-core", "yaqd-thorlabs", "pyvisa", "pyvisa-py", "pyusb", "pyvista", "pyvistaqt"):
+        try:
+            packages[name] = version(name)
+        except PackageNotFoundError:
+            packages[name] = None
+    provenance = {"packages": packages, "platform": platform.platform(), "git_commit": None, "suite_dirty": None}
+    try:
+        provenance["git_commit"] = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=root, text=True, stderr=subprocess.DEVNULL, timeout=5).strip()
+        provenance["suite_dirty"] = bool(subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=all", "--", "."],
+            cwd=root, text=True, stderr=subprocess.DEVNULL, timeout=5).strip())
+    except (OSError, subprocess.SubprocessError):
+        pass  # exported source trees are also usable; the source hash remains
+    return provenance
 
 
 class Tee:
@@ -48,12 +71,16 @@ def execute(case, config, options, *, app_factory=None):
     paths = app._new_experiment_paths(case.key, options["label"])
     write_json(paths.directory / "recipe.json", recipe(case, config, options))
     state = {"test": case.key, "status": "running", "started_at": datetime.now(timezone.utc).isoformat(), "python": platform.python_version(), "source_sha256": source_fingerprint(), "required_setup": case.setup}
+    state["provenance"] = runtime_provenance()
     status_path = paths.directory / "run.json"
     write_json(status_path, state)
     print(f"Run folder: {paths.directory}")
     with (paths.directory / "console.log").open("w") as logfile, redirect_stdout(Tee(sys.stdout, logfile)), redirect_stderr(Tee(sys.stderr, logfile)):
         try:
-            app.connect()
+            if case.scope_only:
+                app.connect(scope_only=True)
+            else:
+                app.connect()
             if case.target and options["target_mode"] == "current":
                 app.capture_target()
             state["effective_config"] = asdict(app.config)

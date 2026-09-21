@@ -1,0 +1,12 @@
+{
+  "started_at": "2026-09-21T19:52:38.929016+00:00",
+  "axis": "phi2",
+  "pd_input": "in2",
+  "frequency_hz": 0.5,
+  "duration_s": 12.0,
+  "offset_v": 0.4,
+  "amplitude_v": 0.4,
+  "scope_duration_s": 2.0,
+  "scope_decimation": 16384,
+  "visibility_definition": "(high-low)/(high+low)"
+}

@@ -100,6 +100,14 @@ def validate(config, case, options):
             raise ValueError(f"{name} must be positive")
     # Full-period scans must fit before any instrument is connected. An explicit
     # voltage sweep does not depend on the unmeasured terminal transfer gain.
+    if case.scope_only:
+        if config.pd_input not in {"in1", "in2"}:
+            raise ValueError("pd_input must be in1 or in2")
+        if not 1 <= config.rp_scope_port <= 65535:
+            raise ValueError("rp_scope_port must be within 1..65535")
+        if not 2 / 8.589934592 <= config.visibility_frequency_hz <= 1000:
+            raise ValueError("visibility_frequency_hz must be within 0.233..1000 Hz (two periods per scope capture)")
+        return
     if case.key not in {"live", "pax-path-hold", "first-npbs-d-isolation"} and not config.phase_output_map_confirmed:
         raise ValueError("Set phase_output_map_confirmed after checking the output assignment")
     if case.key not in {"live", "sweep", "pax-path-hold", "first-npbs-d-isolation"}:

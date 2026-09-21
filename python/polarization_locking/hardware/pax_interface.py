@@ -3,6 +3,8 @@ from __future__ import annotations
 import time
 import subprocess
 import sys
+import os
+import signal
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
@@ -49,6 +51,8 @@ class PAXController:
         if yaqc is None:
             raise RuntimeError("yaqc is not installed in the active Python environment")
 
+        if self.config.pax_host in {"localhost", "127.0.0.1", "::1"}:
+            self._stop_existing_pax_daemons()
         try:
             self.client = self._new_client()
         except ConnectionRefusedError as exc:
@@ -62,6 +66,42 @@ class PAXController:
         self._test_mode = False
         return self.client
 
+    @staticmethod
+    def _stop_existing_pax_daemons() -> None:
+        """Reclaim the local PAX from lingering daemons before connecting."""
+        if not sys.platform.startswith("linux"):
+            return
+        names = {"yaqd-thorlabs-pax1000", "pax1000_daemon.py"}
+        for entry in Path("/proc").iterdir():
+            if not entry.name.isdigit() or int(entry.name) == os.getpid():
+                continue
+            try:
+                argv = (entry / "cmdline").read_bytes().decode(errors="replace").strip("\0").split("\0")
+            except (FileNotFoundError, PermissionError, ProcessLookupError):
+                continue
+            executable = Path(argv[0]).name if argv else ""
+            # Match actual launch arguments, not a shell/editor mentioning PAX.
+            matches = executable in names or (
+                executable.startswith("python") and len(argv) > 1 and Path(argv[1]).name in names
+            )
+            if not matches:
+                continue
+            pid = int(entry.name)
+            print(f"Stopping existing PAX daemon (PID {pid}) before connection.")
+            try:
+                os.kill(pid, signal.SIGTERM)
+                deadline = time.monotonic() + 2.0
+                while time.monotonic() < deadline:
+                    if not entry.exists():
+                        break
+                    time.sleep(0.05)
+                else:
+                    os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            except PermissionError as exc:
+                raise RuntimeError(f"Cannot stop existing PAX daemon PID {pid}; it still owns the device") from exc
+
     def _apply_measurement_configuration(self) -> None:
         """Apply wavelength after the project daemon configures motor/mode."""
         if self.client is None:
@@ -69,7 +109,17 @@ class PAXController:
         wavelength = float(self.config.pax_wavelength_nm)
         if wavelength <= 0.0:
             raise ValueError("pax_wavelength_nm must be positive")
-        self.client.set_wavelength(wavelength)
+        try:
+            self.client.set_wavelength(wavelength)
+        except Exception as exc:
+            message = str(exc)
+            if "No such device" in message:
+                raise RuntimeError(
+                    "The PAX daemon accepted the network connection, but its USB device handle is stale. "
+                    "Stop the existing YAQD PAX daemon and retry; the local project daemon will restart "
+                    "automatically. Confirm the PAX serial in hardware/pax1000.toml."
+                ) from exc
+            raise
 
     def _new_client(self) -> Any:
         if yaqc is None:

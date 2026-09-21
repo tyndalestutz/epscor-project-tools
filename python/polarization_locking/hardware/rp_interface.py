@@ -8,6 +8,36 @@ from typing import Any
 import numpy as np
 
 
+class _ScopeClient:
+    """Limit a borrowed monitor connection to scope and input-mux writes."""
+
+    def __init__(self, client):
+        self.client = client
+
+    def reads(self, address, length):
+        result = self.client.reads(address, length)
+        if result is None:
+            raise RuntimeError("RP scope read failed")
+        return result
+
+    def writes(self, address, values):
+        # Scope input muxes share DSP module IDs with ASGs, but their output
+        # routing registers are at +4 and must never be written here.
+        for offset in range(len(values)):
+            register = address + 4 * offset
+            if not (0x40100000 <= register <= 0x40100030 or register in (0x40380000, 0x40390000)):
+                raise RuntimeError(f"Scope session refused register write {register:#x}")
+        if not self.client.writes(address, values):
+            raise RuntimeError("RP scope write failed")
+
+
+class _ScopeSession:
+    """Minimal Pyrpl scope parent; no output modules or persisted settings."""
+
+    _autosave_active = False
+    frequency_correction = 1.0
+
+
 @dataclass(frozen=True)
 class PhotodiodeReading:
     """Summary of one Red Pitaya scope capture on the final-output PD."""
@@ -76,6 +106,81 @@ class RPController:
         )
 
         return self.p
+
+    def connect_scope_only(self) -> Any:
+        """Start only a monitor transport; never load FPGA/output settings."""
+        import os
+        import shlex
+        from pathlib import Path
+        from types import SimpleNamespace
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        try:
+            from pyrpl.hardware_modules.scope import Scope
+            from pyrpl.memory import MemoryTree
+            from pyrpl.redpitaya_client import MonitorClient
+            from pyrpl.directories import user_config_dir
+            import paramiko
+            import yaml
+        except ImportError as exc:  # pragma: no cover - hardware dependency
+            raise RuntimeError("pyrpl is not installed in the active Python environment") from exc
+
+        def unavailable():
+            raise RuntimeError("Cannot attach to scope monitor; no FPGA reload or output initialization attempted")
+
+        # Use only SSH credentials from the existing profile, never its module
+        # settings. A separate port avoids stopping an existing Pyrpl client.
+        profile = Path(user_config_dir) / f"{self.config.rp_config}.yml"
+        connection = yaml.safe_load(profile.read_text()).get("redpitaya", {})
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self._scope_ssh = ssh
+        client = None
+        try:
+            ssh.connect(self.config.rp_hostname, port=connection.get("sshport", 22),
+                        username=connection.get("user", "root"), password=connection.get("password"),
+                        timeout=5, banner_timeout=5, auth_timeout=5)
+            _, stdout, _ = ssh.exec_command("cat /tmp/loaded_fpga.inf", timeout=5)
+            if "pyrpl" not in stdout.read().decode().lower():
+                raise RuntimeError("RP is not marked as running the Pyrpl FPGA; refusing to reload it during passive measurement")
+            executable = str(Path(connection.get("serverdirname", "/opt/pyrpl")) / connection.get("monitor_server_name", "monitor_server"))
+            _, stdout, stderr = ssh.exec_command(f"{shlex.quote(executable)} {self.config.rp_scope_port}", timeout=5)
+            time.sleep(0.2)
+            if stdout.channel.exit_status_ready():
+                raise RuntimeError(f"Scope monitor did not start: {stderr.read().decode().strip()}")
+            client = MonitorClient(self.config.rp_hostname, self.config.rp_scope_port, restartserver=unavailable)
+            session = _ScopeSession()
+            session.client = _ScopeClient(client)
+            # Read raw registers before Scope property defaults can normalize
+            # them. Restore these exact values when the session closes.
+            session.previous = {address: session.client.reads(address, 1).copy()
+                                for address in (0x40100004, 0x40100010, 0x40100014, 0x40100028, 0x40380000, 0x40390000)}
+            session.c = MemoryTree()  # in-memory only
+            session.parent = session
+            session.scope = Scope(session, "scope")
+            self.p = SimpleNamespace(rp=session)
+        except BaseException:
+            if client is not None:
+                client.close()
+            ssh.close()
+            self._scope_ssh = None
+            raise
+        return self.p
+
+    def disconnect_scope_only(self) -> None:
+        """Release a scope-only Pyrpl connection without touching RP outputs."""
+        try:
+            if self.p is not None:
+                session = self.p.rp
+                try:
+                    for address, values in session.previous.items():
+                        session.client.writes(address, values)
+                finally:
+                    session.client.client.close()
+        finally:
+            self.p = None
+            if getattr(self, "_scope_ssh", None) is not None:
+                self._scope_ssh.close()
+                self._scope_ssh = None
 
     def disconnect(self) -> None:
         try:
