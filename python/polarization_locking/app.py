@@ -46,7 +46,15 @@ class PolarizationLockApp(DiagnosticsMixin, FeedbackMixin):
     def connect(self, *, scope_only: bool = False) -> None:
         self._scope_only = scope_only
         if scope_only:
-            self.rp.connect_scope_only()
+            self._contrast_active = self.config.visibility_mode == "active"
+            self._contrast_pd = self.config.visibility_source in {"pd", "both"}
+            self._contrast_pax = self.config.visibility_source in {"pax", "both"}
+            if self._contrast_active:
+                self.rp.connect()
+            elif self._contrast_pd:
+                self.rp.connect_scope_only()
+            if self._contrast_pax:
+                self.pax.connect()
             self.running = True
             return
         self.rp.connect()
@@ -57,7 +65,14 @@ class PolarizationLockApp(DiagnosticsMixin, FeedbackMixin):
     def disconnect(self) -> None:
         self.running = False
         if getattr(self, "_scope_only", False):
-            self.rp.disconnect_scope_only()
+            try:
+                if self._contrast_active:
+                    self.rp.disconnect()
+                elif self._contrast_pd:
+                    self.rp.disconnect_scope_only()
+            finally:
+                if self._contrast_pax:
+                    self.pax.disconnect()
             return
         try:
             self.rp.disconnect()

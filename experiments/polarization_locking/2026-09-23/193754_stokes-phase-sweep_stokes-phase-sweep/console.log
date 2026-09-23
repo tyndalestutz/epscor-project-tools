@@ -1,0 +1,14 @@
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+Stokes phase sweep: OUT1 0.5 Hz sine, 0.36 +/- 0.36 V, 60 s.
+IN1 is the measured OUT1 voltage reference. PAX and RP timing windows are logged; no phase is inferred.
+Stokes phase sweep saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-23/193754_stokes-phase-sweep_stokes-phase-sweep/data.csv
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-23/193754_stokes-phase-sweep_stokes-phase-sweep/report.pdf

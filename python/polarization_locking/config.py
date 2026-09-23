@@ -32,6 +32,7 @@ class PolarizationLockConfig:
     pax_measurement_wait_s: float = 0.06
     pax_read_retries: int = 3
     pax_retry_wait_s: float = 0.25
+    pax_fresh_read_timeout_s: float = 5.0
     # Values observed in the known-good Thorlabs Windows application log.
     # They are reasserted by PAXController after it attaches to a daemon.
     pax_rotation_velocity_hz: float = 60.0
@@ -155,9 +156,16 @@ class PolarizationLockConfig:
     # not calibrate the PD against PAX ``ptotal`` units, but it prevents an
     # accidental 100x error when comparing their *relative* responses.
     pd_input: str = "in1"
-    # Passive visibility acquisition: external drive, DC-coupled PD.
+    # Contrast acquisition: PD/PAX, with an external or actively generated drive.
     rp_scope_port: int = 2223
     visibility_frequency_hz: float = 0.5
+    visibility_source: str = "pd"
+    visibility_mode: str = "passive"
+    visibility_axis: str = "phi1"
+    visibility_waveform: str = "sin"
+    visibility_amplitude_v: float = 0.36
+    visibility_offset_v: float = 0.36
+    visibility_pax_sample_period_s: float = 0.05
     visibility_dark_voltage_v: Optional[float] = None
     pd_nd_optical_density: float = 2.0
     pd_scope_duration_s: float = 0.01
@@ -176,6 +184,12 @@ class PolarizationLockConfig:
     # unipolar RP output to generate a negative voltage.
     power_balance_phi2_frequency_hz: float = 0.5
     power_balance_sample_period_s: float = 0.05
+
+    # Explicit electrical sweep; no V_lambda or phase calibration is inferred.
+    stokes_phase_sweep_frequency_hz: float = 0.5
+    stokes_phase_sweep_amplitude_v: float = 0.36
+    stokes_phase_sweep_offset_v: float = 0.36
+    stokes_phase_sweep_sample_period_s: float = 0.05
 
     # Fit-ready field-propagation calibration. At each phi1 bias, sweep one
     # phi2 V_lambda for path A only, path B only, and both paths. Alternating

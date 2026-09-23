@@ -30,7 +30,8 @@ without a behavior-level reason and regression coverage.
    Add parameters to `PolarizationLockConfig`; validate before connecting.
 2. Add one `TestCase` in `catalog.py`, including honest purpose, physical setup,
    relevant config groups, duration semantics, and report type. `scope_only=True`
-   selects the passive session lifecycle; ordinary tests own both RP and PAX.
+   selects the contrast-specific session lifecycle (detectors and active/passive
+   mode from configuration); ordinary tests own both RP and PAX.
 3. Use the runner's output path and instrument session. Do not duplicate recipes,
    session startup, or report dispatch in an ad-hoc command. Retain partial data
    on failures and interruption, and label derived estimates and units accurately.

@@ -23,7 +23,9 @@ because the previous command returned `completed`.
 
 Every ordinary test below connects both RP and PAX, initializes RP outputs to
 zero, and attempts zero on exit, even when its name includes “monitor” or “hold”.
-`pd-visibility` alone leaves output state unchanged and never connects PAX.
+`pd-visibility` defaults to passive mode, which leaves output state unchanged.
+Select PD, PAX or both, then active/passive outside the parameter table; active
+mode drives the selected phase output and zeros outputs on exit.
 Path-condition durations are per condition. Calibration/settling add time.
 
 Every menu run attempts a PDF and keeps recipe/status/log artifacts. A complete
@@ -31,12 +33,12 @@ report may still describe invalid physics; specialized analysis can be partial.
 CSV fields depend on the measurement. `rough` reports through its log instead
 of a measurement CSV. Report regeneration is offline.
 
-## Monitoring and passive visibility
+## Monitoring and contrast
 
 | Test key | Purpose / action | Required setup |
 | --- | --- | --- |
 | `live` | Log raw PAX angles, Stokes, DOP and u/v until Ctrl+C. No actuator scan; RP outputs are initialized to zero. | PAX at the location recorded in bench_pax_location. |
-| `pd-visibility` | Measure fringe contrast on the selected PD input under external drive. No RP output initialization or PAX connection. | DC-coupled PD on the selected RP input; external drive must span complete fringes. Set its frequency and, when known, the blocked-light voltage offset. RP must already have the Pyrpl FPGA loaded. |
+| `pd-visibility` | Contrast from PD, PAX or both. Choose passive or active; active actuator/waveform settings remain in the table. | Drive spans fringes. PD: DC coupling and signed dark baseline. PAX: recorded port/wavelength. Both: simultaneous optical delivery. See [contrast procedure](visibility.md). |
 
 ## Actuator response and coupling
 
@@ -74,6 +76,66 @@ of a measurement CSV. Report regeneration is offline.
 | `pid-test` | Apply a rough correction followed by bounded PI feedback. DOP is logged without gating feedback; current-target capture uses the DOP gate. | PAX at final output; both paths open unless prompted. |
 | `pid-live` | Run the two-axis PI experiment with an interactive Poincare sphere. Requires PyVista; DOP behavior matches the two-axis PI hold. | PAX at final output; both paths open unless prompted. |
 | `rough` | Measure, make one bounded target correction, settle, and report the residual. Uses the DOP gate; summary goes to the run log. | PAX at final output; both paths open unless prompted. |
+
+## Repeated power/Stokes acquisition
+
+`stokes-phase-sweep` measures optical power and polarization while OUT1 drives
+phi1 with a continuous sine. Put PAX in path A / E4 observing the combined
+field, and physically T OUT1 into IN1. IN1 is a literal voltage reference, not
+a photodiode; no ND correction or theoretical phase conversion is applied.
+OUT2 remains at zero and outputs are returned to zero on exit.
+
+```bash
+python python/polarization_locking/lock.py --show stokes-phase-sweep
+python python/polarization_locking/lock.py --profile python/polarization_locking/profiles/stokes-phase-sweep-example.json --dry-run
+python python/polarization_locking/lock.py --profile python/polarization_locking/profiles/stokes-phase-sweep-example.json --run stokes-phase-sweep
+```
+
+Defaults: 60 s (30 electrical cycles), 0.5 Hz, 0.36 V amplitude and 0.36 V
+offset (0–0.72 V). These are explicit electrical commands, not a claim of a
+calibrated 2π optical excursion. Configure `stokes_phase_sweep_*` in the recipe
+or menu and `duration_s` in run options. Nominal polling is 0.05 s, matching the
+existing driven PAX tests; actual cadence is limited by fresh PAX records and
+scope acquisition. No cycle averaging or fitting is performed.
+
+The shared PAX daemon retains its five-second startup wait. This test also uses
+the shared `read_fresh_polarization()` adapter: initialization, finite values,
+ADC validity and advancement of both timestamp and revision are required.
+Readiness is established before starting the sine and acquisition clock.
+An unavailable/stalled PAX fails the run after the configured freshness wait;
+already flushed rows are retained. Low DOP and small raw DOP excursions above
+one are retained rather than filtered for polarization purity.
+
+`data.csv` has one row per fresh PAX reading paired with the immediately
+following short IN1 scope capture. `in1_reference_v` is the capture mean in
+volts; standard deviation, extrema, count, scope timing/decimation and FPGA
+averaging state are also retained. `pd_scope_*` settings control this existing
+scope helper; the input is always IN1 regardless of `pd_input`. Each short
+capture remains a separate row; no averaging across PAX measurements occurs.
+`out1_command_estimated_v` is the software sine estimate, not measured voltage
+or hardware phase readback. Actual ASG frequency/amplitude/offset are logged.
+
+`elapsed_s` is the midpoint of the host IN1 capture call; `utc` is row completion.
+`in1_started_s`, `in1_finished_s`, `pax_requested_s`, and `pax_received_s`
+record separate acquisition windows. These are sequential paired snapshots,
+not hardware-trigger-synchronized measurements; the PAX integration window and
+device clock offset are not calibrated. Preserve these times and PAX counters
+for later alignment, particularly when comparing voltage-dependent trajectories.
+
+As elsewhere in this suite, `s1,s2,s3` are unit-norm directions derived from
+PAX theta/eta. Additional `s1_over_s0,s2_over_s0,s3_over_s0` equal DOP times
+that direction, providing total-power-normalized Stokes for coherency analysis.
+Raw theta, eta, DOP, power and the usual PAX diagnostic fields remain in the CSV.
+
+The standard dated run folder contains `data.csv`, `recipe.json`, `run.json`,
+`console.log`, and `report.pdf`. The report shows voltage, power, Stokes, DOP,
+and angles versus time plus standard metadata. Visibility/model analysis stays
+offline: the existing visibility estimator assumes dense uniform scope traces,
+not irregular PAX snapshots. Regenerate the PDF without hardware:
+
+```bash
+PYTHONPATH=python python -m polarization_locking.reports.run_report path/to/run-directory
+```
 
 ## Specialist and historical tools
 

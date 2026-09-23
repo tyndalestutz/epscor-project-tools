@@ -5,6 +5,7 @@ import subprocess
 import sys
 import os
 import signal
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
@@ -46,8 +47,10 @@ class PAXController:
         self._daemon_process: Optional[subprocess.Popen[Any]] = None
         self._daemon_log_path: Optional[Path] = None
         self.last_raw_record: dict[str, Any] | None = None
+        self._last_fresh_record: tuple[float, float] | None = None
 
     def connect(self) -> Any:
+        self._last_fresh_record = None
         if yaqc is None:
             raise RuntimeError("yaqc is not installed in the active Python environment")
 
@@ -127,6 +130,7 @@ class PAXController:
         return yaqc.Client(host=self.config.pax_host, port=self.config.pax_port)
 
     def disconnect(self) -> None:
+        self._last_fresh_record = None
         self.client = None
         self._test_mode = False
         if self._daemon_process is not None:
@@ -249,3 +253,37 @@ class PAXController:
             timestamp=timestamp, theta=theta, eta=eta, s1=s1, s2=s2, s3=s3, dop=dop, ptotal=ptotal,
             revisions=revisions, adc_min=adc_min, adc_max=adc_max, rev_time=rev_time,
         )
+
+    def read_fresh_polarization(self) -> PAXReading:
+        """Return an initialized, advancing record or fail within a bounded wait.
+
+        The first call establishes advancement using two valid device records.
+        Low DOP and small calibration excursions above one remain raw data;
+        this checks acquisition validity, not polarization purity.
+        """
+        deadline = time.monotonic() + self.config.pax_fresh_read_timeout_s
+        previous = self._last_fresh_record
+        while time.monotonic() < deadline:
+            try:
+                reading = self.read_polarization()
+            except (KeyError, ValueError):
+                # YAQD can expose its empty initial result before the first
+                # completed measurement; non-finite angles also cannot form Stokes.
+                time.sleep(0.01)
+                continue
+            values = (reading.timestamp, reading.revisions, reading.theta, reading.eta,
+                      reading.dop, reading.ptotal, reading.adc_min, reading.adc_max, reading.rev_time)
+            valid = (all(math.isfinite(value) and abs(value) < 1e30 for value in values)
+                     and reading.timestamp > 0 and reading.revisions > 0 and reading.rev_time > 0
+                     and 0 <= reading.adc_min < reading.adc_max < 65520
+                     and abs(reading.theta) <= math.pi / 2 and abs(reading.eta) <= math.pi / 4
+                     and reading.dop >= 0 and reading.ptotal > 0)
+            if valid:
+                current = (reading.timestamp, reading.revisions)
+                if previous is not None and all(now > before for now, before in zip(current, previous)):
+                    self._last_fresh_record = current
+                    return reading
+                if previous is None:
+                    previous = current
+            time.sleep(0.01)
+        raise RuntimeError("PAX did not return a valid advancing measurement before the freshness timeout")

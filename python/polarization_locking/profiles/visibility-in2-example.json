@@ -7,6 +7,7 @@
     "report": "pdf"
   },
   "config": {
+    "visibility_source": "pd",
     "pd_input": "in2",
     "visibility_frequency_hz": 0.5,
     "visibility_dark_voltage_v": null,

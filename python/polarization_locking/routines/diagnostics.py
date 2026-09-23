@@ -14,9 +14,13 @@ from .prompts import prepare_setup
 
 
 class DiagnosticsMixin:
+    def _run_stokes_phase_sweep(self, output_file: str, duration_s: float) -> None:
+        from .stokes_phase_sweep import acquire_stokes_phase_sweep
+        acquire_stokes_phase_sweep(self.rp, self.pax, self.config, output_file, duration_s)
+
     def _run_pd_visibility(self, output_file: str, duration_s: float) -> None:
-        from .visibility import acquire_visibility
-        acquire_visibility(self.rp.p.rp.scope, self.config, output_file, duration_s)
+        from .visibility import acquire_contrast
+        acquire_contrast(self.rp, self.pax, self.config, output_file, duration_s)
 
     def _run_live_monitor(self, output_file: str | None = None) -> None:
         """Print PAX readings continuously and optionally persist them to CSV."""

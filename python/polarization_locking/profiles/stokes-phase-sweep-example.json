@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "test": "stokes-phase-sweep",
+  "options": {
+    "label": "stokes-phase-sweep-E4",
+    "duration_s": 60.0,
+    "report": "pdf"
+  },
+  "config": {
+    "bench_pax_location": "Path A / E4, combined field after first NPBS",
+    "bench_voltage_chain": "OUT1 -> phi1 actuator driver; OUT1 physically T-ed to IN1 voltage reference",
+    "bench_notes": "Both input paths open. IN1 measures actuator-command voltage, not optical power. Record operator and actual setup before running.",
+    "stokes_phase_sweep_frequency_hz": 0.5,
+    "stokes_phase_sweep_amplitude_v": 0.36,
+    "stokes_phase_sweep_offset_v": 0.36,
+    "stokes_phase_sweep_sample_period_s": 0.05
+  }
+}

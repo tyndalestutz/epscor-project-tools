@@ -1,0 +1,12 @@
+{
+  "mode": "active",
+  "frequency_hz": 0.46566128730773926,
+  "axis": "phi1",
+  "output": "out1",
+  "waveform": "sin",
+  "asg_waveform": "sin",
+  "offset_v": 0.3599853515625,
+  "amplitude_v": 0.3599853515625,
+  "requested_frequency_hz": 0.5,
+  "started_at": "2026-09-23T22:31:30.349082+00:00"
+}

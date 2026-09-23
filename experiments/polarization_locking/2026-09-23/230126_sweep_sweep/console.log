@@ -1,0 +1,181 @@
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/augustus/miniconda3/envs/jl-env/lib/python3.10/logging/__init__.py", line 1103, in emit
+    stream.write(msg + self.terminator)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 52, in write
+    self.logfile.write(text)
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/lock.py", line 19, in <module>
+    raise SystemExit(main())
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 210, in main
+    else:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 157, in run
+    self.detail(case)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 121, in detail
+    state = self.run_test(case, deepcopy(config), dict(options))
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 83, in execute
+    app.connect()
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/app.py", line 52, in connect
+    return
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/hardware/rp_interface.py", line 84, in connect
+    self.p = Pyrpl(hostname=self.config.rp_hostname, config=self.config.rp_config, gui=False)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/pyrpl.py", line 289, in __init__
+    self.logger.info(
+Message: 'All your PyRPL settings will be saved to the config file\n    %s\nIf you would like to restart PyRPL with these settings, type "pyrpl.exe %s" in a windows terminal or \n    from pyrpl import Pyrpl\n    p = Pyrpl(\'%s\')\nin a python terminal.'
+Arguments: ('/home/augustus/pyrpl_user_dir/config/scope_config.yml', 'scope_config', 'scope_config')
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/augustus/miniconda3/envs/jl-env/lib/python3.10/logging/__init__.py", line 1103, in emit
+    stream.write(msg + self.terminator)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 52, in write
+    self.logfile.write(text)
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/lock.py", line 19, in <module>
+    raise SystemExit(main())
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 210, in main
+    else:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 157, in run
+    self.detail(case)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 121, in detail
+    state = self.run_test(case, deepcopy(config), dict(options))
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 83, in execute
+    app.connect()
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/app.py", line 52, in connect
+    return
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/hardware/rp_interface.py", line 84, in connect
+    self.p = Pyrpl(hostname=self.config.rp_hostname, config=self.config.rp_config, gui=False)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/pyrpl.py", line 322, in __init__
+    self.rp = RedPitaya(config=self.c)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 235, in __init__
+    should_reload_fpga = self._should_reload_fpga()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 268, in _should_reload_fpga
+    self.logger.info("Correct FPGA image detected, skipping reload")
+Message: 'Correct FPGA image detected, skipping reload'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/hardware_modules/pwm.py", line 39, in __init__
+    self.pyrpl()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/modules.py", line 466, in pyrpl
+    parent = parent.parent
+AttributeError: 'RedPitaya' object has no attribute 'parent'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/augustus/miniconda3/envs/jl-env/lib/python3.10/logging/__init__.py", line 1103, in emit
+    stream.write(msg + self.terminator)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 52, in write
+    self.logfile.write(text)
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/lock.py", line 19, in <module>
+    raise SystemExit(main())
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 210, in main
+    else:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 157, in run
+    self.detail(case)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 121, in detail
+    state = self.run_test(case, deepcopy(config), dict(options))
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 83, in execute
+    app.connect()
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/app.py", line 52, in connect
+    return
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/hardware/rp_interface.py", line 84, in connect
+    self.p = Pyrpl(hostname=self.config.rp_hostname, config=self.config.rp_config, gui=False)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/pyrpl.py", line 322, in __init__
+    self.rp = RedPitaya(config=self.c)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 242, in __init__
+    self.start()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 686, in start
+    self.startclient()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 725, in startclient
+    self.makemodules()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 743, in makemodules
+    self.makemodule(name, cls)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 733, in makemodule
+    module = cls(self, name)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/hardware_modules/pwm.py", line 44, in __init__
+    rp.logger.warning("no pyrpl instance")
+Message: 'no pyrpl instance'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/hardware_modules/pwm.py", line 39, in __init__
+    self.pyrpl()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/modules.py", line 466, in pyrpl
+    parent = parent.parent
+AttributeError: 'RedPitaya' object has no attribute 'parent'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/augustus/miniconda3/envs/jl-env/lib/python3.10/logging/__init__.py", line 1103, in emit
+    stream.write(msg + self.terminator)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 52, in write
+    self.logfile.write(text)
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/lock.py", line 19, in <module>
+    raise SystemExit(main())
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 210, in main
+    else:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 157, in run
+    self.detail(case)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 121, in detail
+    state = self.run_test(case, deepcopy(config), dict(options))
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 83, in execute
+    app.connect()
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/app.py", line 52, in connect
+    return
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/hardware/rp_interface.py", line 84, in connect
+    self.p = Pyrpl(hostname=self.config.rp_hostname, config=self.config.rp_config, gui=False)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/pyrpl.py", line 322, in __init__
+    self.rp = RedPitaya(config=self.c)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 242, in __init__
+    self.start()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 686, in start
+    self.startclient()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 725, in startclient
+    self.makemodules()
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 743, in makemodules
+    self.makemodule(name, cls)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 733, in makemodule
+    module = cls(self, name)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/hardware_modules/pwm.py", line 44, in __init__
+    rp.logger.warning("no pyrpl instance")
+Message: 'no pyrpl instance'
+Arguments: ()
+--- Logging error ---
+Traceback (most recent call last):
+  File "/home/augustus/miniconda3/envs/jl-env/lib/python3.10/logging/__init__.py", line 1103, in emit
+    stream.write(msg + self.terminator)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 52, in write
+    self.logfile.write(text)
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/lock.py", line 19, in <module>
+    raise SystemExit(main())
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 210, in main
+    else:
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 157, in run
+    self.detail(case)
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/cli.py", line 121, in detail
+    state = self.run_test(case, deepcopy(config), dict(options))
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/runner.py", line 83, in execute
+    app.connect()
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/app.py", line 52, in connect
+    return
+  File "/home/augustus/Documents/code/repos/epscor-project-tools/python/polarization_locking/hardware/rp_interface.py", line 84, in connect
+    self.p = Pyrpl(hostname=self.config.rp_hostname, config=self.config.rp_config, gui=False)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/pyrpl.py", line 322, in __init__
+    self.rp = RedPitaya(config=self.c)
+  File "/home/augustus/Documents/code/repos/pyrpl/pyrpl/redpitaya.py", line 243, in __init__
+    self.logger.info(
+Message: 'Successfully connected to Redpitaya with hostname 192.168.1.98.'
+Arguments: ()
+Warning: 11/11 sweep readings had DOP below 0.900. They were logged, but are not suitable for a rough move.
+Calibration sweep saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-23/230126_sweep_sweep/data.csv
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-23/230126_sweep_sweep/report.pdf

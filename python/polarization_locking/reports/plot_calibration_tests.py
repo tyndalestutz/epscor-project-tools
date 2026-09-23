@@ -220,6 +220,30 @@ def add_pax_path_hold_page(pdf: PdfPages, input_file: Path) -> None:
     plt.close(figure)
 
 
+def add_stokes_phase_sweep_page(pdf: PdfPages, input_file: Path) -> None:
+    rows = _rows(input_file)
+    def values(key):
+        return np.asarray([float(row[key]) for row in rows])
+    figure, axes = plt.subplots(3, 2, figsize=(11.7, 8.3), constrained_layout=True)
+    figure.suptitle("Power and Stokes versus phase-actuator drive", fontsize=16)
+    panels = (
+        ("Voltage reference", ("in1_reference_v", "out1_command_estimated_v"), "V", "elapsed_s"),
+        ("PAX total power", ("pax_ptotal",), "W", "pax_received_s"),
+        ("Polarization direction (unit norm)", ("s1", "s2", "s3"), "Stokes direction", "pax_received_s"),
+        ("Degree of polarization", ("dop",), "DOP", "pax_received_s"),
+        ("Ellipse angles", ("theta", "eta"), "rad", "pax_received_s"),
+        ("Total-power-normalized Stokes", ("s1_over_s0", "s2_over_s0", "s3_over_s0"), "Si / S0", "pax_received_s"),
+    )
+    for ax, (title, fields, unit, time_key) in zip(axes.flat, panels):
+        for field in fields:
+            ax.plot(values(time_key), values(field), lw=.8, label=field)
+        ax.set(title=title, xlabel="Host elapsed time (s)", ylabel=unit)
+        ax.grid(alpha=.2)
+        ax.legend(fontsize=7)
+    pdf.savefig(figure)
+    plt.close(figure)
+
+
 def create_report(input_file: Path, output_file: Path, kind: str, axis: str | None = None) -> None:
     output_file.parent.mkdir(parents=True, exist_ok=True)
     with PdfPages(output_file) as pdf:

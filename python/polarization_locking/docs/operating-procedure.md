@@ -50,7 +50,9 @@ setup. A driver model name is not a gain measurement. Use a bounded explicit
 | Mode | Connection and cleanup |
 | --- | --- |
 | Ordinary menu test, including `live` | Full RP and PAX connection; initializes RP outputs to zero, runs the routine, attempts zero on exit |
-| `pd-visibility` | Scope transport only; requires already loaded Pyrpl FPGA; does not load saved actuator settings or connect PAX; restores scope registers |
+| `pd-visibility`, passive PD/both | Scope transport only; requires already loaded Pyrpl FPGA; restores scope registers; measures signed dark baseline unless provided; both also connects PAX |
+| `pd-visibility`, passive PAX | PAX connection only; records total optical power; never connects RP or changes actuator outputs |
+| `pd-visibility`, active (any detector choice) | Normal RP connection; selected phase actuator/waveform, other output zero; PAX connects when selected; both outputs returned to zero on exit |
 
 Do not run competing control sessions or concurrent RP scope acquisitions.
 For passive work, establish which outputs are connected and already active:
@@ -90,8 +92,9 @@ not erase raw data.
 
 Inspect the PDF and raw measurements for repeatability, drift, saturation,
 and coverage. Visibility requires checking `visibility.json` and per-capture
-`status`: null means invalid/unresolved; an assumed zero dark level gives only
-apparent contrast. Vpp alone is not contrast. For locking, review residual error,
+`status`: null means invalid/unresolved. PD mode needs a measured/provided signed
+dark baseline; PAX contrast uses instrument-reported watts. Review actual PAX
+cadence and fringe coverage. Vpp alone is not contrast. For locking, review residual error,
 outputs, saturation, and DOP. Existing PI loops log DOP without continuously
 gating feedback.
 

@@ -1,10 +1,10 @@
 {
-  "test": "pd-visibility",
+  "test": "sweep",
   "status": "completed",
-  "started_at": "2026-09-23T18:06:08.812756+00:00",
+  "started_at": "2026-09-23T22:01:26.339498+00:00",
   "python": "3.10.20",
-  "source_sha256": "9c4bb86097e8511795de9361e9dfe7ac230f59b1a8f7599c091b8f3b8b394d49",
-  "required_setup": "DC-coupled PD on the selected RP input; external drive must span complete fringes. Set its frequency and, when known, the blocked-light voltage offset. RP must already have the Pyrpl FPGA loaded.",
+  "source_sha256": "94fbb73c7cde95282578f20bc8f239b0276c3aa74a79a6f8bd7614574ae82e30",
+  "required_setup": "PAX must observe the selected actuator's optical response; record its location.",
   "provenance": {
     "packages": {
       "numpy": "2.2.5",
@@ -21,7 +21,7 @@
       "pyvistaqt": "0.12.0"
     },
     "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
-    "git_commit": "2eea2d365d18854bf881a0640458693c69f49e75",
+    "git_commit": "c5a263d48b104a14a9debe00668f0926c06b3506",
     "suite_dirty": true
   },
   "effective_config": {
@@ -31,7 +31,7 @@
     "bench_expected_v_pi_terminal_v": 13.0,
     "bench_notes": "V_pi expectation only; verify channel and measured driver gain before calibration.",
     "sweep_start_rp_v": 0.0,
-    "sweep_stop_rp_v": 0.1,
+    "sweep_stop_rp_v": 0.9,
     "sweep_points": 11,
     "sweep_repeats": 1,
     "sweep_settle_s": 1.0,
@@ -46,6 +46,7 @@
     "pax_measurement_wait_s": 0.06,
     "pax_read_retries": 3,
     "pax_retry_wait_s": 0.25,
+    "pax_fresh_read_timeout_s": 5.0,
     "pax_rotation_velocity_hz": 60.0,
     "pax_measurement_mode": 5,
     "pax_wavelength_nm": 830.0,
@@ -127,7 +128,7 @@
     "diagnostic_settle_s": 3.0,
     "diagnostic_hold_s": 60.0,
     "diagnostic_sample_period_s": 0.5,
-    "pd_input": "in2",
+    "pd_input": "in1",
     "rp_scope_port": 2223,
     "visibility_frequency_hz": 0.5,
     "visibility_dark_voltage_v": null,
@@ -140,6 +141,10 @@
     "pax_path_hold_sample_period_s": 0.25,
     "power_balance_phi2_frequency_hz": 0.5,
     "power_balance_sample_period_s": 0.05,
+    "stokes_phase_sweep_frequency_hz": 0.5,
+    "stokes_phase_sweep_amplitude_v": 0.36,
+    "stokes_phase_sweep_offset_v": 0.36,
+    "stokes_phase_sweep_sample_period_s": 0.05,
     "field_model_phi1_fractions": [
       0.0,
       0.25,
@@ -201,7 +206,7 @@
     "phi1_pd_pax_outer_gain": 0.12,
     "phi1_pd_pax_outer_max_setpoint_step_v": 0.0015
   },
-  "finished_at": "2026-09-23T18:06:24.901339+00:00",
+  "finished_at": "2026-09-23T22:01:51.946836+00:00",
   "report_file": "report.pdf",
   "report_status": "completed"
 }

@@ -259,8 +259,11 @@ class RPController:
         )
 
     @contextmanager
-    def photodiode_monitor(self):
-        """Temporarily route the Pyrpl scope's first channel to the PD on IN1."""
+    def photodiode_monitor(self, *, input_channel: str | None = None):
+        """Capture input voltage; an explicit channel selects a fresh immediate trace.
+
+        Values are literal volts, with no photodiode or attenuation correction.
+        """
         if self.p is None:
             raise RuntimeError("Red Pitaya connection is not established")
         scope = self.p.rp.scope
@@ -269,14 +272,51 @@ class RPController:
             "duration": scope.duration,
             "decimation": scope.decimation,
         }
-        scope.input1 = self.config.pd_input
-        scope.duration = self.config.pd_scope_duration_s
-        scope.decimation = self.config.pd_scope_decimation
+        if input_channel is not None:
+            if input_channel not in {"in1", "in2"}:
+                raise ValueError("Input channel must be in1 or in2")
+            for name in ("average", "trigger_source", "trigger_delay", "ch1_active", "ch2_active", "rolling_mode", "trace_average"):
+                previous[name] = getattr(scope, name)
+            delay_register = scope._trigger_delay_register
         try:
+            scope.input1 = input_channel or self.config.pd_input
+            scope.duration = self.config.pd_scope_duration_s
+            scope.decimation = self.config.pd_scope_decimation
+            if input_channel is not None:
+                scope.setup(average=True, trigger_source="immediately", trigger_delay=0.0,
+                            ch1_active=True, ch2_active=False, rolling_mode=False, trace_average=1)
             yield lambda: self._read_photodiode(scope)
         finally:
-            for name, value in previous.items():
-                setattr(scope, name, value)
+            try:
+                if input_channel is not None:
+                    scope.stop()
+            finally:
+                for name, value in previous.items():
+                    setattr(scope, name, value)
+                if input_channel is not None:
+                    scope._trigger_delay_register = delay_register
+
+    def set_phase_waveform(self, *, axis: str, waveform: str, offset: float,
+                           amplitude: float, frequency_hz: float) -> dict:
+        """Drive the selected phase output; hold the other output at zero."""
+        waveforms = {"sin": "sin", "cos": "cos", "triangle": "ramp",
+                     "sawtooth": "halframp", "square": "square"}
+        if axis not in {"phi1", "phi2"} or waveform not in waveforms:
+            raise ValueError("Unknown phase axis or contrast waveform")
+        if self.p is None or self.asg1 is None or self.asg2 is None:
+            raise RuntimeError("Red Pitaya connection is not established")
+        if not np.all(np.isfinite([offset, amplitude, frequency_hz])) or amplitude <= 0 or frequency_hz <= 0:
+            raise ValueError("Waveform settings must be finite; amplitude/frequency must be positive")
+        self._validate_output_voltage(offset - amplitude, offset + amplitude)
+        selected, other = (self.asg1, self.asg2) if axis == "phi1" else (self.asg2, self.asg1)
+        other.setup(waveform="dc", offset=0.0, amplitude=0.0, trigger_source="immediately")
+        selected.periodic = True
+        selected.setup(waveform=waveforms[waveform], frequency=frequency_hz, offset=offset,
+                       amplitude=amplitude, trigger_source="immediately", cycles_per_burst=0)
+        return {"axis": axis, "output": "out1" if axis == "phi1" else "out2",
+                "waveform": waveform, "asg_waveform": str(selected.waveform),
+                "frequency_hz": float(selected.frequency), "offset_v": float(selected.offset),
+                "amplitude_v": float(selected.amplitude)}
 
     def _read_photodiode(self, scope: Any) -> PhotodiodeReading:
         trace = np.asarray(scope.single(timeout=self.config.pd_scope_timeout_s)[0], dtype=float)

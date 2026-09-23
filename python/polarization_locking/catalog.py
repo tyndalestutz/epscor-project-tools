@@ -21,7 +21,7 @@ class TestCase:
 
     def config_names(self) -> list[str]:
         if self.scope_only:
-            return ["bench_notes", "rp_hostname", "rp_config", "rp_scope_port", "pd_input", "visibility_frequency_hz", "visibility_dark_voltage_v", "results_directory"]
+            return ["bench_notes", "bench_pax_location", "rp_hostname", "rp_config", "rp_scope_port", "pd_input", "phase_output_map_confirmed", "rp_output_max_voltage", "results_directory"] + [f.name for f in fields(PolarizationLockConfig) if f.name.startswith(("visibility_", "pax_"))]
         common = ("bench_", "rp_", "pax_", "phi1_v_lambda", "phi2_v_lambda", "phi1_actuator_", "phi2_actuator_", "phase_output_", "minimum_dop", "results_directory")
         return [f.name for f in fields(PolarizationLockConfig) if f.name.startswith(common + self.groups)]
 
@@ -53,7 +53,8 @@ TESTS = (
     TestCase("pid-test", "Two-axis PI hold", "Apply a rough correction followed by bounded PI feedback. DOP is logged without gating feedback; current-target capture uses the DOP gate.", FINAL, "_run_pid_test", ("pid_", "target_", "sphere_"), timed=True, report="pid", target=True),
     TestCase("pid-live", "Two-axis PI with sphere view", "Run the two-axis PI experiment with an interactive Poincare sphere. Requires PyVista; DOP behavior matches the two-axis PI hold.", FINAL, "_run_pid_live", ("pid_", "target_", "sphere_"), timed=True, report="pid", target=True),
     TestCase("rough", "One-shot target move", "Measure, make one bounded target correction, settle, and report the residual. Uses the DOP gate; summary goes to the run log.", FINAL, "rough_align_once", ("rough_", "target_", "sphere_"), target=True),
-    TestCase("pd-visibility", "Passive photodiode visibility", "Measure fringe contrast on the selected PD input under external drive. No RP output initialization or PAX connection.", "DC-coupled PD on the selected RP input; external drive must span complete fringes. Set its frequency and, when known, the blocked-light voltage offset. RP must already have the Pyrpl FPGA loaded.", "_run_pd_visibility", ("visibility_", "pd_input"), timed=True, report="visibility", scope_only=True),
+    TestCase("pd-visibility", "Contrast (PD / PAX / both)", "Measure PD voltage contrast, PAX power contrast, or both concurrently. Passive mode leaves the drive untouched; active mode drives the selected phase actuator and returns outputs to zero on exit.", "PD needs a DC-coupled input and measured/provided signed dark baseline. PAX needs the recorded port/wavelength. Both requires light delivered to both sensors (e.g. a beam split), with that arrangement recorded. Active mapping: phi1=OUT1, phi2=OUT2; the other output is zero. Passive PD needs the existing Pyrpl FPGA. Drive must span fringes.", "_run_pd_visibility", ("visibility_", "pd_input"), timed=True, report="visibility", scope_only=True),
+    TestCase("stokes-phase-sweep", "Power and Stokes phase sweep", "Measure synchronized optical power and Stokes parameters while sweeping an external phase actuator. Repeated OUT1 sine cycles; IN1 is the measured voltage reference, with acquisition timing retained.", "PAX in path A / E4, observing the combined field. OUT1 drives phi1 and is physically T-ed into IN1 as the voltage reference (not a photodiode). OUT2 stays at zero.", "_run_stokes_phase_sweep", ("stokes_phase_sweep_", "pd_scope_"), timed=True, report="stokes-phase-sweep"),
 )
 BY_KEY = {case.key: case for case in TESTS}
 

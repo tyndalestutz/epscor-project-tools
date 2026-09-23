@@ -32,12 +32,28 @@ class DiagnosticsMenu:
             self.print("Voltages ending in rp_v/rp_voltage are RP commands (0-1 V). V_lambda is terminal voltage for 2pi; V_pi is half of V_lambda. Historical gains are editable candidates.")
         entries = [("option", key, value) for key, value in options.items()]
         names = list(TYPES) if all_fields else case.config_names()
+        if case.key == "pd-visibility":
+            self.print(f"Detector: {config.visibility_source.upper()} | Mode: {config.visibility_mode.upper()} (c to change)")
+            names = [name for name in names if name not in {"visibility_source", "visibility_mode"}]
+            if not all_fields:
+                drive_names = {"visibility_axis", "visibility_waveform", "visibility_amplitude_v", "visibility_offset_v", "phase_output_map_confirmed", "rp_output_max_voltage"}
+                if config.visibility_mode == "passive":
+                    names = [name for name in names if name not in drive_names]
+                if config.visibility_source == "pd":
+                    names = [name for name in names if not name.startswith("pax_") and name not in {"bench_pax_location", "visibility_pax_sample_period_s"}]
+                elif config.visibility_source == "pax":
+                    names = [name for name in names if name not in {"pd_input", "visibility_dark_voltage_v", "rp_scope_port"}]
+                    if config.visibility_mode == "passive":
+                        names = [name for name in names if name not in {"rp_hostname", "rp_config"}]
         entries += [("config", key, getattr(config, key)) for key in names]
         hints = {
             "axis": "phi1 = OUT1; phi2 = OUT2",
             "duration_s": "seconds; calibration/settling adds time",
             "report": "pdf/both" if case.report.startswith("analyze_") or case.report == "power" else "pdf",
             "target_mode": "current = capture each run; explicit = target_u/target_v",
+            "visibility_axis": "phi1 = OUT1; phi2 = OUT2",
+            "visibility_waveform": "sin, cos, triangle, sawtooth, square",
+            "visibility_amplitude_v": "peak amplitude; output spans offset +/- amplitude",
         }
         for index, (_, key, value) in enumerate(entries, 1):
             hint = f"  ({hints[key]})" if key in hints else ""
@@ -94,17 +110,44 @@ class DiagnosticsMenu:
         self.sessions[case.key] = (config, options)
         return case
 
+    def choose_contrast(self, config):
+        """Two short selections outside the parameter table; no hardware access."""
+        chosen = []
+        for title, choices, current in (
+            ("Detector", ("pd", "pax", "both"), config.visibility_source),
+            ("Mode", ("passive", "active"), config.visibility_mode),
+        ):
+            while True:
+                value = self.ask(f"{title}: {' / '.join(choices)} [{current}]; b = back: ").lower()
+                if value in BACK:
+                    return False
+                if value in QUIT:
+                    raise EOFError
+                if not value or value in choices:
+                    chosen.append(value or current)
+                    break
+                self.print(f"Choose {' / '.join(choices)}.")
+        config.visibility_source, config.visibility_mode = chosen
+        return True
+
     def detail(self, case):
+        if case.key == "pd-visibility":
+            self.print(f"\n{case.title}\nRequired setup: {case.setup}")
+            if not self.choose_contrast(self.settings(case)[0]):
+                return
         while True:
             config, options = self.settings(case)
             self.show(case, config, options)
             try:
-                action = self.ask("r run | e edit | all edit all | s save | l load | d defaults | b back | q quit: ").lower()
+                selection = "c detector/mode | " if case.key == "pd-visibility" else ""
+                action = self.ask(selection + "r run | e edit | all edit all | s save | l load | d defaults | b back | q quit: ").lower()
                 if not action or action in BACK:
                     return
                 if action in QUIT:
                     raise EOFError
-                if action in {"e", "edit", "all"}:
+                if action == "c" and case.key == "pd-visibility":
+                    self.choose_contrast(config)
+                elif action in {"e", "edit", "all"}:
                     self.edit(case, config, options, all_fields=action == "all")
                 elif action in {"s", "save"}:
                     self.save(case, config, options)
@@ -169,9 +212,11 @@ def main(argv=None):
     group.add_argument("--run", choices=BY_KEY, metavar="TEST", help="explicitly start a hardware run")
     parser.add_argument("--profile", type=Path, help="load a saved recipe (or a previous run's recipe.json)")
     parser.add_argument("--dry-run", action="store_true", help="validate and print recipe; never connect")
-    parser.add_argument("--pd-input", choices=("in1", "in2"), help="PD input for passive visibility")
-    parser.add_argument("--frequency", type=float, help="external drive frequency in Hz for passive visibility")
-    parser.add_argument("--dark-voltage", type=float, help="blocked-light PD voltage for passive visibility")
+    parser.add_argument("--pd-input", choices=("in1", "in2"), help="PD input for contrast measurement")
+    parser.add_argument("--source", choices=("pd", "pax", "both"), help="contrast detector selection")
+    parser.add_argument("--mode", choices=("passive", "active"), help="contrast drive mode; configure axis/waveform in the parameter table or recipe")
+    parser.add_argument("--frequency", type=float, help="external or requested active drive frequency in Hz for contrast measurement")
+    parser.add_argument("--dark-voltage", type=float, help="blocked-light PD voltage for contrast measurement")
     args = parser.parse_args(argv)
     menu = DiagnosticsMenu()
     case = None
@@ -184,11 +229,11 @@ def main(argv=None):
             if case and case.key != requested:
                 raise ValueError("Requested test does not match the recipe")
             case = BY_KEY[requested]
-        if any(value is not None for value in (args.pd_input, args.frequency, args.dark_voltage)):
+        if any(value is not None for value in (args.source, args.mode, args.pd_input, args.frequency, args.dark_voltage)):
             if case is None or case.key != "pd-visibility":
-                raise ValueError("--pd-input, --frequency and --dark-voltage require pd-visibility")
+                raise ValueError("Contrast overrides (--source, --mode, --pd-input, --frequency, --dark-voltage) require pd-visibility")
             config, options = menu.settings(case)
-            for name, value in (("pd_input", args.pd_input), ("visibility_frequency_hz", args.frequency), ("visibility_dark_voltage_v", args.dark_voltage)):
+            for name, value in (("visibility_source", args.source), ("visibility_mode", args.mode), ("pd_input", args.pd_input), ("visibility_frequency_hz", args.frequency), ("visibility_dark_voltage_v", args.dark_voltage)):
                 if value is not None:
                     setattr(config, name, value)
         if args.list:

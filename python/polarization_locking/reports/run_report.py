@@ -70,11 +70,19 @@ def add_overview(pdf, case, paths, config, options, state, rows):
     samples = f"{len(rows):,} recorded samples"
     if stages:
         samples += "; " + ", ".join(f"{k}: {v:,}" for k, v in stages.items())
+    bench_context = f"{config.bench_pax_location}\n{config.bench_voltage_chain}"
+    if case.scope_only:
+        bench_context = (f"Source: {config.visibility_source}; mode: {config.visibility_mode}; "
+                         f"PD input: {config.pd_input}; PAX location: {config.bench_pax_location}; "
+                         f"requested/declared drive: {config.visibility_frequency_hz:g} Hz. ")
+        bench_context += (f"Active {config.visibility_axis}, {config.visibility_waveform}, "
+                          f"{config.visibility_offset_v:g} +/- {config.visibility_amplitude_v:g} V; outputs zero on exit."
+                          if config.visibility_mode == "active" else "RP outputs unchanged.")
     sections = [
         ("Run", f"{paths.directory.name}\nStatus: {state.get('status', 'unknown')} | Started: {state.get('started_at', 'not recorded')}"),
         ("Purpose", case.description),
         ("Required optical setup", case.setup),
-        ("Recorded bench context (recipe)", f"PD: {config.pd_input}; external drive: {config.visibility_frequency_hz:g} Hz; RP outputs unchanged" if case.scope_only else f"{config.bench_pax_location}\n{config.bench_voltage_chain}"),
+        ("Recorded bench context (recipe)", bench_context),
         ("Operator setup notes", config.bench_notes),
         ("Data", samples + "\nSource: data.csv; full acquisition settings: recipe.json; status: run.json"),
     ]
@@ -99,7 +107,7 @@ def add_parameters(pdf, case, config, options):
         fig, ax = plt.subplots(figsize=(11.7, 8.3))
         ax.axis("off")
         fig.text(.065, .92, "Active parameters", fontsize=21, weight="bold", color=NAVY)
-        fig.text(.065, .86, "Passive acquisition; voltage at the selected PD input. No actuator commands." if case.scope_only else "RP commands: volts, bounded to 0–1. V_lambda: terminal volts for 2π. Gains: terminal V / RP V.", fontsize=10)
+        fig.text(.065, .86, f"Contrast: {config.visibility_source}, {config.visibility_mode}. Active drive readback is in drive.json; voltages are RP command volts." if case.scope_only else "RP commands: volts, bounded to 0–1. V_lambda: terminal volts for 2π. Gains: terminal V / RP V.", fontsize=10)
         table = ax.table(cellText=items[start:start+24], colLabels=["Parameter", "Recorded value"], colWidths=[.64, .36], cellLoc="left", loc="upper left", bbox=[0, 0, 1, .94])
         table.auto_set_font_size(False)
         table.set_fontsize(9)
@@ -147,9 +155,38 @@ def add_telemetry(pdf, rows):
 
 def add_specialized(pdf, case, paths, options):
     kind = case.report
-    if kind == "visibility":
+    if kind == "stokes-phase-sweep":
+        from .plot_calibration_tests import add_stokes_phase_sweep_page
+        add_stokes_phase_sweep_page(pdf, paths.csv)
+    elif kind == "visibility":
         summary = json.loads((paths.directory / "visibility.json").read_text())
-        text_page(pdf, "Photodiode visibility", [(key.replace("_", " "), str(value)) for key, value in summary.items()])
+        source = summary.get("source", "pd")
+        text_page(pdf, f"{source.upper()} contrast", [(key.replace("_", " "), str(value)) for key, value in summary.items()])
+        drive_path = paths.directory / "drive.json"
+        if drive_path.exists():
+            text_page(pdf, "Contrast drive", [(key.replace("_", " "), str(value)) for key, value in json.loads(drive_path.read_text()).items()])
+        if source in {"pax", "both"}:
+            pax_path = paths.csv if source == "pax" else paths.directory / "pax.csv"
+            with pax_path.open(newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            fig, ax = plt.subplots(figsize=(11.7, 8.3), constrained_layout=True)
+            ax.plot(column(rows, "elapsed_s"), column(rows, "pax_ptotal") * 1e6, ".-", lw=.8, ms=3)
+            ax.set(title="PAX total optical power — recorded samples", xlabel="Host elapsed time (s)", ylabel="Power (µW)")
+            ax.grid(alpha=.2)
+            pdf.savefig(fig)
+            plt.close(fig)
+            if source == "pax":
+                return
+        dark_path = paths.directory / "dark.npz"
+        if dark_path.exists():
+            with np.load(dark_path) as data:
+                fig, ax = plt.subplots(figsize=(11.7, 8.3), constrained_layout=True)
+                ax.plot(data["time_s"], data["voltage_v"] * 1000, lw=.5)
+            ax.axhline(summary["dark_voltage_v"] * 1000, color=TEAL, label="Measured signed dark baseline")
+            ax.set(title="Blocked-light PD capture", xlabel="Capture time (s)", ylabel="Signed PD voltage (mV)")
+            ax.legend()
+            pdf.savefig(fig)
+            plt.close(fig)
         captures = sorted(paths.directory.glob("capture-*.npz"))
         for start in range(0, len(captures), 3):
             fig, axes = plt.subplots(3, 1, figsize=(11.7, 8.3), constrained_layout=True)
@@ -161,6 +198,8 @@ def add_specialized(pdf, case, paths, options):
                 result, means = analyze_trace(v, dt, summary["external_frequency_hz"], summary["dark_voltage_v"])
                 ax.plot(t, v * 1000, color="0.7", lw=.4, label="Recorded samples (FPGA averaging on)")
                 ax.plot(t[0] + (np.arange(len(means)) + .5) * result["bin_s"], means * 1000, color=TEAL, label="1/64-period averages")
+                if summary["dark_voltage_v"] is not None:
+                    ax.axhline(summary["dark_voltage_v"] * 1000, color="tab:red", linestyle="--", label="Signed dark baseline")
                 ax.set(title=f"{summary['pd_input']} / {path.stem}: {result['status']}", xlabel="Capture time (s)", ylabel="PD voltage (mV)")
                 ax.legend(fontsize=8)
                 ax.grid(alpha=.2)

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "test": "pd-visibility",
+  "options": {"label": "pax-contrast", "duration_s": 12.0, "report": "pdf"},
+  "config": {
+    "visibility_source": "pax",
+    "visibility_frequency_hz": 0.5,
+    "visibility_pax_sample_period_s": 0.05,
+    "visibility_dark_voltage_v": null,
+    "bench_notes": "Record PAX port/alignment, wavelength, external drive source/range/frequency and active outputs. PAX power mode leaves the drive unchanged."
+  }
+}

@@ -94,6 +94,23 @@ def validate(config, case, options):
             raise ValueError("Sweep must satisfy 0 <= start < stop <= RP maximum")
         if config.sweep_points < 2:
             raise ValueError("sweep_points must be at least 2")
+    if case.key == "stokes-phase-sweep":
+        frequency = config.stokes_phase_sweep_frequency_hz
+        amplitude = config.stokes_phase_sweep_amplitude_v
+        offset = config.stokes_phase_sweep_offset_v
+        if frequency <= 0 or amplitude <= 0:
+            raise ValueError("Stokes sweep frequency and amplitude must be positive")
+        if not 0 <= offset - amplitude < offset + amplitude <= config.rp_output_max_voltage:
+            raise ValueError("Stokes sweep offset +/- amplitude must fit the RP output range")
+        if options["duration_s"] * frequency < 2:
+            raise ValueError("Stokes sweep duration must cover at least two drive cycles")
+        if config.pax_fresh_read_timeout_s <= 0 or config.pd_scope_timeout_s <= 0:
+            raise ValueError("PAX freshness and scope timeouts must be positive")
+        if config.pd_scope_decimation not in {2 ** n for n in range(17)}:
+            raise ValueError("pd_scope_decimation must be a power of two within 1..65536")
+        if max(config.stokes_phase_sweep_sample_period_s, config.pax_measurement_wait_s +
+               16384 * 8e-9 * config.pd_scope_decimation) * frequency > 0.05:
+            raise ValueError("Stokes sweep needs at least 20 nominal samples per drive cycle; slow the drive or shorten acquisition settings")
     for name in case.config_names():
         value = values[name]
         if isinstance(value, (int, float)) and ("sample_period_s" in name or "step_voltage" in name or name.endswith("step_rp_v")) and value <= 0:
@@ -101,6 +118,30 @@ def validate(config, case, options):
     # Full-period scans must fit before any instrument is connected. An explicit
     # voltage sweep does not depend on the unmeasured terminal transfer gain.
     if case.scope_only:
+        if config.visibility_source not in {"pd", "pax", "both"}:
+            raise ValueError("visibility_source must be pd, pax or both")
+        if config.visibility_mode not in {"passive", "active"}:
+            raise ValueError("visibility_mode must be passive or active")
+        if config.visibility_mode == "active":
+            if not config.phase_output_map_confirmed:
+                raise ValueError("Confirm phi1=OUT1 / phi2=OUT2 before active contrast")
+            if config.visibility_axis not in {"phi1", "phi2"}:
+                raise ValueError("visibility_axis must be phi1 or phi2")
+            if config.visibility_waveform not in {"sin", "cos", "triangle", "sawtooth", "square"}:
+                raise ValueError("visibility_waveform must be sin, cos, triangle, sawtooth or square")
+            lo = config.visibility_offset_v - config.visibility_amplitude_v
+            hi = config.visibility_offset_v + config.visibility_amplitude_v
+            if not 0 <= lo < hi <= config.rp_output_max_voltage:
+                raise ValueError("Contrast offset +/- amplitude must fit the RP output range")
+        if config.visibility_source in {"pax", "both"}:
+            if config.visibility_frequency_hz <= 0 or config.pax_fresh_read_timeout_s <= 0:
+                raise ValueError("PAX visibility frequency and freshness timeout must be positive")
+            if options["duration_s"] * config.visibility_frequency_hz < 2:
+                raise ValueError("PAX visibility duration must cover at least two drive cycles")
+            if max(config.visibility_pax_sample_period_s, config.pax_measurement_wait_s) * config.visibility_frequency_hz > .1:
+                raise ValueError("PAX visibility needs at least ten nominal samples per drive cycle; slow the drive")
+            if config.visibility_source == "pax":
+                return
         if config.pd_input not in {"in1", "in2"}:
             raise ValueError("pd_input must be in1 or in2")
         if not 1 <= config.rp_scope_port <= 65535:
@@ -110,7 +151,7 @@ def validate(config, case, options):
         return
     if case.key not in {"live", "pax-path-hold", "first-npbs-d-isolation"} and not config.phase_output_map_confirmed:
         raise ValueError("Set phase_output_map_confirmed after checking the output assignment")
-    if case.key not in {"live", "sweep", "pax-path-hold", "first-npbs-d-isolation"}:
+    if case.key not in {"live", "sweep", "pax-path-hold", "first-npbs-d-isolation", "stokes-phase-sweep"}:
         axes = ("phi1", "phi2")
         if case.key in {"bidirectional-sweep", "single-axis-pid"}:
             axes = (options["axis"],)

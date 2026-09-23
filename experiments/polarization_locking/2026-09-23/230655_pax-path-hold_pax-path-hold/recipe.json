@@ -1,30 +1,12 @@
 {
-  "test": "pd-visibility",
-  "status": "completed",
-  "started_at": "2026-09-23T18:04:37.051681+00:00",
-  "python": "3.10.20",
-  "source_sha256": "9c4bb86097e8511795de9361e9dfe7ac230f59b1a8f7599c091b8f3b8b394d49",
-  "required_setup": "DC-coupled PD on the selected RP input; external drive must span complete fringes. Set its frequency and, when known, the blocked-light voltage offset. RP must already have the Pyrpl FPGA loaded.",
-  "provenance": {
-    "packages": {
-      "numpy": "2.2.5",
-      "scipy": "1.15.3",
-      "matplotlib": "3.10.9",
-      "pyrpl": "0.9.8.0",
-      "yaqc": "2023.6.0",
-      "yaqd-core": "2025.12.0",
-      "yaqd-thorlabs": "2025.12.0",
-      "pyvisa": "1.16.2",
-      "pyvisa-py": "0.8.1",
-      "pyusb": "1.3.1",
-      "pyvista": "0.48.4",
-      "pyvistaqt": "0.12.0"
-    },
-    "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
-    "git_commit": "2eea2d365d18854bf881a0640458693c69f49e75",
-    "suite_dirty": true
+  "schema_version": 1,
+  "test": "pax-path-hold",
+  "options": {
+    "label": "pax-path-hold",
+    "duration_s": 60.0,
+    "report": "pdf"
   },
-  "effective_config": {
+  "config": {
     "results_directory": "/home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking",
     "bench_pax_location": "In front of NPBS 1, C port",
     "bench_voltage_chain": "Red Pitaya (0-1 V command) -> Thorlabs MDT690 -> piezo",
@@ -46,6 +28,7 @@
     "pax_measurement_wait_s": 0.06,
     "pax_read_retries": 3,
     "pax_retry_wait_s": 0.25,
+    "pax_fresh_read_timeout_s": 5.0,
     "pax_rotation_velocity_hz": 60.0,
     "pax_measurement_mode": 5,
     "pax_wavelength_nm": 830.0,
@@ -130,6 +113,8 @@
     "pd_input": "in1",
     "rp_scope_port": 2223,
     "visibility_frequency_hz": 0.5,
+    "visibility_source": "pd",
+    "visibility_pax_sample_period_s": 0.05,
     "visibility_dark_voltage_v": null,
     "pd_nd_optical_density": 2.0,
     "pd_scope_duration_s": 0.01,
@@ -140,6 +125,10 @@
     "pax_path_hold_sample_period_s": 0.25,
     "power_balance_phi2_frequency_hz": 0.5,
     "power_balance_sample_period_s": 0.05,
+    "stokes_phase_sweep_frequency_hz": 0.5,
+    "stokes_phase_sweep_amplitude_v": 0.36,
+    "stokes_phase_sweep_offset_v": 0.36,
+    "stokes_phase_sweep_sample_period_s": 0.05,
     "field_model_phi1_fractions": [
       0.0,
       0.25,
@@ -200,8 +189,5 @@
     "phi1_pd_pax_outer_period_s": 3.0,
     "phi1_pd_pax_outer_gain": 0.12,
     "phi1_pd_pax_outer_max_setpoint_step_v": 0.0015
-  },
-  "finished_at": "2026-09-23T18:04:51.903157+00:00",
-  "report_file": "report.pdf",
-  "report_status": "completed"
+  }
 }

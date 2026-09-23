@@ -1,0 +1,17 @@
+{
+  "source": "pax",
+  "samples": 85,
+  "recorded_duration_s": 12.119076283008326,
+  "external_frequency_hz": 0.46566128730773926,
+  "power_min_w": 0.0006966284,
+  "power_max_w": 0.0006986478,
+  "power_mean_w": 0.0006979108576470588,
+  "visibility": 0.0014473120089054353,
+  "sample_interval_median_s": 0.1443308829984744,
+  "sample_interval_max_s": 0.1464307709975401,
+  "samples_per_drive_cycle": 14.87889219123463,
+  "status": "observed PAX total-power contrast",
+  "definition": "(Pmax-Pmin)/(Pmax+Pmin), extrema of recorded PAX total optical power in watts",
+  "interpretation": "Uses instrument-reported total power, with no additional optical-background subtraction. No PD voltage zero or polarity is applied. Finite sampling may miss narrow extrema; full fringe coverage and suitable drive speed must be checked. This is not a noise-corrected fit.",
+  "mode": "active"
+}
