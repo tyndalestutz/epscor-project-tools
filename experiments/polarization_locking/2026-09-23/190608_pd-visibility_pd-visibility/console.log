@@ -1,0 +1,8 @@
+Passive visibility on in2; external drive 0.5 Hz; RP outputs untouched.
+DC coupling and a full fringe excursion are required. Extrema use 1/64-period bin averages.
+Dark voltage not measured: reporting apparent contrast assuming zero offset.
+Capture 1: 2.42%; low=-0.00256245 V, high=-0.00244141 V, Vpp=0.000121045 V (apparent; zero dark offset assumed)
+Capture 2: 2.42%; low=-0.00256245 V, high=-0.00244141 V, Vpp=0.000121045 V (apparent; zero dark offset assumed)
+Capture 3: 2.54%; low=-0.00256348 V, high=-0.00243628 V, Vpp=0.000127199 V (apparent; zero dark offset assumed)
+Mean observed visibility: 2.46% (3/3 valid captures).
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-23/190608_pd-visibility_pd-visibility/report.pdf

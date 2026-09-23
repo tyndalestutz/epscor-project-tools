@@ -164,7 +164,10 @@ class PAXController:
             raise RuntimeError("Python or the project PAX daemon is unavailable in the active environment") from exc
 
     def _wait_for_daemon(self, original_error: ConnectionRefusedError) -> Any:
-        deadline = time.monotonic() + self.config.pax_daemon_start_timeout_s
+        # Include the daemon's five-second spin-up wait, including old recipes
+        # whose configured startup timeout was only five seconds.
+        startup_timeout_s = max(10.0, self.config.pax_daemon_start_timeout_s)
+        deadline = time.monotonic() + startup_timeout_s
         while time.monotonic() < deadline:
             if self._daemon_process is not None and self._daemon_process.poll() is not None:
                 log_hint = (
@@ -181,7 +184,7 @@ class PAXController:
                 time.sleep(0.1)
         raise RuntimeError(
             f"PAX daemon did not begin listening at {self.config.pax_host}:{self.config.pax_port} within "
-            f"{self.config.pax_daemon_start_timeout_s:.1f} s."
+            f"{startup_timeout_s:.1f} s."
         ) from original_error
 
     def get_channel_names(self) -> list[str]:

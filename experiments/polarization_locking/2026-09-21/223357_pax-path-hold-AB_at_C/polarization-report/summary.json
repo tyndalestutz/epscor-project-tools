@@ -1,0 +1,408 @@
+{
+  "source": "../data.csv",
+  "source_sha256": "be6ea1f5b6b2948e32bff16d01bce55c35ebd97a04d627063742cf2e28a6201d",
+  "analysis_sha256": "890bccbd23941230d0fce7ee818651a485cd7ec2a10af2a5b60b6a32226bab32",
+  "versions": {
+    "python": "3.10.20",
+    "numpy": "2.2.5",
+    "matplotlib": "3.10.9"
+  },
+  "operator_context": "User reports external phi1 drive during A+B; RP command columns are zero and are not external actuator voltages.",
+  "method": "All rows; equal sample weights; arithmetic means; sample SD with ddof=1; no fits, filtering, detrending, DOP correction/weighting, drive reconstruction or model export.",
+  "convention": "theta and eta in radians in CSV; s=(cos(2eta)cos(2theta),cos(2eta)sin(2theta),sin(2eta)); these are unit orientation vectors, not DOP-scaled total Stokes.",
+  "angle_definitions": {
+    "ellipticity_deg": "eta*180/pi",
+    "minor_major_ratio": "abs(tan(eta)) per sample, then averaged",
+    "axis_distance": "acos(sign*s_j/||s||)*180/pi; Poincare sphere angle, not ellipse azimuth",
+    "s1_circle_latitude": "asin(s1)*180/pi; signed angular distance from S1=0 plane",
+    "around_s1": "atan2(s3,s2), wrapped; no unwrapping or cycle count",
+    "static_mean_direction": "normalize(arithmetic mean of recorded unit Stokes); A and B only"
+  },
+  "groups": {
+    "path_a_only": {
+      "samples": 241,
+      "first_elapsed_s": 5.369998689275235e-06,
+      "last_elapsed_s": 60.00039387099969,
+      "duration_span_s": 60.000388501001,
+      "sample_interval_s": {
+        "n": 240,
+        "mean": 0.2500016187541708,
+        "sample_sd": 0.0001903982331950563,
+        "min": 0.24952175200451165,
+        "max": 0.2504665589949582
+      },
+      "duplicate_pax_timestamps": 0,
+      "measurements": {
+        "theta_deg": {
+          "n": 241,
+          "mean": 1.6676070428380996,
+          "sample_sd": 0.0034534048945798336,
+          "min": 1.6597785184026765,
+          "max": 1.6789267679159487
+        },
+        "eta_deg": {
+          "n": 241,
+          "mean": 2.1350975224689774,
+          "sample_sd": 0.0010492048350500883,
+          "min": 2.131957621032349,
+          "max": 2.1383008367822427
+        },
+        "abs_eta_deg": {
+          "n": 241,
+          "mean": 2.1350975224689774,
+          "sample_sd": 0.0010492048350500883,
+          "min": 2.131957621032349,
+          "max": 2.1383008367822427
+        },
+        "signed_axis_ratio": {
+          "n": 241,
+          "mean": 0.03728174022019105,
+          "sample_sd": 1.833753178423724e-05,
+          "min": 0.037226862531220116,
+          "max": 0.03733772641485414
+        },
+        "minor_major_ratio": {
+          "n": 241,
+          "mean": 0.03728174022019105,
+          "sample_sd": 1.833753178423724e-05,
+          "min": 0.037226862531220116,
+          "max": 0.03733772641485414
+        },
+        "s1": {
+          "n": 241,
+          "mean": 0.9955349452224674,
+          "sample_sd": 7.407815226476702e-06,
+          "min": 0.9955096259478216,
+          "max": 0.9955517820914753
+        },
+        "s2": {
+          "n": 241,
+          "mean": 0.05801609732892692,
+          "sample_sd": 0.00012001443200360886,
+          "min": 0.05774396247891607,
+          "max": 0.05840932545935248
+        },
+        "s3": {
+          "n": 241,
+          "mean": 0.07445998633437582,
+          "sample_sd": 3.652248757669107e-05,
+          "min": 0.07435068695892273,
+          "max": 0.07457149227877642
+        },
+        "dop": {
+          "n": 241,
+          "mean": 1.0167011078838175,
+          "sample_sd": 9.331436998619966e-05,
+          "min": 1.016497,
+          "max": 1.016963
+        },
+        "pax_ptotal": {
+          "n": 241,
+          "mean": 0.0004220715709543568,
+          "sample_sd": 1.9416262853469523e-07,
+          "min": 0.0004216927,
+          "max": 0.0004227308
+        },
+        "pd_mean_v": {
+          "n": 241,
+          "mean": -0.0049904674848085615,
+          "sample_sd": 3.1273528362856014e-05,
+          "min": -0.005066275596618652,
+          "max": -0.004870235919952393
+        },
+        "s1_circle_latitude_deg": {
+          "n": 241,
+          "mean": 84.58357660219798,
+          "sample_sd": 0.004495623573375488,
+          "min": 84.56822794961192,
+          "max": 84.59380414542274
+        },
+        "s2s3_radius": {
+          "n": 241,
+          "mean": 0.09439367939610195,
+          "sample_sd": 7.811296061282846e-05,
+          "min": 0.09421597090986013,
+          "max": 0.09466036470048224
+        }
+      },
+      "mean_orientation_stokes": [
+        0.9955349452224678,
+        0.05801609732892692,
+        0.07445998633437585
+      ],
+      "mean_orientation_vector_length": 0.9999999921366484,
+      "static_mean_direction": [
+        0.9955349530507092,
+        0.0580160977851279,
+        0.07445998691988091
+      ],
+      "dop_above_one_count": 241,
+      "dop_below_zero_count": 0,
+      "max_unit_vector_norm_error": 2.220446049250313e-16,
+      "max_stokes_reconstruction_error": 0.0,
+      "rp_command_columns_all_zero": true,
+      "largest_unsampled_around_s1_gap_deg": 359.6858925146061,
+      "sampled_around_s1_covering_arc_deg": 0.31410748539389033,
+      "s1_circle_latitude_rms_deg": 84.58357672117361,
+      "fraction_within_5deg_s1_circle": 0.0,
+      "fraction_within_10deg_s1_circle": 0.0
+    },
+    "path_b_only": {
+      "samples": 241,
+      "first_elapsed_s": 5.230001988820732e-06,
+      "last_elapsed_s": 60.000376983000024,
+      "duration_span_s": 60.000371752998035,
+      "sample_interval_s": {
+        "n": 240,
+        "mean": 0.25000154897082516,
+        "sample_sd": 0.00017146444192594383,
+        "min": 0.24942253100016387,
+        "max": 0.25057653700059745
+      },
+      "duplicate_pax_timestamps": 0,
+      "measurements": {
+        "theta_deg": {
+          "n": 241,
+          "mean": -87.30432944150014,
+          "sample_sd": 0.002348212611625431,
+          "min": -87.31080386458514,
+          "max": -87.2983706804308
+        },
+        "eta_deg": {
+          "n": 241,
+          "mean": 1.8702289406302255,
+          "sample_sd": 0.0016801920067051998,
+          "min": 1.8652119628890382,
+          "max": 1.874684674115936
+        },
+        "abs_eta_deg": {
+          "n": 241,
+          "mean": 1.8702289406302255,
+          "sample_sd": 0.0016801920067051998,
+          "min": 1.8652119628890382,
+          "max": 1.874684674115936
+        },
+        "signed_axis_ratio": {
+          "n": 241,
+          "mean": 0.03265325073318869,
+          "sample_sd": 2.9356140127126944e-05,
+          "min": 0.03256559481303601,
+          "max": 0.032731101041076315
+        },
+        "minor_major_ratio": {
+          "n": 241,
+          "mean": 0.03265325073318869,
+          "sample_sd": 2.9356140127126944e-05,
+          "min": 0.03256559481303601,
+          "max": 0.032731101041076315
+        },
+        "s1": {
+          "n": 241,
+          "mean": -0.9934553957954696,
+          "sample_sd": 1.0660467517143647e-05,
+          "min": -0.9934806251008532,
+          "max": -0.9934330903069332
+        },
+        "s2": {
+          "n": 241,
+          "mean": -0.09375770737756281,
+          "sample_sd": 8.118598179151678e-05,
+          "min": -0.09396427377282043,
+          "max": -0.09353337943486296
+        },
+        "s3": {
+          "n": 241,
+          "mean": 0.06523694340045354,
+          "sample_sd": 5.8524868116794695e-05,
+          "min": 0.06506219000469553,
+          "max": 0.06539214584311843
+        },
+        "dop": {
+          "n": 241,
+          "mean": 1.0000543560165975,
+          "sample_sd": 2.469021177308637e-05,
+          "min": 0.9999924,
+          "max": 1.000131
+        },
+        "pax_ptotal": {
+          "n": 241,
+          "mean": 0.00037171787468879663,
+          "sample_sd": 1.8208471855615407e-07,
+          "min": 0.0003712639,
+          "max": 0.0003720397
+        },
+        "pd_mean_v": {
+          "n": 241,
+          "mean": -0.004951423350953462,
+          "sample_sd": 3.311921992652129e-05,
+          "min": -0.0050348564982414246,
+          "max": -0.004855483770370483
+        },
+        "s1_circle_latitude_deg": {
+          "n": 241,
+          "mean": -83.44132180648168,
+          "sample_sd": 0.005347847485937278,
+          "min": -83.45398743172917,
+          "max": -83.43014017871889
+        },
+        "s2s3_radius": {
+          "n": 241,
+          "mean": 0.1142206981642049,
+          "sample_sd": 9.272675983887706e-05,
+          "min": 0.11400108573701441,
+          "max": 0.11441457548414288
+        }
+      },
+      "mean_orientation_stokes": [
+        -0.9934553957954694,
+        -0.09375770737756275,
+        0.0652369434004535
+      ],
+      "mean_orientation_vector_length": 0.9999999949560316,
+      "static_mean_direction": [
+        -0.993455400806427,
+        -0.09375770785047366,
+        0.06523694372950657
+      ],
+      "dop_above_one_count": 239,
+      "dop_below_zero_count": 0,
+      "max_unit_vector_norm_error": 2.220446049250313e-16,
+      "max_stokes_reconstruction_error": 0.0,
+      "rp_command_columns_all_zero": true,
+      "largest_unsampled_around_s1_gap_deg": 359.89437338606103,
+      "sampled_around_s1_covering_arc_deg": 0.10562661393896633,
+      "s1_circle_latitude_rms_deg": 83.44132197714535,
+      "fraction_within_5deg_s1_circle": 0.0,
+      "fraction_within_10deg_s1_circle": 0.0
+    },
+    "both_paths": {
+      "samples": 241,
+      "first_elapsed_s": 4.197994712740183e-06,
+      "last_elapsed_s": 60.000508332996105,
+      "duration_span_s": 60.00050413500139,
+      "sample_interval_s": {
+        "n": 240,
+        "mean": 0.2500021005625058,
+        "sample_sd": 0.00010182075293588223,
+        "min": 0.2497069380042376,
+        "max": 0.25029122499836376
+      },
+      "duplicate_pax_timestamps": 0,
+      "measurements": {
+        "theta_deg": {
+          "n": 241,
+          "mean": 0.9245604893750105,
+          "sample_sd": 39.573563419093134,
+          "min": -42.03604558633637,
+          "max": 47.15568704641604
+        },
+        "eta_deg": {
+          "n": 241,
+          "mean": -5.221094313266429,
+          "sample_sd": 27.68235371083662,
+          "min": -42.5540509993362,
+          "max": 42.99622544815046
+        },
+        "abs_eta_deg": {
+          "n": 241,
+          "mean": 24.543819962898688,
+          "sample_sd": 13.73961501618994,
+          "min": 0.15034928206248419,
+          "max": 42.99622544815046
+        },
+        "signed_axis_ratio": {
+          "n": 241,
+          "mean": -0.09798632138919117,
+          "sample_sd": 0.5583358465553604,
+          "min": -0.9180681549000573,
+          "max": 0.932391928554705
+        },
+        "minor_major_ratio": {
+          "n": 241,
+          "mean": 0.48628644261627807,
+          "sample_sd": 0.2896902268247837,
+          "min": 0.0026240960230451693,
+          "max": 0.932391928554705
+        },
+        "s1": {
+          "n": 241,
+          "mean": 0.07847517725287959,
+          "sample_sd": 0.06039362077663206,
+          "min": -0.07471451399514482,
+          "max": 0.22034383603838822
+        },
+        "s2": {
+          "n": 241,
+          "mean": -0.09562457936508895,
+          "sample_sd": 0.6400274483744731,
+          "min": -0.9911947062331236,
+          "max": 0.995441087597335
+        },
+        "s3": {
+          "n": 241,
+          "mean": -0.15864397998763954,
+          "sample_sd": 0.741785137485985,
+          "min": -0.9963573647421528,
+          "max": 0.9975548507172396
+        },
+        "dop": {
+          "n": 241,
+          "mean": 0.8494561983402489,
+          "sample_sd": 0.03266564567905014,
+          "min": 0.7823658,
+          "max": 0.9253024
+        },
+        "pax_ptotal": {
+          "n": 241,
+          "mean": 0.0007977750970954358,
+          "sample_sd": 3.3468732416425386e-05,
+          "min": 0.0007381463,
+          "max": 0.0008513534
+        },
+        "pd_mean_v": {
+          "n": 241,
+          "mean": -0.004975671064556882,
+          "sample_sd": 3.500944940940742e-05,
+          "min": -0.0050604864954948425,
+          "max": -0.004880644381046295
+        },
+        "s1_circle_latitude_deg": {
+          "n": 241,
+          "mean": 4.50957099599534,
+          "sample_sd": 3.477756646788539,
+          "min": -4.284819138396501,
+          "max": 12.729228934842103
+        },
+        "s2s3_radius": {
+          "n": 241,
+          "mean": 0.995077288401457,
+          "sample_sd": 0.005541574834757424,
+          "min": 0.9754222644167436,
+          "max": 0.9999972299029869
+        }
+      },
+      "mean_orientation_stokes": [
+        0.07847517725287959,
+        -0.09562457936508888,
+        -0.1586439799876394
+      ],
+      "mean_orientation_vector_length": 0.2011723788444616,
+      "static_mean_direction": null,
+      "dop_above_one_count": 0,
+      "dop_below_zero_count": 0,
+      "max_unit_vector_norm_error": 1.1102230246251565e-16,
+      "max_stokes_reconstruction_error": 0.0,
+      "rp_command_columns_all_zero": true,
+      "largest_unsampled_around_s1_gap_deg": 57.03131762657874,
+      "sampled_around_s1_covering_arc_deg": 302.96868237342125,
+      "s1_circle_latitude_rms_deg": 5.690416154044571,
+      "fraction_within_5deg_s1_circle": 0.5560165975103735,
+      "fraction_within_10deg_s1_circle": 0.91701244813278
+    }
+  },
+  "static_pair": {
+    "poincare_separation_deg": 171.73010038755933,
+    "departure_from_antipodal_deg": 8.269899612440668
+  },
+  "coordinate_reference": "https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=12211"
+}

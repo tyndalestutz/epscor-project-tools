@@ -1,0 +1,11 @@
+{
+  "pd_input": "in1",
+  "captures": 3,
+  "valid_captures": 3,
+  "visibility_mean": 0.012563069555076854,
+  "visibility_std": 0.0023375497669405176,
+  "dark_voltage_v": null,
+  "external_frequency_hz": 0.5,
+  "definition": "(Imax-Imin)/(Imax+Imin), I = polarity*(V-Vdark); extrema of 1/64-period averages",
+  "interpretation": "Observed contrast assumes DC coupling, linear unsaturated PD, and full fringe excursion. A missing dark measurement gives apparent contrast only. Scatter is not total uncertainty."
+}

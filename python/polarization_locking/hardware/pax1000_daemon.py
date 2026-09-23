@@ -48,8 +48,9 @@ class ProjectPAX1000(UsesSerial, HasMeasureTrigger, IsSensor):
         self.inst.write(f"SENS:CALC {int(self._config.get('measurement_mode', 5))}")
         self._wavelength = float(self.inst.query("SENSe:CORRection:WAVelength?")) * 1e9
         self.inst.write("INPut:ROTation:STATe 1")
-        while not self.inst.query("INPut:ROTation:STATe?"):
-            time.sleep(0.1)
+        # Wait once at spin-up, before any client can acquire measurements.
+        # The motor and autorange need time to settle, even if rotation is on.
+        time.sleep(5.0)
 
     def close(self):
         self.inst.write("INPut:ROTation:STATe 0")
