@@ -234,27 +234,59 @@ def create_run_report(case, paths, config, options, state):
     plot_error = None
     with PdfPages(temporary, metadata={"Title": case.title, "Subject": paths.directory.name, "Author": "Polarization diagnostics"}) as document:
         pdf = ReportPages(document)
-        add_overview(pdf, case, paths, config, options, state, rows)
-        if rows:
-            try:
-                add_specialized(pdf, case, paths, options)
-            except Exception as exc:
-                plot_error = f"{type(exc).__name__}: {exc}"
-                plt.close("all")
-                text_page(pdf, "Specialized analysis unavailable", [("Reason", plot_error), ("Data retained", "Raw telemetry follows. The original CSV and recipe remain available for reanalysis.")])
-            if not case.scope_only:
-                add_telemetry(pdf, rows)
+        if case.report == "pax-live":
+            add_pax_live(pdf, paths, config, state, rows)
         else:
-            log = paths.directory / "console.log"
-            lines = log.read_text().splitlines() if log.exists() else []
-            for start in range(0, len(lines), 18):
-                text_page(pdf, "Run log", [("Recorded output", "\n".join(lines[start:start+18]))])
-        add_parameters(pdf, case, config, options)
+            add_overview(pdf, case, paths, config, options, state, rows)
+            if rows:
+                try:
+                    add_specialized(pdf, case, paths, options)
+                except Exception as exc:
+                    plot_error = f"{type(exc).__name__}: {exc}"
+                    plt.close("all")
+                    text_page(pdf, "Specialized analysis unavailable", [("Reason", plot_error), ("Data retained", "Raw telemetry follows. The original CSV and recipe remain available for reanalysis.")])
+                if not case.scope_only:
+                    add_telemetry(pdf, rows)
+            else:
+                log = paths.directory / "console.log"
+                lines = log.read_text().splitlines() if log.exists() else []
+                for start in range(0, len(lines), 18):
+                    text_page(pdf, "Run log", [("Recorded output", "\n".join(lines[start:start+18]))])
+            add_parameters(pdf, case, config, options)
     temporary.replace(paths.pdf)
     print(f"PDF report saved to {paths.pdf}")
     if plot_error:
         print(f"Report contains raw data; specialized analysis unavailable: {plot_error}")
     return {"report_file": paths.pdf.name, "report_status": "partial" if plot_error else "completed", **({"report_error": plot_error} if plot_error else {})}
+
+
+def add_pax_live(pdf, paths, config, state, rows):
+    elapsed = column(rows, "elapsed_s")
+    span = elapsed[-1] - elapsed[0] if len(rows) > 1 else 0
+    rate = (len(rows) - 1) / span if span > 0 else 0
+    text_page(pdf, "PAX alignment run", [
+        ("Run", f"{paths.directory.name}\nStatus: {state.get('status', 'unknown')}"),
+        ("Acquisition", f"Duration: {state.get('duration_s', elapsed[-1] if len(rows) else 0):.1f} s; "
+         f"{len(rows)} fresh samples; {rate:.2f} Hz over recorded samples."),
+        ("Setup", f"{config.bench_pax_location}\n{config.bench_notes}"),
+        ("Definitions", "Power: watts. DoP: fraction. S1–S3: the suite's normalized direction (not multiplied by DoP). "
+         "CSV theta/eta: radians; displayed angles: degrees. No fit or smoothing."),
+        ("Raw data", "data.csv contains every accepted sample and the full exposed PAX record. "
+         "Red Pitaya was not connected or measured. Settings/provenance: recipe.json and run.json."),
+        ("Acquisition issues", state.get("error", "None") + "\n" + state.get("cleanup_error", "")),
+    ])
+    if not rows:
+        return
+    fig, axes = plt.subplots(2, 2, figsize=(11.7, 8.3), constrained_layout=True)
+    for ax, fields, unit in zip(axes.flat, (("pax_ptotal",), ("s1", "s2", "s3"), ("dop",), ("theta_deg", "eta_deg")),
+                                ("Power (W)", "Normalized Stokes direction", "DoP (fraction)", "Angle (deg)")):
+        for field in fields:
+            ax.plot(elapsed, column(rows, field), label=field, linewidth=.8)
+        ax.set(xlabel="Elapsed time (s)", ylabel=unit)
+        ax.grid(alpha=.2)
+        ax.legend()
+    pdf.savefig(fig)
+    plt.close(fig)
 
 
 def main(argv=None):

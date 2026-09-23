@@ -128,7 +128,10 @@ def test_all_catalog_entries_dispatch_and_persist(case, tmp_path, monkeypatch):
     app = fake_app(config, monkeypatch)
     state = execute(case, config, default_options(case), app_factory=lambda _: app)
     assert state["status"] == "completed", state
-    app.connect.assert_called_once()
+    if case.pax_only:
+        app.connect.assert_not_called()  # real panel connects inside its worker
+    else:
+        app.connect.assert_called_once()
     app.disconnect.assert_called_once()
     path = next(tmp_path.rglob("recipe.json"))
     assert load_recipe(path)[0] == case

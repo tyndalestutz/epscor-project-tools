@@ -28,7 +28,7 @@ class DiagnosticsMenu:
 
     def show(self, case, config, options, *, all_fields=False):
         self.print(f"\n{case.title} [{case.key}]\n{case.description}\nRequired setup: {case.setup}")
-        if not case.scope_only:
+        if not case.scope_only and not case.pax_only:
             self.print("Voltages ending in rp_v/rp_voltage are RP commands (0-1 V). V_lambda is terminal voltage for 2pi; V_pi is half of V_lambda. Historical gains are editable candidates.")
         entries = [("option", key, value) for key, value in options.items()]
         names = list(TYPES) if all_fields else case.config_names()

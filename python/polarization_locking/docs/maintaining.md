@@ -32,9 +32,14 @@ without a behavior-level reason and regression coverage.
    relevant config groups, duration semantics, and report type. `scope_only=True`
    selects the contrast-specific session lifecycle (detectors and active/passive
    mode from configuration); ordinary tests own both RP and PAX.
+   `pax_only=True` is used by `pax-live`: its GUI routine owns startup, reads and
+   cleanup on a single worker thread; the runner defers connection to it.
 3. Use the runner's output path and instrument session. Do not duplicate recipes,
    session startup, or report dispatch in an ad-hoc command. Retain partial data
    on failures and interruption, and label derived estimates and units accurately.
+   The alignment panel returns Save/Discard to the runner. It flushes every row;
+   only explicit Discard deletes the newly allocated run after handles close.
+   Cleanup failures and unconfirmed stops retain temporary data. Only Save reports.
 4. Add meaningful offline checks for physics/math, dispatch, failure cleanup,
    and any changed hardware behavior. Use representative synthetic traces;
    never connect real instruments from pytest.

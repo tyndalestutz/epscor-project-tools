@@ -14,6 +14,12 @@ from .prompts import prepare_setup
 
 
 class DiagnosticsMixin:
+    def _run_pax_live(self, output_file: str) -> dict:
+        # Select cleanup even if constructing the GUI fails before connection.
+        self._pax_only = True
+        from .pax_live import run_panel
+        return run_panel(self, output_file)
+
     def _run_stokes_phase_sweep(self, output_file: str, duration_s: float) -> None:
         from .stokes_phase_sweep import acquire_stokes_phase_sweep
         acquire_stokes_phase_sweep(self.rp, self.pax, self.config, output_file, duration_s)

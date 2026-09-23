@@ -6,6 +6,7 @@ import hashlib
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 import platform
+import shutil
 import subprocess
 import sys
 
@@ -71,13 +72,19 @@ def execute(case, config, options, *, app_factory=None):
     paths = app._new_experiment_paths(case.key, options["label"])
     write_json(paths.directory / "recipe.json", recipe(case, config, options))
     state = {"test": case.key, "status": "running", "started_at": datetime.now(timezone.utc).isoformat(), "python": platform.python_version(), "source_sha256": source_fingerprint(), "required_setup": case.setup}
+    if case.key == "pax-live":
+        state["data_disposition"] = "temporary"
     state["provenance"] = runtime_provenance()
     status_path = paths.directory / "run.json"
     write_json(status_path, state)
     print(f"Run folder: {paths.directory}")
     with (paths.directory / "console.log").open("w") as logfile, redirect_stdout(Tee(sys.stdout, logfile)), redirect_stderr(Tee(sys.stderr, logfile)):
         try:
-            if case.scope_only:
+            if case.pax_only:
+                # The live panel opens immediately; its worker owns the entire
+                # PAX session so YAQC never moves between threads.
+                app._pax_only = True
+            elif case.scope_only:
                 app.connect(scope_only=True)
             else:
                 app.connect()
@@ -93,8 +100,16 @@ def execute(case, config, options, *, app_factory=None):
             kwargs.update({flag: True for flag in case.flags})
             if case.key == "rough":
                 kwargs = {}
-            getattr(app, case.method)(**kwargs)
+            result = getattr(app, case.method)(**kwargs)
             state["status"] = "completed"
+            if case.key == "pax-live":
+                result = result or {}
+                state["data_disposition"] = {"save": "saved", "discard": "discard"}.get(result.get("disposition"), "temporary")
+                state.update({key: result[key] for key in ("sample_count", "duration_s", "error", "cleanup_error") if key in result})
+                if state.get("error"):
+                    state["status"] = "failed"
+                if state.get("cleanup_error"):
+                    state["status"] = "cleanup_failed"
         except (KeyboardInterrupt, EOFError):
             state["status"] = "interrupted"
             print("Run stopped. Partial data is retained.")
@@ -110,12 +125,28 @@ def execute(case, config, options, *, app_factory=None):
             state["effective_config"] = asdict(app.config)
             state["finished_at"] = datetime.now(timezone.utc).isoformat()
             write_json(status_path, state)
-            # Reporting runs after cleanup, including stopped monitors and partial scans.
-            try:
-                from .reports.run_report import create_run_report
-                state.update(create_run_report(case, paths, app.config, options, state))
-            except Exception as exc:
-                state.update(report_status="failed", report_error=f"{type(exc).__name__}: {exc}")
-                print(f"Data saved; report failed: {state['report_error']}")
+            # Unconfirmed live runs remain recoverable; only Save generates a PDF.
+            if case.key != "pax-live" or state.get("data_disposition") == "saved":
+                try:
+                    from .reports.run_report import create_run_report
+                    state.update(create_run_report(case, paths, app.config, options, state))
+                except Exception as exc:
+                    state.update(report_status="failed", report_error=f"{type(exc).__name__}: {exc}")
+                    print(f"Data saved; report failed: {state['report_error']}")
             write_json(status_path, state)
+    # The worker and log handles are closed. Delete only this newly allocated run,
+    # and retain cleanup failures as recovery evidence even after Discard.
+    if state.get("data_disposition") == "discard":
+        if state["status"] == "cleanup_failed":
+            state["data_disposition"] = "temporary"
+            write_json(status_path, state)
+            print(f"Cleanup failed; temporary data retained at {paths.directory}")
+        else:
+            try:
+                shutil.rmtree(paths.directory)
+                state.update(status="discarded", data_disposition="discarded")
+                print("Alignment run discarded.")
+            except OSError as exc:
+                state.update(status="discard_failed", data_disposition="temporary", error=str(exc))
+                print(f"Could not fully discard {paths.directory}: {exc}")
     return state

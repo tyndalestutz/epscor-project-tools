@@ -149,6 +149,10 @@ def validate(config, case, options):
         if not 2 / 8.589934592 <= config.visibility_frequency_hz <= 1000:
             raise ValueError("visibility_frequency_hz must be within 0.233..1000 Hz (two periods per scope capture)")
         return
+    if case.pax_only:
+        if config.pax_fresh_read_timeout_s <= 0 or config.pax_wavelength_nm <= 0:
+            raise ValueError("PAX freshness timeout and wavelength must be positive")
+        return
     if case.key not in {"live", "pax-path-hold", "first-npbs-d-isolation"} and not config.phase_output_map_confirmed:
         raise ValueError("Set phase_output_map_confirmed after checking the output assignment")
     if case.key not in {"live", "sweep", "pax-path-hold", "first-npbs-d-isolation", "stokes-phase-sweep"}:

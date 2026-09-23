@@ -18,8 +18,13 @@ class TestCase:
     target: bool = False
     flags: tuple[str, ...] = ()
     scope_only: bool = False
+    pax_only: bool = False
 
     def config_names(self) -> list[str]:
+        if self.pax_only:
+            return ["bench_notes", "bench_pax_location", "results_directory"] + [
+                f.name for f in fields(PolarizationLockConfig)
+                if f.name.startswith("pax_") and not f.name.startswith("pax_path_")]
         if self.scope_only:
             return ["bench_notes", "bench_pax_location", "rp_hostname", "rp_config", "rp_scope_port", "pd_input", "phase_output_map_confirmed", "rp_output_max_voltage", "results_directory"] + [f.name for f in fields(PolarizationLockConfig) if f.name.startswith(("visibility_", "pax_"))]
         common = ("bench_", "rp_", "pax_", "phi1_v_lambda", "phi2_v_lambda", "phi1_actuator_", "phi2_actuator_", "phase_output_", "minimum_dop", "results_directory")
@@ -55,6 +60,7 @@ TESTS = (
     TestCase("rough", "One-shot target move", "Measure, make one bounded target correction, settle, and report the residual. Uses the DOP gate; summary goes to the run log.", FINAL, "rough_align_once", ("rough_", "target_", "sphere_"), target=True),
     TestCase("pd-visibility", "Contrast (PD / PAX / both)", "Measure PD voltage contrast, PAX power contrast, or both concurrently. Passive mode leaves the drive untouched; active mode drives the selected phase actuator and returns outputs to zero on exit.", "PD needs a DC-coupled input and measured/provided signed dark baseline. PAX needs the recorded port/wavelength. Both requires light delivered to both sensors (e.g. a beam split), with that arrangement recorded. Active mapping: phi1=OUT1, phi2=OUT2; the other output is zero. Passive PD needs the existing Pyrpl FPGA. Drive must span fringes.", "_run_pd_visibility", ("visibility_", "pd_input"), timed=True, report="visibility", scope_only=True),
     TestCase("stokes-phase-sweep", "Power and Stokes phase sweep", "Measure synchronized optical power and Stokes parameters while sweeping an external phase actuator. Repeated OUT1 sine cycles; IN1 is the measured voltage reference, with acquisition timing retained.", "PAX in path A / E4, observing the combined field. OUT1 drives phi1 and is physically T-ed into IN1 as the voltage reference (not a photodiode). OUT2 stays at zero.", "_run_stokes_phase_sweep", ("stokes_phase_sweep_", "pd_scope_"), timed=True, report="stokes-phase-sweep"),
+    TestCase("pax-live", "PAX alignment panel", "Large live power, DoP, Stokes and ellipse-angle readouts for manual alignment. Stop to Save or Discard; all fresh readings are logged while open. Red Pitaya is left untouched.", "PAX at the location recorded in bench_pax_location; align optics by hand. Requires a graphical desktop (Qt).", "_run_pax_live", report="pax-live", pax_only=True),
 )
 BY_KEY = {case.key: case for case in TESTS}
 

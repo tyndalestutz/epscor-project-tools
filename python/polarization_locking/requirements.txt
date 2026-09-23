@@ -1,5 +1,8 @@
 numpy
 matplotlib
+# Numeric PAX alignment panel (no plotting in the acquisition loop).
+qtpy
+PyQt5
 # Hardware access (use the established bench environment for instrument drivers).
 pyrpl
 yaqc

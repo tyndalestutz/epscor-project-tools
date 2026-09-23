@@ -35,6 +35,44 @@ Select a test by name or number. **e** edits, **s** saves a recipe, **l** loads,
 Edits persist for that test during the session; save a recipe to keep them.
 Only Run connects instruments. Ctrl+C stops a run and retains partial data.
 
+### Live manual alignment
+
+```bash
+python python/polarization_locking/lock.py --run pax-live
+```
+
+`pax-live` opens a simple Qt panel with large power (µW), DoP (fraction),
+S1/S2/S3 and theta/eta (degrees) readouts. Current values are unsmoothed;
+small deltas compare endpoints roughly one second apart (theta wraps at 180°).
+Stokes values are the existing adapter's normalized direction, without DoP scaling.
+The panel uses `qtpy` and a Qt binding (`PyQt5` in the bench environment).
+No Red Pitaya connection or output changes are made. Its state is recorded as
+unmeasured; existing output drives may still be active.
+
+The worker reuses PAX startup settling and `read_fresh_polarization()` validation.
+It adds no polling sleep. Recent phase-sweep runs delivered about 5.6–5.8 fresh
+samples/s including scope overhead; expect roughly 5–10 Hz on this setup,
+subject to instrument/network timing. The panel displays the actual rate.
+Startup/stale data show `WAITING FOR PAX…`; invalid placeholders are never
+displayed as measurements. Stop/close/Ctrl+C finishes the current request and
+disconnects PAX, then offers **Save** or **Discard**.
+
+Every accepted sample is flushed immediately to the printed run folder:
+`experiments/polarization_locking/YYYY-MM-DD/HHMMSS_pax-live_LABEL/data.csv`
+(or the configured `results_directory`). While open, `run.json` marks this
+as `data_disposition: temporary`. CSV includes host/device timing, raw power
+in W, angles in radians and degrees, Stokes, DoP, ADC diagnostics, revision
+time, measurement counter, wavelength readback and the full exposed raw record
+in `pax_raw_json`. Future diagnostic fields remain recoverable there. Standard
+configuration/provenance live in `recipe.json` and `run.json`.
+
+**Save** keeps the folder, marks it saved and writes a simple summary/trace PDF
+after cleanup. **Discard** removes only this run's folder. Crashes or an
+unconfirmed choice retain temporary data for recovery; cleanup failures are
+always retained. An interrupted CSV can be read directly, and the normal
+offline report command can regenerate its report. The legacy terminal-only
+`live` test keeps its existing behavior.
+
 **Output behavior matters:** ordinary menu tests, including `live` (PAX monitor),
 initialize RP outputs to zero and attempt to return them to zero on exit.
 `pd-visibility` offers PD, PAX or both. Its default passive mode preserves existing

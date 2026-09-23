@@ -30,6 +30,8 @@ Path-condition durations are per condition. Calibration/settling add time.
 
 Every menu run attempts a PDF and keeps recipe/status/log artifacts. A complete
 report may still describe invalid physics; specialized analysis can be partial.
+Exception: `pax-live` connects only PAX and logs temporarily; Stop/close offers
+Save (retain and report) or Discard (remove this run). Crashes retain recovery data.
 CSV fields depend on the measurement. `rough` reports through its log instead
 of a measurement CSV. Report regeneration is offline.
 
@@ -38,6 +40,7 @@ of a measurement CSV. Report regeneration is offline.
 | Test key | Purpose / action | Required setup |
 | --- | --- | --- |
 | `live` | Log raw PAX angles, Stokes, DOP and u/v until Ctrl+C. No actuator scan; RP outputs are initialized to zero. | PAX at the location recorded in bench_pax_location. |
+| `pax-live` | Large numeric alignment panel, small recent deltas, every fresh PAX record logged. Save/Discard on stop. No RP connection or output changes. | PAX at recorded location/wavelength; Qt desktop. See [launch and logging](../README.md#live-manual-alignment). |
 | `pd-visibility` | Contrast from PD, PAX or both. Choose passive or active; active actuator/waveform settings remain in the table. | Drive spans fringes. PD: DC coupling and signed dark baseline. PAX: recorded port/wavelength. Both: simultaneous optical delivery. See [contrast procedure](visibility.md). |
 
 ## Actuator response and coupling

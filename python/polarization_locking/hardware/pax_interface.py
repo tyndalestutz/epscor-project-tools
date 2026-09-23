@@ -37,6 +37,10 @@ class PAXReading:
     rev_time: float = float("nan")
 
 
+class PAXNotReady(RuntimeError):
+    """No valid advancing record within the shared freshness timeout."""
+
+
 class PAXController:
     """Thin wrapper around the PAX1000 YAQC client."""
 
@@ -286,4 +290,4 @@ class PAXController:
                 if previous is None:
                     previous = current
             time.sleep(0.01)
-        raise RuntimeError("PAX did not return a valid advancing measurement before the freshness timeout")
+        raise PAXNotReady("PAX did not return a valid advancing measurement before the freshness timeout")

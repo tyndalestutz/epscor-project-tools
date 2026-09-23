@@ -50,6 +50,7 @@ setup. A driver model name is not a gain measurement. Use a bounded explicit
 | Mode | Connection and cleanup |
 | --- | --- |
 | Ordinary menu test, including `live` | Full RP and PAX connection; initializes RP outputs to zero, runs the routine, attempts zero on exit |
+| `pax-live` | PAX only, initialized/read/closed by one worker; RP untouched and unmeasured; Stop/close/Ctrl+C offers Save or Discard after cleanup |
 | `pd-visibility`, passive PD/both | Scope transport only; requires already loaded Pyrpl FPGA; restores scope registers; measures signed dark baseline unless provided; both also connects PAX |
 | `pd-visibility`, passive PAX | PAX connection only; records total optical power; never connects RP or changes actuator outputs |
 | `pd-visibility`, active (any detector choice) | Normal RP connection; selected phase actuator/waveform, other output zero; PAX connects when selected; both outputs returned to zero on exit |
@@ -79,6 +80,7 @@ processes. Confirm the serial in [pax1000.toml](../hardware/pax1000.toml).
 
 Duration on path comparisons means **per condition**. Other timing can include
 calibration, settling, and a final complete scope capture. Ctrl+C stops a run;
+`pax-live` then offers Save/Discard; until a choice, its flushed CSV stays recoverable.
 **b** at a setup prompt aborts it. Keep the folder after either. Cleanup failure
 closes the menu; verify instrument state before another run.
 

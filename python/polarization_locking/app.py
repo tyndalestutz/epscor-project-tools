@@ -43,8 +43,13 @@ class PolarizationLockApp(DiagnosticsMixin, FeedbackMixin):
                 raise ValueError("Set both target_u and target_v, or neither")
             self.set_target(self.config.target_u, self.config.target_v)
 
-    def connect(self, *, scope_only: bool = False) -> None:
+    def connect(self, *, scope_only: bool = False, pax_only: bool = False) -> None:
+        self._pax_only = pax_only
         self._scope_only = scope_only
+        if pax_only:
+            self.pax.connect()
+            self.running = True
+            return
         if scope_only:
             self._contrast_active = self.config.visibility_mode == "active"
             self._contrast_pd = self.config.visibility_source in {"pd", "both"}
@@ -64,6 +69,9 @@ class PolarizationLockApp(DiagnosticsMixin, FeedbackMixin):
 
     def disconnect(self) -> None:
         self.running = False
+        if getattr(self, "_pax_only", False):
+            self.pax.disconnect()
+            return
         if getattr(self, "_scope_only", False):
             try:
                 if self._contrast_active:
