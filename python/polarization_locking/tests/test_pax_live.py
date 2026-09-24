@@ -2,8 +2,8 @@
 import csv
 import json
 from pathlib import Path
-from queue import Queue
-from threading import Event, get_ident, main_thread
+from queue import SimpleQueue
+from threading import Event, Thread, get_ident, main_thread
 import time
 from unittest.mock import Mock
 
@@ -18,14 +18,15 @@ from polarization_locking.runner import execute
 from polarization_locking.tests.test_stokes_phase_sweep import Clock, reading
 
 
-def test_worker_flushes_every_row_reuses_freshness_and_preserves_diagnostics(tmp_path, monkeypatch):
+def test_worker_logs_every_row_reuses_freshness_and_preserves_diagnostics(tmp_path, monkeypatch):
     clock = Clock()
+    clock.time = lambda: 1700000000 + clock.now
     monkeypatch.setattr(pax_live, "time", clock)
     app = PolarizationLockApp()
     app.rp = Mock()
     app.pax = Mock(last_raw_record={"measurement_id": 11, "extra_flag": 7})
     app.pax.client.get_wavelength.return_value = 780.0
-    stop, updates, result = Event(), Queue(maxsize=1), {}
+    stop, updates, result = Event(), pax_live.SampleCache(), {}
     path = tmp_path / "data.csv"
     count = 0
 
@@ -35,9 +36,6 @@ def test_worker_flushes_every_row_reuses_freshness_and_preserves_diagnostics(tmp
         clock.sleep(.1)
         if count == 1:
             raise PAXNotReady("spinup")
-        # The preceding sample is already on disk even without consuming GUI updates.
-        with path.open() as handle:
-            assert len(list(csv.DictReader(handle))) == count - 2
         if count == 5:
             stop.set()
         return reading(count, theta=.1, eta=-.02)
@@ -53,7 +51,7 @@ def test_worker_flushes_every_row_reuses_freshness_and_preserves_diagnostics(tmp
     assert json.loads(rows[-1]["pax_raw_json"])["extra_flag"] == 7
     assert rows[-1]["pax_measurement_id"] == "11"
     assert rows[-1]["rp_state"] == "not_connected_or_measured"
-    assert updates.qsize() == 1 and updates.get()["row"]["sample"] == 4
+    assert updates.latest()["sample"] == 4
     app.pax.connect.assert_called_once()
     app.pax.disconnect.assert_called_once()
     app.pax.read_polarization.assert_not_called()
@@ -92,7 +90,7 @@ def test_worker_failure_keeps_partial_csv_and_cleans_up(tmp_path, failure_at):
         app.pax.disconnect.side_effect = RuntimeError("cleanup failed")
     result = {}
     path = tmp_path / "data.csv"
-    pax_live.collect(app, path, stop, Queue(maxsize=1), result)
+    pax_live.collect(app, path, stop, pax_live.SampleCache(), result)
     assert ("cleanup_error" if failure_at == "cleanup" else "error") in result
     assert len(list(csv.DictReader(path.open()))) == (0 if failure_at == "connect" else 1)
     app.pax.disconnect.assert_called_once()
@@ -211,3 +209,60 @@ def test_simple_saved_report(tmp_path):
     write_json(tmp_path / "run.json", {"status": "completed", "data_disposition": "saved"})
     main([str(tmp_path)])
     assert json.loads((tmp_path / "run.json").read_text())["report_status"] == "completed"
+
+
+def test_slow_csv_formatting_cannot_block_pax_acquisition(tmp_path, monkeypatch):
+    app = PolarizationLockApp()
+    app.rp = Mock()
+    app.pax = Mock(last_raw_record={})
+    app.pax.client.get_wavelength.return_value = 780
+    stop, entered, release, acquired = Event(), Event(), Event(), Event()
+    cache, result = pax_live.SampleCache(capacity=5), {}
+    row = pax_live.sample_row
+    owners = []
+
+    def slow_row(sample):
+        owners.append(get_ident())
+        entered.set()
+        assert release.wait(3)
+        return row(sample)
+
+    monkeypatch.setattr(pax_live, "sample_row", slow_row)
+    count = 0
+    def fresh():
+        nonlocal count
+        count += 1
+        if count == 20:
+            stop.set()
+            acquired.set()
+        return reading(count)
+
+    app.pax.read_fresh_polarization.side_effect = fresh
+    path = tmp_path / "data.csv"
+    worker = Thread(target=pax_live.collect, args=(app, path, stop, cache, result))
+    worker.start()
+    try:
+        assert entered.wait(2) and acquired.wait(2)
+        assert cache.latest()["sample"] == 20
+        samples, gap = cache.after(0)
+        assert gap and len(samples) == 5
+        assert worker.is_alive()  # waiting only for final logger drain
+    finally:
+        release.set()
+        worker.join(3)
+    assert not worker.is_alive() and "error" not in result
+    assert len(list(csv.DictReader(path.open()))) == 20
+    assert all(owner != worker.ident for owner in owners)
+
+
+def test_logger_failure_stops_acquisition_and_is_reported(tmp_path, monkeypatch):
+    app = PolarizationLockApp()
+    app.rp = Mock()
+    app.pax = Mock(last_raw_record={})
+    app.pax.client.get_wavelength.return_value = 780
+    stop, result = Event(), {}
+    app.pax.read_fresh_polarization.side_effect = lambda: (time.sleep(.002), reading())[1]
+    monkeypatch.setattr(pax_live, "sample_row", Mock(side_effect=OSError("disk full")))
+    pax_live.collect(app, tmp_path / "data.csv", stop, pax_live.SampleCache(), result)
+    assert stop.is_set() and "disk full" in result["error"]
+    app.pax.disconnect.assert_called_once()

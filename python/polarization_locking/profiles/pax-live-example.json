@@ -1,8 +1,13 @@
 {
   "schema_version": 1,
   "test": "pax-live",
-  "options": {"label": "manual-alignment", "report": "pdf"},
+  "options": {
+    "label": "manual-alignment",
+    "report": "pdf"
+  },
   "config": {
-    "bench_notes": "Record PAX port, wavelength, optical paths, and which optics are adjusted by hand. RP outputs remain unchanged and are not measured."
+    "bench_notes": "Record PAX port, wavelength, optical paths, and which optics are adjusted by hand. RP outputs remain unchanged and are not measured.",
+    "pax_live_reference_duration_s": 5.0,
+    "pax_live_reference_max_spread_deg": 5.0
   }
 }

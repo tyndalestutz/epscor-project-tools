@@ -1,13 +1,13 @@
-"""Small Qt instrument panel; one worker owns PAX and flushes every fresh row."""
+"""Small Qt instrument panel; one PAX producer and an independent CSV logger."""
 from collections import deque
 import csv
 from datetime import datetime, timezone
 import json
 import math
 from pathlib import Path
-from queue import Empty, Full, Queue
+from queue import SimpleQueue
 import signal
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 import time
 
 from ..hardware.pax_interface import PAXNotReady
@@ -42,53 +42,97 @@ class RecentReadings:
                 "rate_hz": (len(self.rows) - 1) / span if span > 0 else 0}
 
 
-def publish(queue, item):
-    """Only display updates can be dropped; CSV logging precedes publication."""
-    try:
-        queue.get_nowait()
-    except Empty:
-        pass
-    try:
-        queue.put_nowait(item)
-    except Full:
-        pass
+class SampleCache:
+    """Bounded recent samples for independent GUI consumers, never hardware reads.
+
+    The lock covers only append/copy operations, not formatting or calculations.
+    Samples are immutable after publication. A slow consumer detects an overrun;
+    the independent logger queue never drops scientific samples.
+    """
+    def __init__(self, capacity=2048):
+        self.lock = Lock()
+        self.samples = deque(maxlen=capacity)
+
+    def publish(self, sample):
+        with self.lock:
+            self.samples.append(sample)
+
+    def latest(self):
+        with self.lock:
+            return self.samples[-1] if self.samples else None
+
+    def after(self, cursor):
+        with self.lock:
+            recent = list(self.samples)
+        gap = bool(recent and recent[0]["sample"] > cursor + 1)
+        return [sample for sample in recent if sample["sample"] > cursor], gap
 
 
-def collect(app, output_file, stop, updates, result):
-    """Use the normal adapter/session, entirely on its owning worker thread."""
-    started = time.monotonic()
-    history = RecentReadings()
-    count = 0
+def sample_row(sample):
+    """CSV/display conversion happens in consumers, never the PAX producer."""
+    reading, raw = sample["reading"], sample["raw"]
+    return dict(sample=sample["sample"], utc=datetime.fromtimestamp(sample["host_time"], timezone.utc).isoformat(),
+                elapsed_s=sample["elapsed_s"], pax_requested_s=sample["requested_s"], pax_received_s=sample["elapsed_s"],
+                pax_timestamp=reading.timestamp, pax_revisions=reading.revisions, pax_ptotal=reading.ptotal,
+                s1=reading.s1, s2=reading.s2, s3=reading.s3, dop=reading.dop,
+                theta=reading.theta, eta=reading.eta, theta_deg=math.degrees(reading.theta), eta_deg=math.degrees(reading.eta),
+                pax_adc_min=reading.adc_min, pax_adc_max=reading.adc_max, pax_rev_time=reading.rev_time,
+                pax_measurement_id=raw.get("measurement_id", ""), pax_wavelength_nm=sample["wavelength_nm"],
+                measurement_status="valid_fresh", rp_state="not_connected_or_measured")
+
+
+def log_samples(output_file, messages, stop, result):
+    """One logger drains raw samples and optional small GUI event records."""
+    events = None
     try:
         with Path(output_file).open("w", newline="") as handle:
             writer = csv.DictWriter(handle, fieldnames=FIELDS)
             writer.writeheader()
             handle.flush()
-            app.connect(pax_only=True)
-            wavelength = app.pax.client.get_wavelength()
-            while not stop.is_set():
-                requested = time.monotonic() - started
-                try:
-                    reading = app.pax.read_fresh_polarization()
-                except PAXNotReady:
-                    publish(updates, {"waiting": True})
-                    continue
-                received = time.monotonic() - started
-                raw = dict(app.pax.last_raw_record or {})
-                count += 1
-                row = dict(sample=count, utc=datetime.now(timezone.utc).isoformat(), elapsed_s=received,
-                           pax_requested_s=requested, pax_received_s=received,
-                           pax_timestamp=reading.timestamp, pax_revisions=reading.revisions,
-                           pax_ptotal=reading.ptotal, s1=reading.s1, s2=reading.s2, s3=reading.s3,
-                           dop=reading.dop, theta=reading.theta, eta=reading.eta,
-                           theta_deg=math.degrees(reading.theta), eta_deg=math.degrees(reading.eta),
-                           pax_adc_min=reading.adc_min, pax_adc_max=reading.adc_max,
-                           pax_rev_time=reading.rev_time, pax_measurement_id=raw.get("measurement_id", ""),
-                           pax_wavelength_nm=wavelength, measurement_status="valid_fresh",
-                           rp_state="not_connected_or_measured", pax_raw_json=json.dumps(raw))
-                writer.writerow(row)
-                handle.flush()
-                publish(updates, history.add(row) | {"received_monotonic": started + received})
+            while True:
+                message = messages.get()
+                if message is None:
+                    break
+                kind, item = message
+                if kind == "sample":
+                    writer.writerow(sample_row(item) | {"pax_raw_json": json.dumps(item["raw"])})
+                    handle.flush()
+                else:
+                    if events is None:
+                        events = Path(output_file).with_name("events.jsonl").open("a")
+                    events.write(json.dumps(item) + "\n")
+                    events.flush()
+    except Exception as exc:
+        result["error"] = f"Logger {type(exc).__name__}: {exc}"
+        stop.set()
+    finally:
+        if events is not None:
+            events.close()
+
+
+def collect(app, output_file, stop, cache, result, messages=None):
+    """Use the normal adapter/session, entirely on its owning worker thread."""
+    started = time.monotonic()
+    messages = messages if messages is not None else SimpleQueue()
+    logger = Thread(target=log_samples, args=(output_file, messages, stop, result), name="pax-live-log")
+    logger.start()
+    count = 0
+    try:
+        app.connect(pax_only=True)
+        wavelength = app.pax.client.get_wavelength()
+        while not stop.is_set():
+            requested = time.monotonic() - started
+            try:
+                reading = app.pax.read_fresh_polarization()
+            except PAXNotReady:
+                continue
+            received = time.monotonic()
+            count += 1
+            sample = dict(sample=count, reading=reading, raw=dict(app.pax.last_raw_record or {}),
+                          elapsed_s=received - started, requested_s=requested,
+                          received_monotonic=received, host_time=time.time(), wavelength_nm=wavelength)
+            messages.put(("sample", sample))
+            cache.publish(sample)
     except Exception as exc:
         result["error"] = f"{type(exc).__name__}: {exc}"
     finally:
@@ -96,6 +140,8 @@ def collect(app, output_file, stop, updates, result):
             app.disconnect()
         except Exception as exc:
             result["cleanup_error"] = f"{type(exc).__name__}: {exc}"
+        messages.put(None)
+        logger.join()  # shutdown only; GUI stays responsive while flushing
         result.update(sample_count=count, duration_s=time.monotonic() - started)
 
 
@@ -105,10 +151,15 @@ def run_panel(app, output_file):
 
     gui = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
     loop = QtCore.QEventLoop()
-    updates = Queue(maxsize=1)
+    cache = SampleCache()
+    messages = SimpleQueue()
     stop = Event()
     result = {}
-    worker = Thread(target=collect, args=(app, output_file, stop, updates, result), name="pax-live")
+    worker = Thread(target=collect, args=(app, output_file, stop, cache, result, messages), name="pax-live")
+
+    def emit_event(event, **values):
+        messages.put(("event", dict(event=event, utc=datetime.now(timezone.utc).isoformat(),
+                                    host_monotonic=time.monotonic(), **values)))
 
     class Panel(QtWidgets.QWidget):
         def __init__(self):
@@ -117,6 +168,9 @@ def run_panel(app, output_file):
             self.finishing = False
             self.last = None
             self.last_received = None
+            self.cursor = 0
+            self.history = RecentReadings()
+            self.orthogonalizer = None
             self.started = time.monotonic()
             self.setWindowTitle("PAX · manual alignment")
             self.resize(1120, 740)
@@ -162,12 +216,30 @@ def run_panel(app, output_file):
             layout.addWidget(self.status)
             self.button = QtWidgets.QPushButton("Stop")
             self.button.clicked.connect(self.stop)
-            layout.addWidget(self.button, alignment=QtCore.Qt.AlignRight)
+            controls = QtWidgets.QHBoxLayout()
+            self.orthogonalizer_button = QtWidgets.QPushButton("Orthogonalizer")
+            self.orthogonalizer_button.clicked.connect(self.open_orthogonalizer)
+            controls.addWidget(self.orthogonalizer_button)
+            controls.addStretch()
+            controls.addWidget(self.button)
+            layout.addLayout(controls)
             self.timer = QtCore.QTimer(self)
             self.timer.timeout.connect(self.tick)
-            self.timer.start(33)
+            self.timer.start(50)
+
+        def open_orthogonalizer(self):
+            if self.orthogonalizer is None:
+                from .orthogonalizer import create_window
+                self.orthogonalizer = create_window(self, cache, app.config, emit_event)
+                self.orthogonalizer.destroyed.connect(lambda: setattr(self, "orthogonalizer", None))
+            self.orthogonalizer.show()
+            self.orthogonalizer.raise_()
+            self.orthogonalizer.activateWindow()
 
         def stop(self):
+            self.orthogonalizer_button.setEnabled(False)
+            if self.orthogonalizer is not None:
+                self.orthogonalizer.close()
             stop.set()
             self.button.setEnabled(False)
             self.status.setText("STOPPING… finishing the current PAX request and closing the connection.")
@@ -182,10 +254,13 @@ def run_panel(app, output_file):
         def tick(self):
             if self.finishing:
                 return
-            try:
-                item = updates.get_nowait()
-            except Empty:
-                item = None
+            batch, gap = cache.after(self.cursor)
+            if gap:
+                self.history = RecentReadings()
+            item = None
+            for sample in batch:
+                item = self.history.add(sample_row(sample)) | {"received_monotonic": sample["received_monotonic"]}
+                self.cursor = sample["sample"]
             if item and "row" in item:
                 self.last = item
                 self.last_received = item["received_monotonic"]
@@ -198,7 +273,7 @@ def run_panel(app, output_file):
                     self.deltas[key].setText(trend)
             elapsed = time.monotonic() - self.started
             age = time.monotonic() - self.last_received if self.last_received is not None else float("inf")
-            waiting = (item and item.get("waiting")) or age > 1
+            waiting = age > 1
             if not stop.is_set():
                 if waiting:
                     for key in self.values:
@@ -212,6 +287,9 @@ def run_panel(app, output_file):
                                         f"sample {row['sample']} · age {age:.1f} s")
             if not worker.is_alive():
                 self.finishing = True
+                self.orthogonalizer_button.setEnabled(False)
+                if self.orthogonalizer is not None:
+                    self.orthogonalizer.close()
                 self.timer.stop()
                 worker.join()
                 message = "Save this alignment run?"

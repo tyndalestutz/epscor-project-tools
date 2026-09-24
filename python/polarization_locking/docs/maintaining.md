@@ -37,7 +37,10 @@ without a behavior-level reason and regression coverage.
 3. Use the runner's output path and instrument session. Do not duplicate recipes,
    session startup, or report dispatch in an ad-hoc command. Retain partial data
    on failures and interruption, and label derived estimates and units accurately.
-   The alignment panel returns Save/Discard to the runner. It flushes every row;
+   The alignment panel returns Save/Discard to the runner. One logger flushes
+   every row independently of the PAX producer; GUI windows share a bounded cache.
+   Reference calculations stay in the GUI consumer; opening a window never reads
+   hardware or starts another logger. Drain logging before Save/Discard;
    only explicit Discard deletes the newly allocated run after handles close.
    Cleanup failures and unconfirmed stops retain temporary data. Only Save reports.
 4. Add meaningful offline checks for physics/math, dispatch, failure cleanup,
