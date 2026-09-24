@@ -152,6 +152,10 @@ def validate(config, case, options):
     if case.pax_only:
         if config.pax_fresh_read_timeout_s <= 0 or config.pax_wavelength_nm <= 0:
             raise ValueError("PAX freshness timeout and wavelength must be positive")
+        if not 0 < config.pax_live_reference_duration_s <= 60:
+            raise ValueError("Reference duration must be within (0, 60] seconds")
+        if not 0 < config.pax_live_reference_max_spread_deg <= 180:
+            raise ValueError("Reference spread warning must be within (0, 180] degrees")
         return
     if case.key not in {"live", "pax-path-hold", "first-npbs-d-isolation"} and not config.phase_output_map_confirmed:
         raise ValueError("Set phase_output_map_confirmed after checking the output assignment")

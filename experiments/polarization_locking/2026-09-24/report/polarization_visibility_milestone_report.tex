@@ -1,0 +1,260 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.68in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\sisetup{detect-all}
+\definecolor{navy}{RGB}{28,62,82}
+\definecolor{light}{RGB}{242,246,248}
+\newcommand{\vect}[1]{\bm{#1}}
+\newcommand{\avg}[1]{\left\langle #1\right\rangle}
+\newcommand{\unitstokes}[1]{\widehat{\vect{s}}_{#1}}
+
+\begin{document}
+
+{\Large\bfseries Measurement-updated Stokes prediction and reduced-visibility actuation test}\\[-1pt]
+{\small Hybrid MZI polarization-control system: measured-state model validation, improved orthogonality, and Red Pitaya $V_\pi/V_\lambda$ command-chain verification}
+
+\vspace{4pt}
+\hrule
+\vspace{6pt}
+
+\begin{tcolorbox}[colback=light,colframe=navy,boxrule=0.6pt,arc=1.5pt,left=6pt,right=6pt,top=5pt,bottom=5pt]
+\textbf{Scope and data philosophy.} This report uses measured optical powers and measured Stokes states as inputs to the model. No polarization state, overlap, or visibility parameter is adjusted to force agreement with a measured fringe. The model prediction is therefore forward-propagated from independently measured quantities. Visibility estimates from swept data are reported with the same extrema/envelope logic used in the earlier report so that the comparison is traceable across alignment states.
+\end{tcolorbox}
+
+\section*{1. Baseline result: measurement-updated Jones/Stokes visibility model}
+
+\subsection*{1.1 Minimal update to the ideal model}
+The ideal output field at the monitored recombination port is taken to contain two coherent contributions whose relative phase is controlled by $\phi_1$. Replacing ideal orthogonal basis states by the \emph{measured} normalized polarization states $\lvert A\rangle$ and $\lvert B\rangle$ gives
+\begin{equation}
+E_4(\phi_1)=\sqrt{P_A}\,e^{i\phi_1}\lvert A\rangle+\sqrt{P_B}\,\lvert B\rangle .
+\end{equation}
+The corresponding intensity is
+\begin{equation}
+I_4(\phi_1)=P_A+P_B+2\sqrt{P_AP_B}\,\Re\!\left[e^{i\phi_1}\langle B\vert A\rangle\right].
+\end{equation}
+Hence the theoretical fringe visibility is
+\begin{equation}
+\boxed{V_{\rm th}=\frac{2\sqrt{P_AP_B}}{P_A+P_B}\,\left|\langle A\vert B\rangle\right|.}
+\label{eq:visibility}
+\end{equation}
+For fully polarized states, the Jones-state overlap follows directly from the normalized Stokes vectors,
+\begin{equation}
+\boxed{\left|\langle A\vert B\rangle\right|=
+\sqrt{\frac{1+\vect{s}_A\!\cdot\!\vect{s}_B}{2}}.}
+\label{eq:stokesoverlap}
+\end{equation}
+Equation~\eqref{eq:visibility} separates two physically distinct contrast terms: a scalar power-balance factor and a polarization-overlap factor.
+
+\subsection*{1.2 Earlier measured-state substitution}
+The earlier isolated-state measurement used
+\begin{align*}
+\vect{s}_A&=(+0.990466,-0.051196,+0.127887), & P_A&=\SI{0.342329}{mW},\\
+\vect{s}_B&=(-0.989706,-0.092665,-0.109066), & P_B&=\SI{0.417919}{mW}.
+\end{align*}
+Therefore
+\begin{align*}
+\vect{s}_A\cdot\vect{s}_B&=-0.989475,\\
+\left|\langle A\vert B\rangle\right|&=\sqrt{\frac{1-0.989475}{2}}=0.072544,\\
+\frac{2\sqrt{P_AP_B}}{P_A+P_B}&=0.995045,
+\end{align*}
+which yields
+\begin{equation}
+\boxed{V_{\rm th,0}=(0.995045)(0.072544)=0.07219\approx\mathbf{7.22\%}.}
+\end{equation}
+The corresponding swept-PAX result was
+\[
+P_{\min}=\SI{0.7264}{mW},\qquad P_{\max}=\SI{0.8615}{mW},
+\]
+with a literal-extrema visibility of $8.51\%$, a repeated-cycle mean of $6.60\%\pm0.61\%$, and a pooled 2--98\% envelope visibility of $7.23\%$.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Baseline quantity & Visibility & Interpretation \\
+\midrule
+Stokes/Jones prediction & \textbf{7.22\%} & Independent isolated-state inputs \\
+PAX pooled 2--98\% envelope & \textbf{7.23\%} & Robust repeated-sweep estimate \\
+PAX cycle-wise mean & 6.60\% $\pm$ 0.61\% & Sparse sampling lowers extrema \\
+PAX literal global extrema & 8.51\% & Most sensitive to single samples \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[colback=light,colframe=navy,boxrule=0.6pt,arc=1.5pt,left=6pt,right=6pt,top=5pt,bottom=5pt]
+\textbf{Baseline milestone.} The independently measured Stokes overlap predicted $7.22\%$ visibility, while the robust swept-PAX estimate was $7.23\%$. The earlier residual fringe contrast was therefore quantitatively explained by measured polarization nonorthogonality without fitting the model to the visibility data.
+\end{tcolorbox}
+
+\section*{2. Improved orthogonalization: updated measured states and forward visibility prediction}
+
+\subsection*{2.1 Time-averaged isolated-path measurements}
+The newer isolated-path acquisition contains \SI{60}{s} records for \texttt{path\_a\_only} and \texttt{path\_b\_only}. We identify these with the two coherent recombination contributions $E_1$ and $E_2$ and retain the $A/B$ notation of Section~1. The Stokes directions and powers below are arithmetic time averages of the recorded values; they are not optimization variables.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Quantity & Path $A$ ($E_1$) & Path $B$ ($E_2$) \\
+\midrule
+$\avg{S_1}$ & $+0.989929$ & $-0.989767$ \\
+$\avg{S_2}$ & $-0.056929$ & $+0.050230$ \\
+$\avg{S_3}$ & $+0.129615$ & $-0.133559$ \\
+$\avg{P}$ & \SI{0.346664}{mW} & \SI{0.377278}{mW} \\
+$\sigma_P$ & \SI{0.000325}{mW} & \SI{0.000417}{mW} \\
+Mean reported DOP & $1.01097$ & $0.99899$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The small $\mathrm{DOP}>1$ excursion in path $A$ is an instrument/calibration artifact; the recorded Stokes direction itself has unit norm to numerical precision and is used only as a polarization direction in Eq.~\eqref{eq:stokesoverlap}.
+
+Using the measured mean vectors,
+\begin{align}
+\vect{s}_A\cdot\vect{s}_B&=-0.99996975,\\
+\left|\langle A\vert B\rangle\right|
+&=\sqrt{\frac{1-0.99996975}{2}}=0.003889,\\
+\frac{2\sqrt{P_AP_B}}{P_A+P_B}&=0.999105.
+\end{align}
+Therefore the forward prediction from the re-aligned isolated measurements is
+\begin{equation}
+\boxed{V_{\rm th,1}=(0.999105)(0.003889)=0.003886\approx\mathbf{0.389\%}.}
+\label{eq:newprediction}
+\end{equation}
+The power-balance term is essentially unity. In this alignment, the model therefore predicts that the residual fringe floor should be set almost entirely by the remaining polarization overlap.
+
+\subsection*{2.2 Comparison against the subsequent swept measurement}
+The subsequent command-chain acquisition sweeps the phase actuator continuously over one calibrated full-wave command range. To preserve the reduction routine of the baseline report, the first \SI{1}{s} is treated as settling and three direct visibility estimators are reported from the remaining PAX total-power samples:
+\begin{equation}
+V=\frac{P_{\max}-P_{\min}}{P_{\max}+P_{\min}}.
+\end{equation}
+For the updated sweep,
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Updated quantity & Visibility & Interpretation \\
+\midrule
+Stokes/Jones prediction & \textbf{0.389\%} & Independent time-averaged $E_1/E_2$ states and powers \\
+PAX pooled 2--98\% envelope & \textbf{3.04\%} & Robust full-record envelope after settling \\
+PAX cycle-wise mean & $2.68\%\pm0.64\%$ & 27 complete/reliably sampled drive cycles \\
+PAX literal global extrema & $4.96\%$ & Most sensitive to isolated power samples \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Relative to the earlier robust envelope value of $7.23\%$, the updated 2--98\% envelope is reduced to $3.04\%$ (approximately a $58\%$ reduction). The cycle-wise estimator similarly falls from $6.60\%$ to $2.68\%$ (approximately a $59\%$ reduction).
+
+\begin{tcolorbox}[colback=light,colframe=navy,boxrule=0.6pt,arc=1.5pt,left=6pt,right=6pt,top=5pt,bottom=5pt]
+\textbf{Updated visibility result.} Orthogonalizing the isolated states substantially reduces the measured contrast, in the direction predicted by the Stokes/Jones model. However, the simple two-state model now predicts $0.389\%$, below the observed $\sim2.7$--$3.0\%$ robust contrast range. The remaining contrast should therefore be treated as an unresolved experimental floor rather than absorbed into a fitted polarization overlap. Candidate contributions include residual time-dependent state motion, path-power drift, actuator-correlated beam motion, finite PAX temporal averaging, or other non-ideal interferometer terms not represented by the two static Jones states.
+\end{tcolorbox}
+
+\section*{3. Symbolic triage of the $V_\pi$/$V_\lambda$ Red Pitaya command chain}
+
+\subsection*{3.1 Command definition and measured electrical loopback}
+The final CSV records a sinusoidal Red Pitaya output with
+\begin{align}
+f_d&=\SI{0.4656612873}{Hz},\\
+V_{\rm amp}&=\SI{0.3599853516}{V},\\
+V_{\rm off}&=\SI{0.3599853516}{V}.
+\end{align}
+Thus the command is
+\begin{equation}
+V_{\rm RP}(t)=V_{\rm off}+V_{\rm amp}\sin(2\pi f_dt),
+\end{equation}
+with the calibrated command-side identification
+\begin{equation}
+\boxed{V_\pi=\SI{0.359985}{V},\qquad V_\lambda=2V_\pi=\SI{0.719971}{V}.}
+\label{eq:vpi}
+\end{equation}
+These are \emph{Red-Pitaya-output-coordinate} voltages. Any downstream high-voltage gain is intentionally not inferred from this dataset.
+
+The recorded input loopback verifies the electrical command chain directly. Across the full record,
+\begin{align*}
+V_{\rm cmd,min}&\approx\SI{0.000042}{V}, & V_{\rm cmd,max}&\approx\SI{0.719852}{V},\\
+V_{\rm in,min}&\approx\SI{-0.004940}{V}, & V_{\rm in,max}&\approx\SI{0.721088}{V}.
+\end{align*}
+A linear comparison of recorded loopback versus commanded voltage gives a slope of $1.00808$, offset of $-4.93$ mV, and correlation coefficient $r=0.999994$. The RMS command-loopback difference is approximately \SI{3.03}{mV}. This establishes that the commanded $0\rightarrow V_\lambda$ excursion is physically present at the monitored RP electrical interface.
+
+\subsection*{3.2 Phase mapping to the Poincar\'e sphere}
+With $V_\lambda$ defined as the command producing a $2\pi$ relative phase excursion, the commanded optical phase is
+\begin{equation}
+\boxed{\phi(V)=2\pi\frac{V}{V_\lambda}.}
+\end{equation}
+Therefore
+\begin{equation}
+V=0\Rightarrow\phi=0,\qquad
+V=V_\pi=\frac{V_\lambda}{2}\Rightarrow\phi=\pi,\qquad
+V=V_\lambda\Rightarrow\phi=2\pi.
+\end{equation}
+For a nearly balanced superposition of nearly orthogonal basis states, sweeping $\phi$ primarily rotates the Stokes direction around the $S_2$--$S_3$ plane. In the ideal limiting case,
+\begin{equation}
+\vect{s}(\phi)=
+\begin{pmatrix}
+0\\
+\cos(\phi+\phi_0)\\
+\sin(\phi+\phi_0)
+\end{pmatrix},
+\label{eq:greatcircle}
+\end{equation}
+so a $V_\pi$ command produces an antipodal point,
+\begin{equation}
+\vect{s}(\phi+\pi)=-\vect{s}(\phi),
+\end{equation}
+whereas a $V_\lambda$ command returns the state,
+\begin{equation}
+\vect{s}(\phi+2\pi)=\vect{s}(\phi).
+\end{equation}
+
+The PAX request/receive timestamps show a median acquisition-channel latency of approximately \SI{144.3}{ms} (mean \SI{144.7}{ms}). Evaluating the known RP sine command at the recorded PAX request time, rather than the later row-completion time, provides a direct clock registration without altering any optical parameter. Using normalized averages of samples within $\pm\SI{10}{mV}$ of the three calibrated command levels gives
+\begin{align*}
+\unitstokes{0}&=(-0.1852,-0.3924,+0.9010),\\
+\unitstokes{\pi}&=(+0.1033,+0.3311,-0.9379),\\
+\unitstokes{\lambda}&=(-0.1841,-0.2349,+0.9544).
+\end{align*}
+The corresponding dot products are
+\begin{equation}
+\boxed{\unitstokes{0}\cdot\unitstokes{\pi}=-0.9941,\qquad
+\unitstokes{0}\cdot\unitstokes{\lambda}=+0.9862.}
+\end{equation}
+Thus the measured $V_\pi$ state is nearly antipodal to the zero-command state, while the measured $V_\lambda$ state nearly returns to it. This is the expected topological behavior of a calibrated $\pi$ and $2\pi$ relative-phase command on the Poincar\'e sphere.
+
+\subsection*{3.3 Contrast observed during the calibrated full-wave actuation}
+The same sweep provides a reduced-contrast measurement while the Stokes state traverses the sphere. After the first \SI{1}{s} settling region, the directly observed total-power visibility is summarized by
+\begin{align*}
+V_{2\text{--}98}&=3.04\%,\\
+\avg{V_{\rm cycle}}&=2.68\%\pm0.64\%,\\
+V_{\rm extrema}&=4.96\%.
+\end{align*}
+These values are empirical reductions of the measured PAX power record. They are not used to back-solve or tune the Stokes overlap in Eq.~\eqref{eq:newprediction}.
+
+\section*{4. Interpretation and next diagnostic step}
+The two milestones together establish a useful separation between \emph{model validation} and \emph{residual-system diagnosis}:
+\begin{enumerate}[leftmargin=1.4em,itemsep=2pt,topsep=2pt]
+\item The earlier alignment provided a close quantitative validation of the measurement-updated Jones/Stokes visibility model: $7.22\%$ predicted versus $7.23\%$ robustly measured.
+\item The improved alignment produces much more nearly antipodal isolated Stokes states and lowers the measured fringe contrast by roughly 60\% using like-for-like reduction metrics.
+\item The updated static-state model predicts only $0.389\%$ visibility, while the calibrated sweep retains approximately $2.7$--$3.0\%$ robust contrast. The appropriate scientific conclusion is therefore not to modify the measured Stokes parameters, but to identify which additional time-dependent or non-Jones contribution sets the present contrast floor.
+\item Independently, the RP command telemetry and Poincar\'e-sphere response verify the calibrated $V_\pi/V_\lambda$ phase-control chain: $V_\pi$ produces a nearly antipodal polarization state and $V_\lambda$ nearly closes the trajectory.
+\end{enumerate}
+
+\begin{tcolorbox}[colback=light,colframe=navy,boxrule=0.6pt,arc=1.5pt,left=6pt,right=6pt,top=5pt,bottom=5pt]
+\textbf{Milestone statement.} The system has progressed from a regime in which measured static polarization nonorthogonality quantitatively explained the fringe visibility to a lower-contrast regime in which the same independently measured model predicts a substantially smaller residual than is observed. At the same time, the calibrated $V_\pi/V_\lambda$ actuator command is demonstrably mapped onto the expected Poincar\'e-sphere motion. The next model refinement should therefore target dynamic/systematic contrast terms, while preserving the independently measured static Stokes states as fixed experimental inputs.
+\end{tcolorbox}
+
+\section*{5. Data provenance and reproducibility notes}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt,topsep=2pt]
+\item Baseline symbolic structure and first milestone values: \texttt{stokes\_visibility\_comparison(1).tex}.
+\item Updated isolated-state record: \texttt{data(20260924-004241).csv}. Each of \texttt{path\_a\_only}, \texttt{path\_b\_only}, and \texttt{both\_paths} contains 241 samples spanning approximately \SI{60}{s}.
+\item Calibrated actuation record: \texttt{data(20260924-004258).csv}, 349 samples spanning approximately \SI{60}{s}.
+\item Static-model quantities use arithmetic time averages of independently recorded isolated-path Stokes vectors and PAX powers. No visibility datum is used to determine $\langle A|B\rangle$.
+\item Sweep visibility uses the same direct definition $V=(P_{\max}-P_{\min})/(P_{\max}+P_{\min})$ as the baseline report. The pooled value uses the 2nd and 98th percentiles; the cycle statistic is the mean and standard deviation of per-cycle extrema after the settling interval.
+\item The $V_\pi/V_\lambda$ state comparison uses the recorded PAX request timestamp to evaluate the already-known sinusoidal command, thereby accounting for acquisition latency without fitting an optical response parameter.
+\end{itemize}
+
+\end{document}

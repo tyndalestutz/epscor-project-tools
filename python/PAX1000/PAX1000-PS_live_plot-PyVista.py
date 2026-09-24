@@ -8,6 +8,7 @@ import signal
 import sys
 import time
 import subprocess
+from pathlib import Path
 
 # =========================
 # START PAX
@@ -22,11 +23,12 @@ subprocess.run(
 time.sleep(1)
 
 # Start a fresh daemon
+CONFIG_PATH = Path(__file__).resolve().with_name("pax1000.toml")
 daemon = subprocess.Popen(
     [
         "yaqd-thorlabs-pax1000",
         "-c",
-        "pax1000.toml",
+        str(CONFIG_PATH),
     ],
     stdout=subprocess.DEVNULL,
     stderr=subprocess.DEVNULL,

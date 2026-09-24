@@ -1,0 +1,88 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.62in]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{microtype}
+\usepackage{enumitem}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\pagestyle{empty}
+\sisetup{detect-all}
+\definecolor{navy}{RGB}{28,62,82}
+\definecolor{light}{RGB}{242,246,248}
+\newcommand{\vect}[1]{\bm{#1}}
+
+\begin{document}
+
+{\Large\bfseries Measurement-updated Stokes prediction of $E_4$ visibility}\\[-1pt]
+{\small Hybrid MZI: comparison of isolated-state polarization measurements with a swept-PAX power measurement}
+
+\vspace{4pt}
+\hrule
+\vspace{5pt}
+
+\textbf{1. Minimal update to the ideal model.}
+The ideal path-$E_4$ field contains two coherent contributions whose relative phase is controlled by $\phi_1$. Replacing the ideal orthogonal basis states by the \emph{measured} normalized polarization states $\lvert A\rangle$ and $\lvert B\rangle$ gives
+\begin{equation}
+E_4(\phi_1)=\sqrt{P_A}\,e^{i\phi_1}\lvert A\rangle+\sqrt{P_B}\,\lvert B\rangle .
+\end{equation}
+The corresponding intensity is
+\begin{equation}
+I_4(\phi_1)=P_A+P_B+2\sqrt{P_AP_B}\,\Re\!\left[e^{i\phi_1}\langle B\vert A\rangle\right],
+\end{equation}
+so the theoretical fringe visibility is
+\begin{equation}
+\boxed{V_{\rm th}=\frac{2\sqrt{P_AP_B}}{P_A+P_B}\,\left|\langle A\vert B\rangle\right|}.
+\end{equation}
+For fully polarized states, the Jones-state overlap is obtained directly from the normalized Stokes vectors,
+\begin{equation}
+\left|\langle A\vert B\rangle\right|=
+\sqrt{\frac{1+\vect{s}_A\!\cdot\!\vect{s}_B}{2}}.
+\end{equation}
+
+\textbf{2. Numerical substitution from the realigned isolated-state measurement.}
+The measured states and powers were
+\begin{align*}
+\vect{s}_A&=(+0.990466,-0.051196,+0.127887), & P_A&=\SI{0.342329}{mW},\\
+\vect{s}_B&=(-0.989706,-0.092665,-0.109066), & P_B&=\SI{0.417919}{mW}.
+\end{align*}
+Therefore
+\begin{align*}
+\vect{s}_A\cdot\vect{s}_B&=-0.989475,\\
+\left|\langle A\vert B\rangle\right|&=\sqrt{\frac{1-0.989475}{2}}=0.072544,\\
+\frac{2\sqrt{P_AP_B}}{P_A+P_B}&=0.995045,
+\end{align*}
+which gives
+\begin{equation}
+\boxed{V_{\rm th}=(0.995045)(0.072544)=0.07219\approx\mathbf{7.22\%}.}
+\end{equation}
+Thus the measured power imbalance is a small correction; the dominant predicted contrast comes from the measured nonorthogonality of the two polarization states.
+
+\textbf{3. Visibility measured directly by the PAX during the $\phi_1$ sweep.}
+The swept acquisition recorded $S_0=P_{\rm PAX}$ simultaneously with the Stokes trajectory. After excluding the initial $\sim\SI{1}{s}$ settling region, the observed power span was approximately
+\[
+P_{\min}=\SI{0.7264}{mW},\qquad P_{\max}=\SI{0.8615}{mW},
+\]
+corresponding to a literal-extrema visibility of $V_{\rm raw}=8.51\%$. Because the PAX samples only about 12 points per actuator period, cycle-wise extrema tend to miss the true extrema: the repeated-cycle mean is $6.60\%\pm0.61\%$. A pooled 2--98\% power envelope gives $V_{\rm PAX}=7.23\%$.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Quantity & Visibility & Interpretation \\
+\midrule
+Stokes/Jones prediction & \textbf{7.22\%} & No fit; isolated measured states and powers \\
+PAX pooled 2--98\% envelope & \textbf{7.23\%} & Robust repeated-sweep estimate \\
+PAX cycle-wise mean & 6.60\% $\pm$ 0.61\% & Sparse phase sampling lowers extrema \\
+PAX literal global extrema & 8.51\% & Most sensitive to individual samples \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[colback=light,colframe=navy,boxrule=0.6pt,arc=1.5pt,left=5pt,right=5pt,top=4pt,bottom=4pt]
+\textbf{Result.} The simplest measurement-updated Jones model predicts $V_{\rm th}=7.22\%$. The independently swept PAX power data place the observed contrast in the same $\sim7\%$ range; the robust pooled estimate is $7.23\%$. Within the sampling limitations of the PAX sweep, the measured polarization nonorthogonality is therefore quantitatively sufficient to account for the visibility observed by the PAX in $E_4$.
+\end{tcolorbox}
+
+\end{document}

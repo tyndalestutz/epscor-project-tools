@@ -22,7 +22,7 @@ class TestCase:
 
     def config_names(self) -> list[str]:
         if self.pax_only:
-            return ["bench_notes", "bench_pax_location", "results_directory"] + [
+            return ["bench_notes", "bench_pax_location", "results_directory", "minimum_dop"] + [
                 f.name for f in fields(PolarizationLockConfig)
                 if f.name.startswith("pax_") and not f.name.startswith("pax_path_")]
         if self.scope_only:

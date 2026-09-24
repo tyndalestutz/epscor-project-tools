@@ -38,6 +38,9 @@ class PolarizationLockConfig:
     pax_rotation_velocity_hz: float = 60.0
     pax_measurement_mode: int = 5
     pax_wavelength_nm: float = 830.0
+    # Optional manual orthogonalizer; no changes to PAX sampling cadence.
+    pax_live_reference_duration_s: float = 5.0
+    pax_live_reference_max_spread_deg: float = 5.0
 
     # Target in the hybrid-MZ sphere coordinates. u is azimuth in [-pi, pi)
     # and v is polar angle in [0, pi]. Both must be set before a rough move.
