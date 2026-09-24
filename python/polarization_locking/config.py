@@ -48,10 +48,11 @@ class PolarizationLockConfig:
     target_v: Optional[float] = None
 
     # Actuator volts for a 2*pi phase shift (V_pi = V_lambda / 2).
-    # Both arms now use matching piezos: apply phi1's current calibration
-    # candidate to both axes. Keep explicit per-axis recipe overrides possible.
-    phi1_v_lambda: Optional[float] = 12.2
-    phi2_v_lambda: Optional[float] = 12.2
+    # Diagnostic setting: intentionally cover 0.775 V RP command on both axes,
+    # slightly beyond the approximately 0.73 V observed cycle. With the existing
+    # 16.875 V/V gain this is 13.078125 actuator volts; not a new measured period.
+    phi1_v_lambda: Optional[float] = 13.078125
+    phi2_v_lambda: Optional[float] = 13.078125
 
     # Electrical transfer from an RP command voltage to actuator voltage, in
     # actuator-volts / RP-command-volt. At a 1.0 V command the measured RP
@@ -166,8 +167,8 @@ class PolarizationLockConfig:
     visibility_mode: str = "passive"
     visibility_axis: str = "phi1"
     visibility_waveform: str = "sin"
-    visibility_amplitude_v: float = 0.36
-    visibility_offset_v: float = 0.36
+    visibility_amplitude_v: float = 0.3875
+    visibility_offset_v: float = 0.3875
     visibility_pax_sample_period_s: float = 0.05
     visibility_dark_voltage_v: Optional[float] = None
     pd_nd_optical_density: float = 2.0
@@ -190,8 +191,8 @@ class PolarizationLockConfig:
 
     # Explicit electrical sweep; no V_lambda or phase calibration is inferred.
     stokes_phase_sweep_frequency_hz: float = 0.5
-    stokes_phase_sweep_amplitude_v: float = 0.36
-    stokes_phase_sweep_offset_v: float = 0.36
+    stokes_phase_sweep_amplitude_v: float = 0.3875
+    stokes_phase_sweep_offset_v: float = 0.3875
     stokes_phase_sweep_sample_period_s: float = 0.05
 
     # Fit-ready field-propagation calibration. At each phi1 bias, sweep one

@@ -1,0 +1,15 @@
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+Stopping existing PAX daemon (PID 763228) before connection.
+Active PAX contrast: 12 s, requested/declared drive 0.5 Hz.
+Contrast drive: {'mode': 'active', 'frequency_hz': 0.46566128730773926, 'axis': 'phi1', 'output': 'out1', 'waveform': 'sin', 'asg_waveform': 'sin', 'offset_v': 0.3599853515625, 'amplitude_v': 0.3599853515625, 'requested_frequency_hz': 0.5, 'started_at': '2026-09-24T19:02:39.047452+00:00'}
+PAX observed power visibility: 18.23%; Pmin=0.0004357022 W, Pmax=0.0006300023 W; 15.0 samples per declared drive cycle.
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-24/200226_pd-visibility_pd-visibility/report.pdf

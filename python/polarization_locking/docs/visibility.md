@@ -29,8 +29,8 @@ In active mode, edit these ordinary table parameters (no further selection chain
 | `visibility_axis` | `phi1` = OUT1; `phi2` = OUT2 |
 | `visibility_waveform` | `sin` (default), `cos`, `triangle`, `sawtooth`, `square` |
 | `visibility_frequency_hz` | 0.5 Hz requested in active mode; actual external frequency in passive mode |
-| `visibility_amplitude_v` | 0.36 V peak |
-| `visibility_offset_v` | 0.36 V, giving 0–0.72 V by default |
+| `visibility_amplitude_v` | 0.3875 V peak |
+| `visibility_offset_v` | 0.3875 V, giving 0–0.775 V by default |
 | `duration_s` | 12 s, in run options |
 
 The other output is held at zero. Range/mapping validation happens before

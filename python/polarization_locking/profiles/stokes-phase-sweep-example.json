@@ -11,8 +11,8 @@
     "bench_voltage_chain": "OUT1 -> phi1 actuator driver; OUT1 physically T-ed to IN1 voltage reference",
     "bench_notes": "Both input paths open. IN1 measures actuator-command voltage, not optical power. Record operator and actual setup before running.",
     "stokes_phase_sweep_frequency_hz": 0.5,
-    "stokes_phase_sweep_amplitude_v": 0.36,
-    "stokes_phase_sweep_offset_v": 0.36,
+    "stokes_phase_sweep_amplitude_v": 0.3875,
+    "stokes_phase_sweep_offset_v": 0.3875,
     "stokes_phase_sweep_sample_period_s": 0.05
   }
 }

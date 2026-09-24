@@ -37,10 +37,12 @@ relocation and updated notes.
 
 RP commands are bounded to 0–1 V. `phi*_v_lambda` is **terminal** voltage for 2π,
 twice Vπ; actuator gain is terminal volts per RP command volt. Both arms now use
-matching piezos and the same configured calibration: **Vλ = 12.2 V, Vπ = 6.1 V,
-and 16.875 actuator V per RP command V**. These are phi1's existing calibration
-candidates applied to both axes, not a new measurement. The former phi2 defaults
-of 30 V and 150 V/V describe the previous setup. Saved full recipes retain their
+matching piezos. Both axes now use a **0.775 V RP diagnostic span**, slightly
+beyond the approximately 0.73 V observed period, to expose a complete fringe and
+any overshoot. With **16.875 actuator V per RP command V**, the stored
+`phi1_v_lambda` and `phi2_v_lambda` are **13.078125 V** (half: 6.5390625 V).
+This is an intentional diagnostic setting, not a newly measured optical period;
+phase conversions using Vλ also inherit this nominal setting. Saved full recipes retain their
 explicit values; update both axis fields before reusing an old recipe on this
 setup. A driver model name is not a gain measurement. Use a bounded explicit
 `sweep` when the conversion is unknown.

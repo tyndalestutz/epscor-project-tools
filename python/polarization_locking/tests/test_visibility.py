@@ -371,7 +371,7 @@ def test_both_collect_concurrently_with_drive_readback_and_cleanup(tmp_path, mon
     rp, pax = Mock(), Mock()
     rp.p.rp.scope = scope
     rp.set_phase_waveform.return_value = {"axis": "phi2", "output": "out2", "waveform": "triangle",
-                                         "frequency_hz": actual_frequency, "amplitude_v": .36, "offset_v": .36}
+                                         "frequency_hz": actual_frequency, "amplitude_v": .3875, "offset_v": .3875}
     count = 0
 
     def read():
@@ -401,7 +401,7 @@ def test_both_collect_concurrently_with_drive_readback_and_cleanup(tmp_path, mon
     else:
         visibility.acquire_contrast(rp, pax, config, str(tmp_path / "data.csv"), 9)
     rp.set_output_zero.assert_called_once()
-    rp.set_phase_waveform.assert_called_once_with(axis="phi2", waveform="triangle", offset=.36, amplitude=.36, frequency_hz=.5)
+    rp.set_phase_waveform.assert_called_once_with(axis="phi2", waveform="triangle", offset=.3875, amplitude=.3875, frequency_hz=.5)
     assert all(getattr(scope, key) == value for key, value in initial.items())
     assert scope._trigger_delay_register == 88
     assert futures[-1].cancelled == bool(failure)

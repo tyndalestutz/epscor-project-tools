@@ -94,8 +94,8 @@ python python/polarization_locking/lock.py --profile python/polarization_locking
 python python/polarization_locking/lock.py --profile python/polarization_locking/profiles/stokes-phase-sweep-example.json --run stokes-phase-sweep
 ```
 
-Defaults: 60 s (30 electrical cycles), 0.5 Hz, 0.36 V amplitude and 0.36 V
-offset (0–0.72 V). These are explicit electrical commands, not a claim of a
+Defaults: 60 s (30 electrical cycles), 0.5 Hz, 0.3875 V amplitude and 0.3875 V
+offset (0–0.775 V). These are explicit electrical commands, not a claim of a
 calibrated 2π optical excursion. Configure `stokes_phase_sweep_*` in the recipe
 or menu and `duration_s` in run options. Nominal polling is 0.05 s, matching the
 existing driven PAX tests; actual cadence is limited by fresh PAX records and

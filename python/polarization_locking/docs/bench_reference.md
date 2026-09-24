@@ -1,3 +1,8 @@
+> Current diagnostic defaults (2026-09-24): both axes span **0.775 V RP**,
+> intentionally overshooting the approximately 0.73 V observed cycle. Stored
+> actuator-side Vλ is **13.078125 V** at gain **16.875 V/V**. The older bench
+> values and examples below are historical; use `config.py` for current defaults.
+
 # Historical polarization bench reference
 
 These notes preserve the earlier command interface and calibration candidates.
