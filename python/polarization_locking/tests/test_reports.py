@@ -79,3 +79,21 @@ def test_reporting_happens_after_cleanup_on_interrupt(tmp_path, monkeypatch):
     state = execute(BY_KEY["live"], config, default_options(BY_KEY["live"]), app_factory=lambda _: app)
     assert events == ["disconnect", "report"]
     assert state["report_status"] == "completed"
+
+
+@pytest.mark.parametrize("key", ["live", "pax-live"])
+def test_run_comment_is_in_report_sections(key, tmp_path, monkeypatch):
+    from polarization_locking.reports import run_report
+    case=BY_KEY[key]
+    paths=SimpleNamespace(directory=tmp_path,csv=tmp_path/"data.csv",pdf=tmp_path/"report.pdf")
+    paths.csv.write_text("s1,s2,s3,dop\n")
+    pages=[]
+    original=run_report.text_page
+    def capture(pdf,title,sections):
+        pages.extend(sections)
+        original(pdf,title,sections)
+    monkeypatch.setattr(run_report,"text_page",capture)
+    options=default_options(case) | {"comment":"PAX on heavier base"}
+    state=create_run_report(case,paths,PolarizationLockConfig(),options,{"status":"completed"})
+    assert state["report_status"]=="completed"
+    assert ("Run comment","PAX on heavier base") in pages

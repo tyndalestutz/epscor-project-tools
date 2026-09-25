@@ -1,0 +1,15 @@
+{
+  "compacted_at": "2026-09-24T20:11:30.265818+00:00",
+  "input_sha256": "2751dd61601e457b2aa3d208d343a7615486acacac528d760ef99bed9f76374e",
+  "output_sha256": "72dcd98be402f04fac9bcbe5313e86235810792fd05c07ff9f31ea215f74e311",
+  "old_bytes": 111070390,
+  "new_bytes": 22331027,
+  "retained_counts": {
+    "pd_samples": 884736,
+    "dark_samples": 16384,
+    "pax_readings": 208,
+    "captures": 54
+  },
+  "verification": "All retained CSV fields match exactly; all sample counts and derived times verified. Rebuilt PD/PAX statistics and spectra match originals to 1e-12 relative tolerance.",
+  "removed": "Repeated labels/timing, normalized samples, spectrum rows, capture summary rows, and nonessential PAX telemetry. Essential capture metadata moved to vibration-setup.json. Original scientific summary unchanged."
+}

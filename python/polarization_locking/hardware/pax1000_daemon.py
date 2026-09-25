@@ -29,6 +29,7 @@ class ProjectPAX1000(UsesSerial, HasMeasureTrigger, IsSensor):
     def __init__(self, name, config, config_filepath):
         super().__init__(name, config, config_filepath)
         manager = pyvisa.ResourceManager() if sys.platform.startswith("win32") else pyvisa.ResourceManager("@py")
+        print("PAX startup: locating and opening USB device...", flush=True)
         for resource in manager.list_resources():
             try:
                 if resource.split("::")[3] == self._config["serial"]:
@@ -47,10 +48,12 @@ class ProjectPAX1000(UsesSerial, HasMeasureTrigger, IsSensor):
         self.inst.write(f"INPut:ROTation:VELocity {float(self._config['velocity']):g}")
         self.inst.write(f"SENS:CALC {int(self._config.get('measurement_mode', 5))}")
         self._wavelength = float(self.inst.query("SENSe:CORRection:WAVelength?")) * 1e9
+        print("PAX startup: starting motor; settling for 5 seconds...", flush=True)
         self.inst.write("INPut:ROTation:STATe 1")
         # Wait once at spin-up, before any client can acquire measurements.
         # The motor and autorange need time to settle, even if rotation is on.
         time.sleep(5.0)
+        print("PAX startup: motor settling complete; initialization finished.", flush=True)
 
     def close(self):
         self.inst.write("INPut:ROTation:STATe 0")

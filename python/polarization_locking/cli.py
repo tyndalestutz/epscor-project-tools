@@ -30,7 +30,8 @@ class DiagnosticsMenu:
         self.print(f"\n{case.title} [{case.key}]\n{case.description}\nRequired setup: {case.setup}")
         if not case.scope_only and not case.pax_only:
             self.print("Voltages ending in rp_v/rp_voltage are RP commands (0-1 V). V_lambda is terminal voltage for 2pi; V_pi is half of V_lambda. Historical gains are editable candidates.")
-        entries = [("option", key, value) for key, value in options.items()]
+        entries = [("option", key, value) for key, value in options.items()
+                   if all_fields or key not in {"label", "comment"}]
         names = list(TYPES) if all_fields else case.config_names()
         if case.key == "pd-visibility":
             self.print(f"Detector: {config.visibility_source.upper()} | Mode: {config.visibility_mode.upper()} (c to change)")
@@ -130,6 +131,16 @@ class DiagnosticsMenu:
         config.visibility_source, config.visibility_mode = chosen
         return True
 
+    def run_details(self, case, options):
+        """Two optional free-text fields before any hardware session starts."""
+        chosen = dict(options)
+        default = options.get("label") or case.key
+        chosen["label"] = self.ask(f"Optional run name [Enter = {default}]: ") or default
+        current = options.get("comment", "")
+        hint = f"keep {current!r}" if current else "none"
+        chosen["comment"] = self.ask(f"Optional run comment [Enter = {hint}]: ") or current
+        return chosen
+
     def detail(self, case):
         if case.key == "pd-visibility":
             self.print(f"\n{case.title}\nRequired setup: {case.setup}")
@@ -157,11 +168,13 @@ class DiagnosticsMenu:
                     self.sessions.pop(case.key, None)
                 elif action in {"r", "run"}:
                     validate(config, case, options)
+                    run_options = self.run_details(case, options)
+                    validate(config, case, run_options)
                     if self.run_test is None:
                         from .runner import execute
                         self.run_test = execute
                     self.print("Starting hardware run. Ctrl+C stops acquisition; b cancels a setup prompt.")
-                    state = self.run_test(case, deepcopy(config), dict(options))
+                    state = self.run_test(case, deepcopy(config), run_options)
                     self.print(f"Run status: {state['status']}")
                     if state.get("report_status"):
                         self.print(f"PDF report: {state['report_status']}")
@@ -211,12 +224,14 @@ def main(argv=None):
     group.add_argument("--show", choices=BY_KEY, metavar="TEST", help="show parameters without connecting")
     group.add_argument("--run", choices=BY_KEY, metavar="TEST", help="explicitly start a hardware run")
     parser.add_argument("--profile", type=Path, help="load a saved recipe (or a previous run's recipe.json)")
+    parser.add_argument("--name", help="optional run folder label; date/time and test name are retained")
+    parser.add_argument("--comment", help="optional run comment saved with metadata and PDF")
     parser.add_argument("--dry-run", action="store_true", help="validate and print recipe; never connect")
-    parser.add_argument("--pd-input", choices=("in1", "in2"), help="PD input for contrast measurement")
+    parser.add_argument("--pd-input", choices=("in1", "in2"), help="PD input for contrast or vibration measurement")
     parser.add_argument("--source", choices=("pd", "pax", "both"), help="contrast detector selection")
     parser.add_argument("--mode", choices=("passive", "active"), help="contrast drive mode; configure axis/waveform in the parameter table or recipe")
     parser.add_argument("--frequency", type=float, help="external or requested active drive frequency in Hz for contrast measurement")
-    parser.add_argument("--dark-voltage", type=float, help="blocked-light PD voltage for contrast measurement")
+    parser.add_argument("--dark-voltage", type=float, help="blocked-light PD voltage for contrast or vibration measurement")
     args = parser.parse_args(argv)
     menu = DiagnosticsMenu()
     case = None
@@ -230,12 +245,26 @@ def main(argv=None):
                 raise ValueError("Requested test does not match the recipe")
             case = BY_KEY[requested]
         if any(value is not None for value in (args.source, args.mode, args.pd_input, args.frequency, args.dark_voltage)):
-            if case is None or case.key != "pd-visibility":
-                raise ValueError("Contrast overrides (--source, --mode, --pd-input, --frequency, --dark-voltage) require pd-visibility")
+            if case is None or case.key not in {"pd-visibility", "pax-vibration"}:
+                raise ValueError("Measurement overrides require pd-visibility or pax-vibration")
             config, options = menu.settings(case)
-            for name, value in (("visibility_source", args.source), ("visibility_mode", args.mode), ("pd_input", args.pd_input), ("visibility_frequency_hz", args.frequency), ("visibility_dark_voltage_v", args.dark_voltage)):
+            if case.key == "pax-vibration":
+                if any(value is not None for value in (args.source, args.mode, args.frequency)):
+                    raise ValueError("Vibration diagnostics only accepts --pd-input and --dark-voltage overrides")
+                overrides = (("pd_input", args.pd_input), ("pax_vibration_dark_voltage_v", args.dark_voltage))
+            else:
+                overrides = (("visibility_source", args.source), ("visibility_mode", args.mode), ("pd_input", args.pd_input), ("visibility_frequency_hz", args.frequency), ("visibility_dark_voltage_v", args.dark_voltage))
+            for name, value in overrides:
                 if value is not None:
                     setattr(config, name, value)
+        if args.name is not None or args.comment is not None:
+            if case is None:
+                raise ValueError("--name and --comment require a selected test or profile")
+            _, options = menu.settings(case)
+            if args.name is not None:
+                options["label"] = args.name
+            if args.comment is not None:
+                options["comment"] = args.comment
         if args.list:
             for index, item in enumerate(TESTS, 1):
                 print(f"{index:2}. {item.key}: {item.title}")

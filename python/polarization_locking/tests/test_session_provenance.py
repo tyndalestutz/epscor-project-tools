@@ -29,7 +29,7 @@ def test_pax_cleans_up_before_connecting(monkeypatch):
     assert controller._daemon_process is None
 
 
-def test_pax_starts_only_when_connection_refused_and_closes_its_own_daemon(monkeypatch):
+def test_pax_starts_only_when_connection_refused_and_closes_its_own_daemon(monkeypatch, capsys):
     controller = PAXController(PolarizationLockConfig())
     client, process = Mock(), Mock()
     monkeypatch.setattr(controller, "_stop_existing_pax_daemons", Mock())
@@ -38,6 +38,9 @@ def test_pax_starts_only_when_connection_refused_and_closes_its_own_daemon(monke
     monkeypatch.setattr(controller, "_start_daemon", lambda: setattr(controller, "_daemon_process", process))
     monkeypatch.setattr(controller, "_wait_for_daemon", Mock(return_value=client))
     assert controller.connect() is client
+    messages=capsys.readouterr().out
+    assert "5-second settling wait" in messages
+    assert messages.index("Starting PAX daemon") < messages.index("PAX ready for setup")
     controller.disconnect()
     process.terminate.assert_called_once()
     process.wait.assert_called_once_with(timeout=2.0)
@@ -108,6 +111,7 @@ def test_remote_pax_connection_does_not_stop_local_daemons(monkeypatch):
 
 
 def test_provenance_records_revision_dirty_state_and_versions(monkeypatch):
+    monkeypatch.setattr("polarization_locking.runner.platform.platform", lambda: "test-platform")
     git = Mock(side_effect=["abc123\n", " M runner.py\n"])
     monkeypatch.setattr("polarization_locking.runner.subprocess.check_output", git)
     monkeypatch.setattr("polarization_locking.runner.version", lambda _: "1.2.3")
@@ -138,3 +142,40 @@ def test_colleague_example_recipes_load_and_validate(name, key):
         assert config.pd_input == "in2"
         assert config.visibility_dark_voltage_v is None
         assert "bench_notes" in case.config_names()
+
+
+@pytest.mark.parametrize("stream_name", ["stdout", "stderr"])
+def test_retained_logging_handler_follows_successive_runs(tmp_path, monkeypatch, stream_name):
+    import io
+    import logging
+    import sys
+    from contextlib import redirect_stdout, redirect_stderr
+    from polarization_locking.runner import Tee
+    terminal=io.StringIO()
+    monkeypatch.setattr(sys, stream_name, terminal)
+    redirect=redirect_stdout if stream_name=="stdout" else redirect_stderr
+    logger=logging.Logger("retained-library-handler")
+    handler=None
+    for index in range(3):
+        with (tmp_path/f"run-{index}.log").open("w") as logfile:
+            tee=Tee(getattr(sys,stream_name),logfile,stream_name)
+            with redirect(tee):
+                if handler is None:
+                    handler=logging.StreamHandler(getattr(sys,stream_name))
+                    logger.addHandler(handler)
+                logger.warning("during run %s",index)
+        logger.warning("between runs %s",index)
+        handler.flush()
+    for index in range(3):
+        assert (tmp_path/f"run-{index}.log").read_text()==f"during run {index}\n"
+    assert terminal.getvalue()=="".join(f"during run {i}\nbetween runs {i}\n" for i in range(3))
+    handler.close()
+
+
+def test_tee_does_not_hide_active_log_write_failures():
+    import io
+    from polarization_locking.runner import Tee
+    logfile=Mock(closed=False)
+    logfile.write.side_effect=OSError("disk full")
+    with pytest.raises(OSError,match="disk full"):
+        Tee(io.StringIO(),logfile).write("measurement")

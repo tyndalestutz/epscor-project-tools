@@ -1,0 +1,32 @@
+{
+  "created_at": "2026-09-25T18:23:56.955718+00:00",
+  "analysis": "offline placement comparison",
+  "sources": {
+    "203850_pax-vibration_pax-vibration": {
+      "data.csv": "72dcd98be402f04fac9bcbe5313e86235810792fd05c07ff9f31ea215f74e311",
+      "vibration-setup.json": "afd5c89ae8f892ba338436b8c6ef747644421d7c6a8df351e76eaf13d661f63e",
+      "vibration.json": "ddfa64217ba59fad62604a624f78320df4f542902a2e6df92163e9e9a39c4cd9",
+      "recipe.json": "9663e8ae300cd581aa8e007074ea49302805023cdcf154f932a2def8063bca61",
+      "run.json": "569aa0e28235a45c153cb9fc629b3368610b252776a79a3c4aff9334bbc4f20c"
+    },
+    "235148_pax-vibration_pax-vibration": {
+      "data.csv": "028b3695ab4d0973195c652848697014a04d5ac0a15edba9aee699b72ef5a6e7",
+      "vibration-setup.json": "4c559bda81b4fa4d8cc0a0b0fe867c607cb84fb7e4a9e773595fde6a86899741",
+      "vibration.json": "70f68cd484f5cf752abc874c365c63b1093de9dd097fde30c8e04d6935ca5ee4",
+      "recipe.json": "9663e8ae300cd581aa8e007074ea49302805023cdcf154f932a2def8063bca61",
+      "run.json": "8bffc4dff9182a3c87390ee3dac2af7f596226b8056c7ae716b229f29ff86144"
+    }
+  },
+  "operator_description": {
+    "before": "Before: near interferometer",
+    "after": "After: displaced, heavier base",
+    "distance_m": null,
+    "base_mass_kg": null
+  },
+  "script_sha256": "4fdf9b55b9510a78a830547121a0f0ef4065fbb2764b5d70b005605174541eb1",
+  "python": "3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]",
+  "numpy": "2.2.5",
+  "matplotlib": "3.10.9",
+  "verification": "Recomputed raw-data PD and PAX metrics agree with saved summaries at rtol=1e-12; matched acquisition settings asserted.",
+  "regeneration": "env PYTHONPATH=python python experiments/polarization_locking/2026-09-24/comparison_pax-placement/analyze.py"
+}

@@ -94,6 +94,19 @@ def validate(config, case, options):
             raise ValueError("Sweep must satisfy 0 <= start < stop <= RP maximum")
         if config.sweep_points < 2:
             raise ValueError("sweep_points must be at least 2")
+    if case.key == "pax-vibration":
+        if config.pd_input not in {"in1", "in2"}:
+            raise ValueError("pd_input must be in1 or in2")
+        decimation = config.pax_vibration_scope_decimation
+        if decimation not in {2 ** n for n in range(17)}:
+            raise ValueError("Vibration scope decimation must be a power of two within 1..65536")
+        if not 0 < config.pax_vibration_band_low_hz < config.pax_vibration_band_high_hz < 1 / (16e-9 * decimation):
+            raise ValueError("Vibration band must lie above zero and below the PD Nyquist frequency")
+        if config.pax_vibration_motor_settle_s < 1 or config.pax_fresh_read_timeout_s <= 0:
+            raise ValueError("Motor settling needs at least 1 s and PAX freshness timeout must be positive")
+        if (config.pax_vibration_phi1_bias_voltage or config.pax_vibration_phi2_bias_voltage) and not config.phase_output_map_confirmed:
+            raise ValueError("Confirm output mapping before applying nonzero static biases")
+        return
     if case.key == "stokes-phase-sweep":
         frequency = config.stokes_phase_sweep_frequency_hz
         amplitude = config.stokes_phase_sweep_amplitude_v

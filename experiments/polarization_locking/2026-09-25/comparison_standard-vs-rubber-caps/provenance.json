@@ -1,0 +1,35 @@
+{
+  "created_at": "2026-09-25T19:58:30.282994+00:00",
+  "analysis": "offline placement comparison",
+  "sources": {
+    "2026-09-24/203850_pax-vibration_pax-vibration": {
+      "data.csv": "72dcd98be402f04fac9bcbe5313e86235810792fd05c07ff9f31ea215f74e311",
+      "vibration-setup.json": "afd5c89ae8f892ba338436b8c6ef747644421d7c6a8df351e76eaf13d661f63e",
+      "vibration.json": "ddfa64217ba59fad62604a624f78320df4f542902a2e6df92163e9e9a39c4cd9",
+      "recipe.json": "9663e8ae300cd581aa8e007074ea49302805023cdcf154f932a2def8063bca61",
+      "run.json": "569aa0e28235a45c153cb9fc629b3368610b252776a79a3c4aff9334bbc4f20c"
+    },
+    "2026-09-25/204124_pax-vibration_rubber-tip-base": {
+      "data.csv": "7fce8924301838b5a968af475a16ce0bc49f71f9195d26fdad440f7abd90fd02",
+      "vibration-setup.json": "2b44d5620d5acbb8e31435260b6b0bfd153f1544f66f447a6868c73ff343b103",
+      "vibration.json": "06b85b1225da8992bf2989c327908faffce84d9a34252f2818b88c47b98551f9",
+      "recipe.json": "0d519b680e336e0301d42e37fa7f0055d1bc18c5104ebe87f462465cea9a90c8",
+      "run.json": "f757895eddd15572e9e4fcce5562311c506b1082cb3517d07e7758eeb3fac6b2"
+    }
+  },
+  "operator_description": {
+    "before": "Before: standard post mount",
+    "after": "After: rubber-cap support",
+    "mount_stack": "top to bottom: PAX -> 10mm low profile mount stack constrained by bracing arm -> magnetic base unconstrained floating on -> metal plate floating on -> 3 rubber screw caps placed near the edges of the metal plate, all sitting directly on the -> optical breadboard",
+    "latest_comment": "same run, but again. checking if strange behavior persists.",
+    "description_source": "2026-09-25/203321_pax-vibration_rubber-tip-base/run.json",
+    "description_source_sha256": "8e1efef2375099341f39e32fd73ebd3a68cac2fcda8865219a9ee04190765db0",
+    "base_mass_kg": null
+  },
+  "script_sha256": "7220bbfe01db1c0ef2815e7179760d7692159f4efec663a57089b1e7cd55fd5d",
+  "python": "3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]",
+  "numpy": "2.2.5",
+  "matplotlib": "3.10.9",
+  "verification": "Recomputed raw-data PD and PAX metrics agree with saved summaries at rtol=1e-12; matched acquisition settings asserted.",
+  "regeneration": "env PYTHONPATH=python python experiments/polarization_locking/2026-09-25/comparison_standard-vs-rubber-caps/analyze.py"
+}

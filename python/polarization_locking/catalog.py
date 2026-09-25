@@ -21,6 +21,10 @@ class TestCase:
     pax_only: bool = False
 
     def config_names(self) -> list[str]:
+        if self.key == "pax-vibration":
+            return ["bench_notes", "bench_pax_location", "bench_voltage_chain", "rp_hostname", "rp_config", "pd_input", "results_directory", "sphere_pole_tolerance"] + [
+                f.name for f in fields(PolarizationLockConfig)
+                if f.name.startswith("pax_") and not f.name.startswith(("pax_live_", "pax_path_"))]
         if self.pax_only:
             return ["bench_notes", "bench_pax_location", "results_directory", "minimum_dop"] + [
                 f.name for f in fields(PolarizationLockConfig)
@@ -61,16 +65,17 @@ TESTS = (
     TestCase("pd-visibility", "Contrast (PD / PAX / both)", "Measure PD voltage contrast, PAX power contrast, or both concurrently. Passive mode leaves the drive untouched; active mode drives the selected phase actuator and returns outputs to zero on exit.", "PD needs a DC-coupled input and measured/provided signed dark baseline. PAX needs the recorded port/wavelength. Both requires light delivered to both sensors (e.g. a beam split), with that arrangement recorded. Active mapping: phi1=OUT1, phi2=OUT2; the other output is zero. Passive PD needs the existing Pyrpl FPGA. Drive must span fringes.", "_run_pd_visibility", ("visibility_", "pd_input"), timed=True, report="visibility", scope_only=True),
     TestCase("stokes-phase-sweep", "Power and Stokes phase sweep", "Measure synchronized optical power and Stokes parameters while sweeping an external phase actuator. Repeated OUT1 sine cycles; IN1 is the measured voltage reference, with acquisition timing retained.", "PAX in path A / E4, observing the combined field. OUT1 drives phi1 and is physically T-ed into IN1 as the voltage reference (not a photodiode). OUT2 stays at zero.", "_run_stokes_phase_sweep", ("stokes_phase_sweep_", "pd_scope_"), timed=True, report="stokes-phase-sweep"),
     TestCase("pax-live", "PAX alignment panel", "Large live power, DoP, Stokes and ellipse-angle readouts for manual alignment. Stop to Save or Discard; all fresh readings are logged while open. Red Pitaya is left untouched.", "PAX at the location recorded in bench_pax_location; align optics by hand. Requires a graphical desktop (Qt).", "_run_pax_live", report="pax-live", pax_only=True),
+    TestCase("pax-vibration", "PAX vibration diagnostics", "Compare fast PD variance with the PAX motor running and stopped. Log all fresh PAX telemetry and static sphere-angle variance during the on window. Duration is per condition; no actuator waveform.", "PD on selected IN1/IN2 with DC coupling and unchanged light/gain in both conditions. Keep PAX physically mounted and optics fixed. Motor-off means rotation stopped, not power unplugged. Outputs hold the configured static biases (default zero).", "_run_pax_vibration", ("pax_vibration_", "pd_input"), timed=True, report="pax-vibration"),
 )
 BY_KEY = {case.key: case for case in TESTS}
 
 
 def default_options(case: TestCase) -> dict:
-    options = {"label": case.key}
+    options = {"label": case.key, "comment": ""}
     if case.axis:
         options["axis"] = "phi1"
     if case.timed:
-        options["duration_s"] = 12.0 if case.scope_only else 60.0
+        options["duration_s"] = 30.0 if case.key == "pax-vibration" else 12.0 if case.scope_only else 60.0
     options["report"] = "pdf"
     if case.target:
         options["target_mode"] = "current"

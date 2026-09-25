@@ -35,6 +35,66 @@ Select a test by name or number. **e** edits, **s** saves a recipe, **l** loads,
 Edits persist for that test during the session; save a recipe to keep them.
 Only Run connects instruments. Ctrl+C stops a run and retains partial data.
 
+### PAX vibration diagnostic
+
+```bash
+python python/polarization_locking/lock.py --run pax-vibration --pd-input in2
+```
+
+Use IN1 or IN2. The default is **30 seconds per condition**: first PD + fresh
+PAX with its motor running, then the same fast PD acquisition with the PAX
+rotation motor commanded off. The PAX stays mounted and powered; this is a
+motor-on/off comparison. There is a five-second motor settling pause before
+the off window. No waveforms run: both outputs hold fixed biases (default zero).
+Edit `pax_vibration_phi1_bias_voltage` / `pax_vibration_phi2_bias_voltage` in the
+normal table if a different static operating point is needed.
+
+The test first prompts for a blocked-light PD dark capture, then for restored
+light. To reuse a known signed dark baseline, supply `--dark-voltage VALUE` or
+`pax_vibration_dark_voltage_v`. Keep light, detector gain, optics and PAX mounting
+unchanged across both windows. Normal suite cleanup zeros RP outputs; the PAX
+motor is stopped at the end. Startup uses the shared fresh-record validation.
+
+The PD records full scope traces at about **15.26 kSa/s**, with FPGA averaging
+and approximately 1.074-second captures at default decimation 8192. PAX polling
+runs while the FPGA captures; it does not downsample the saved PD trace to PAX
+rate. Records have host/network gaps, and a final complete capture may extend
+a window slightly beyond 30 seconds. Actual sampling rate, captured time and
+wall-clock coverage are recorded, with identical settings for both conditions.
+
+Results use **sample variance**, not extrema:
+
+- Relative PD power is `(V - V_dark) / mean(V - V_dark)`; raw signed voltage is
+  preserved. Per-condition normalized variance is `var(V, ddof=1) / (mean(V)-V_dark)^2`.
+- A second metric integrates the mean-removed Hann power spectrum over
+  **5–1000 Hz** by default. Edit `pax_vibration_band_low_hz` / `high_hz` to change
+  the comparison band. The same band applies in both conditions.
+- The report shows on/off variance ratios and **signed on-minus-off excess**.
+  Negative excess is preserved. Clipping or a zero corrected baseline makes
+  normalized metrics unavailable. Compare light levels as well as noise: drift,
+  shot noise or electronics can change the result, so excess is not automatically
+  proof of mechanical vibration.
+- PAX-on telemetry includes relative power variance and static sphere-angle
+  variance using the established **S1-polar** coordinates:
+  `u = atan2(S3,S2)`, `v = acos(S1/||S||)`. `u` is unwrapped before variance;
+  its variance is unavailable at an S1 pole. Both variances are in rad²; the
+  plots use degrees. Near a pole, azimuth noise is geometrically amplified.
+  All acquisition-valid DoP values are retained. PAX's slower bandwidth cannot
+  be directly compared with the PD's fast variance.
+
+Each run keeps one compact `data.csv` with eight columns: `capture`, `voltage_v`,
+`elapsed_s`, `pax_ptotal`, `s1`, `s2`, `s3`, `dop`. PD rows contain only a capture
+ID and signed voltage; capture -1 is the dark trace. PAX rows have a blank capture
+and retain elapsed time, power, normalized Stokes direction and DoP. Sample order
+within each PD capture supplies the sample index. `vibration-setup.json` stores
+sampling interval, host timing, motor state, dark offset and sample count once
+per capture, plus wavelength once per run. Keep it with the CSV for reanalysis.
+Reports derive normalized power, spectra and u/v from these essentials. No repeated
+sample timestamps, derived arrays or full PAX diagnostic payloads are saved.
+The usual summary JSON, recipe, provenance, log and PDF remain alongside the CSV.
+No PAX measurements are fabricated during motor-off.
+Partial data survive interruption. See [example recipe](profiles/pax-vibration-example.json).
+
 ### Live manual alignment
 
 ```bash
@@ -196,3 +256,15 @@ python -m pytest python/polarization_locking/tests
 Checks cover measurement math, menu/recipes, every catalog dispatch, reports,
 failures, and cleanup using synthetic data and mocks. Passing software tests
 does not establish an optical calibration or verify bench wiring.
+
+### Run names and comments
+
+After selecting **Run**, two short prompts accept an optional run name and comment.
+Press Enter at both to use the default name and no comment. These entries apply
+only to that run; they do not silently carry into the next run. Saved recipe
+values remain available as defaults and can be edited through `all`.
+
+Folders keep the date and time: `YYYY-MM-DD/HHMMSS_pax-vibration` by default,
+or `YYYY-MM-DD/HHMMSS_pax-vibration_heavy-base` for the name `heavy base`.
+Comments are saved in `recipe.json`, `run.json`, the console log and the PDF.
+Command-line runs stay noninteractive: use `--name "heavy base" --comment "PAX displaced onto heavier base"`.

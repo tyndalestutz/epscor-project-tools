@@ -1,0 +1,16 @@
+Run comment: PAX is secured to mag base via low profile mount, mag base is free floating on stacked metal plates unconstrained.
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+Block light to the PD on in2 to measure its signed dark offset. [Enter = ready, b = cancel] Restore PD light. Keep both detectors, optics and electronics fixed for both windows. [Enter = ready, b = cancel] pax_on: 30 s on in2; static outputs, identical PD settings.
+PAX motor commanded off; settling 5 s.
+pax_off: 30 s on in2; static outputs, identical PD settings.
+Variance comparison: {'normalized_variance_on_minus_off': 0.0019661766906229087, 'normalized_variance_on_over_off': 2.6339136691260747, 'normalized_band_variance_on_minus_off': 0.0018069154513730883, 'normalized_band_variance_on_over_off': 12.534814415821833, 'interpretation': 'Signed on-minus-off excess, not proof of mechanical causation. Compare the same PD bandwidth, optical alignment, light level and gain. Sequential drift, shot noise and electronics can also differ. PAX power/angles have a much slower bandwidth.'}
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-25/193151_pax-vibration_heavy-base/report.pdf

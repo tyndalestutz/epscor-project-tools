@@ -6,6 +6,7 @@
 | [stokes-phase-sweep-example.json](stokes-phase-sweep-example.json) | Repeated OUT1 sine, IN1 voltage reference, combined E4 power and Stokes |
 | [visibility-in2-example.json](visibility-in2-example.json) | Passive IN2 contrast; 0.5 Hz example, unknown dark offset |
 | [visibility-pax-example.json](visibility-pax-example.json) | Passive PAX total-power contrast; 12 s, external 0.5 Hz drive |
+| [pax-vibration-example.json](pax-vibration-example.json) | 30 s motor-on and 30 s motor-off, fast IN1 PD variance with static PAX reference |
 | [pax-live-example.json](pax-live-example.json) | Manual alignment panel; inherits PAX settings, leaves RP untouched, Save/Discard on stop |
 
 Minimal templates inherit unspecified defaults from the current code. Open one

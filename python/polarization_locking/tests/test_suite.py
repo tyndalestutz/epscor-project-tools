@@ -55,7 +55,7 @@ def test_edit_keep_cancel_invalid_input_and_revisit():
 
 def test_defaults_and_run_without_parameter_questions():
     run = Mock(return_value={"status": "completed"})
-    menu, _ = menu_for(["2", "e", "sweep_points", "21", "b", "d", "r", "b", "q"], run_test=run)
+    menu, _ = menu_for(["2", "e", "sweep_points", "21", "b", "d", "r", "", "", "b", "q"], run_test=run)
     menu.run()
     assert run.call_args.args[1].sweep_points == 11
 
@@ -126,7 +126,8 @@ def fake_app(config, monkeypatch, failure=None):
 def test_all_catalog_entries_dispatch_and_persist(case, tmp_path, monkeypatch):
     config = PolarizationLockConfig(results_directory=str(tmp_path))
     app = fake_app(config, monkeypatch)
-    state = execute(case, config, default_options(case), app_factory=lambda _: app)
+    options = default_options(case) | {"comment": "Displaced PAX; heavier base"}
+    state = execute(case, config, options, app_factory=lambda _: app)
     assert state["status"] == "completed", state
     if case.pax_only:
         app.connect.assert_not_called()  # real panel connects inside its worker
@@ -138,7 +139,15 @@ def test_all_catalog_entries_dispatch_and_persist(case, tmp_path, monkeypatch):
     recorded = json.loads(path.with_name("run.json").read_text())
     assert recorded["status"] == "completed"
     assert "provenance" in recorded and "packages" in recorded["provenance"]
-    assert path.with_name("console.log").exists()
+    assert recorded["run_comment"] == options["comment"]
+    assert load_recipe(path)[2]["comment"] == options["comment"]
+    assert options["comment"] in path.with_name("console.log").read_text()
+    from polarization_locking.reports.run_report import create_run_report
+    if case.key == "pax-live":
+        create_run_report.assert_not_called()  # mock live session has not selected Save
+    else:
+        assert create_run_report.call_args.args[3]["comment"] == options["comment"]
+        assert create_run_report.call_args.args[4]["run_comment"] == options["comment"]
 
 
 @pytest.mark.parametrize("failure,status", [(KeyboardInterrupt(), "interrupted"), (EOFError(), "interrupted"), (RuntimeError("read failed"), "failed")])
@@ -220,7 +229,7 @@ def test_interrupted_real_collector_saves_partial_csv(tmp_path, monkeypatch):
 
 def test_cleanup_failure_closes_menu():
     run = Mock(return_value={"status": "cleanup_failed"})
-    menu, output = menu_for(["2", "r"], run_test=run)
+    menu, output = menu_for(["2", "r", "", ""], run_test=run)
     menu.run()
     assert any("Menu closed" in line for line in output)
 
@@ -242,7 +251,7 @@ def test_direct_launch_is_hardware_free():
 def test_saved_menu_recipe_can_be_loaded_and_run(tmp_path):
     path = str(tmp_path / "custom.json")
     run = Mock(return_value={"status": "completed"})
-    menu, _ = menu_for(["2", "e", "sweep_points", "17", "b", "s", path, "d", "l", path, "r", "b", "q"], run_test=run)
+    menu, _ = menu_for(["2", "e", "sweep_points", "17", "b", "s", path, "d", "l", path, "r", "", "", "b", "q"], run_test=run)
     menu.run()
     assert run.call_args.args[1].sweep_points == 17
 
@@ -283,3 +292,44 @@ def test_inline_report_failure_preserves_acquisition(tmp_path, monkeypatch):
     state = execute(case, config, default_options(case) | {"report": "both"}, app_factory=lambda _: app)
     assert state["status"] == "completed"
     assert "analyzer unavailable" in state["report_error"]
+
+
+@pytest.mark.parametrize("name,comment", [("", ""), ("heavy base", "PAX displaced; same IN2")])
+def test_quick_run_details_are_optional_and_per_run(name, comment):
+    run = Mock(return_value={"status": "completed"})
+    menu, _ = menu_for(["2", "r", name, comment, "r", "", "", "b", "q"], run_test=run)
+    menu.run()
+    first, second = [call.args[2] for call in run.call_args_list]
+    assert first["label"] == (name or "sweep")
+    assert first["comment"] == comment
+    assert second["label"] == "sweep" and second["comment"] == ""
+
+
+def test_cancel_run_details_never_connects():
+    run = Mock()
+    menu, _ = menu_for(["2", "r", KeyboardInterrupt(), "q"], run_test=run)
+    menu.run()
+    run.assert_not_called()
+
+
+@pytest.mark.parametrize("name,expected", [("", "sweep"), ("sweep", "sweep"), ("heavy base", "sweep_heavy-base")])
+def test_folder_name_keeps_date_without_duplicate_default(tmp_path, monkeypatch, name, expected):
+    from datetime import datetime
+    from polarization_locking import app as module
+    clock = Mock()
+    clock.now.return_value = datetime(2026, 9, 25, 12, 34, 56)
+    monkeypatch.setattr(module, "datetime", clock)
+    app = PolarizationLockApp(PolarizationLockConfig(results_directory=str(tmp_path)))
+    first = app._new_experiment_paths("sweep", name)
+    second = app._new_experiment_paths("sweep", name)
+    assert first.directory == tmp_path / "2026-09-25" / f"123456_{expected}"
+    assert second.directory.name == f"123456_{expected}_2"
+
+
+def test_comment_recipe_and_cli_roundtrip(tmp_path, capsys):
+    from polarization_locking.cli import main
+    assert main(["--run", "sweep", "--dry-run", "--name", "heavy base", "--comment", "PAX moved"])==0
+    data=json.loads(capsys.readouterr().out)
+    path=tmp_path/"recipe.json";path.write_text(json.dumps(data))
+    _,_,options=load_recipe(path)
+    assert options["label"]=="heavy base" and options["comment"]=="PAX moved"

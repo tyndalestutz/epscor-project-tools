@@ -52,6 +52,7 @@ setup. A driver model name is not a gain measurement. Use a bounded explicit
 | Mode | Connection and cleanup |
 | --- | --- |
 | Ordinary menu test, including `live` | Full RP and PAX connection; initializes RP outputs to zero, runs the routine, attempts zero on exit |
+| `pax-vibration` | Full RP/PAX session with static biases; same selected PD input in both windows; PAX rotation motor is stopped for the second window and on exit; normal RP cleanup zeros outputs |
 | `pax-live` | PAX only, initialized/read/closed by one worker; RP untouched and unmeasured; Stop/close/Ctrl+C offers Save or Discard after cleanup |
 | `pd-visibility`, passive PD/both | Scope transport only; requires already loaded Pyrpl FPGA; restores scope registers; measures signed dark baseline unless provided; both also connects PAX |
 | `pd-visibility`, passive PAX | PAX connection only; records total optical power; never connects RP or changes actuator outputs |

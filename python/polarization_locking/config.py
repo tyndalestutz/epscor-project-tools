@@ -189,6 +189,15 @@ class PolarizationLockConfig:
     power_balance_phi2_frequency_hz: float = 0.5
     power_balance_sample_period_s: float = 0.05
 
+    # Static PAX motor-on/off comparison; identical fast PD bandwidth in both.
+    pax_vibration_scope_decimation: int = 8192  # ~15.26 kSa/s, ~1.074 s records
+    pax_vibration_band_low_hz: float = 5.0
+    pax_vibration_band_high_hz: float = 1000.0
+    pax_vibration_motor_settle_s: float = 5.0
+    pax_vibration_dark_voltage_v: Optional[float] = None
+    pax_vibration_phi1_bias_voltage: float = 0.0
+    pax_vibration_phi2_bias_voltage: float = 0.0
+
     # Explicit electrical sweep; no V_lambda or phase calibration is inferred.
     stokes_phase_sweep_frequency_hz: float = 0.5
     stokes_phase_sweep_amplitude_v: float = 0.3875

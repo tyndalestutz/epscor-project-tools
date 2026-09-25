@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "test": "pax-vibration",
+  "options": {"label": "pax-motor-noise", "duration_s": 30.0, "report": "pdf"},
+  "config": {
+    "pd_input": "in1",
+    "pax_vibration_dark_voltage_v": null,
+    "bench_notes": "Record the PD port/gain, PAX mounting and optical layout. Keep everything fixed through motor-on and motor-off windows."
+  }
+}

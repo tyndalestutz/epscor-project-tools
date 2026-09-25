@@ -1,0 +1,1 @@
+this run illuminated an alignment error. While there is some stokes param overlap (i.e. S2,S3 do not equal zero) the lack of PS control was determined to be caused by spatial misalignment. this was also clear by the low DOP. 

@@ -14,6 +14,10 @@ from .prompts import prepare_setup
 
 
 class DiagnosticsMixin:
+    def _run_pax_vibration(self, output_file: str, duration_s: float) -> None:
+        from .pax_vibration import acquire
+        acquire(self.rp, self.pax, self.config, output_file, duration_s)
+
     def _run_pax_live(self, output_file: str) -> dict:
         # Select cleanup even if constructing the GUI fails before connection.
         self._pax_only = True

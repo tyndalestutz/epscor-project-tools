@@ -427,7 +427,7 @@ def test_menu_asks_two_choices_then_edits_actuator_in_table():
     from polarization_locking.tests.test_suite import menu_for
     run = Mock(return_value={"status": "completed"})
     menu, output = menu_for(["pd-visibility", "both", "active", "e", "visibility_axis", "phi2",
-                             "visibility_waveform", "triangle", "b", "r", "b", "q"], run_test=run)
+                             "visibility_waveform", "triangle", "b", "r", "", "", "b", "q"], run_test=run)
     menu.run()
     config = run.call_args.args[1]
     assert (config.visibility_source, config.visibility_mode, config.visibility_axis, config.visibility_waveform) == ("both", "active", "phi2", "triangle")

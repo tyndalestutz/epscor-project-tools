@@ -83,6 +83,7 @@ def add_overview(pdf, case, paths, config, options, state, rows):
         ("Purpose", case.description),
         ("Required optical setup", case.setup),
         ("Recorded bench context (recipe)", bench_context),
+        ("Run comment", options.get("comment") or state.get("run_comment") or "None recorded"),
         ("Operator setup notes", config.bench_notes),
         ("Data", samples + "\nSource: data.csv; full acquisition settings: recipe.json; status: run.json"),
     ]
@@ -155,7 +156,9 @@ def add_telemetry(pdf, rows):
 
 def add_specialized(pdf, case, paths, options):
     kind = case.report
-    if kind == "stokes-phase-sweep":
+    if kind == "pax-vibration":
+        add_pax_vibration(pdf, paths)
+    elif kind == "stokes-phase-sweep":
         from .plot_calibration_tests import add_stokes_phase_sweep_page
         add_stokes_phase_sweep_page(pdf, paths.csv)
     elif kind == "visibility":
@@ -227,15 +230,18 @@ def add_specialized(pdf, case, paths, options):
 
 def create_run_report(case, paths, config, options, state):
     rows = []
-    if paths.csv.exists():
+    if paths.csv.exists() and case.key == 'pax-vibration':
+        rows = [row for row in vibration_report_rows(paths.csv) if row.get('record_type', 'pd_capture') == 'pd_capture']
+    elif paths.csv.exists():
         with paths.csv.open(newline="") as handle:
-            rows = list(csv.DictReader(handle))
+            rows = [row for row in csv.DictReader(handle)
+                    if case.key != 'pax-vibration' or row.get('record_type', 'pd_capture') == 'pd_capture']
     temporary = paths.pdf.with_suffix(".tmp.pdf")
     plot_error = None
     with PdfPages(temporary, metadata={"Title": case.title, "Subject": paths.directory.name, "Author": "Polarization diagnostics"}) as document:
         pdf = ReportPages(document)
         if case.report == "pax-live":
-            add_pax_live(pdf, paths, config, state, rows)
+            add_pax_live(pdf, paths, config, dict(state, run_comment=options.get("comment") or state.get("run_comment", "")), rows)
         else:
             add_overview(pdf, case, paths, config, options, state, rows)
             if rows:
@@ -245,7 +251,7 @@ def create_run_report(case, paths, config, options, state):
                     plot_error = f"{type(exc).__name__}: {exc}"
                     plt.close("all")
                     text_page(pdf, "Specialized analysis unavailable", [("Reason", plot_error), ("Data retained", "Raw telemetry follows. The original CSV and recipe remain available for reanalysis.")])
-                if not case.scope_only:
+                if not case.scope_only and case.report != "pax-vibration":
                     add_telemetry(pdf, rows)
             else:
                 log = paths.directory / "console.log"
@@ -268,6 +274,7 @@ def add_pax_live(pdf, paths, config, state, rows):
         ("Run", f"{paths.directory.name}\nStatus: {state.get('status', 'unknown')}"),
         ("Acquisition", f"Duration: {state.get('duration_s', elapsed[-1] if len(rows) else 0):.1f} s; "
          f"{len(rows)} fresh samples; {rate:.2f} Hz over recorded samples."),
+        ("Run comment", state.get("run_comment") or "None recorded"),
         ("Setup", f"{config.bench_pax_location}\n{config.bench_notes}"),
         ("Definitions", "Power: watts. DoP: fraction. S1–S3: the suite's normalized direction (not multiplied by DoP). "
          "CSV theta/eta: radians; displayed angles: degrees. No fit or smoothing."),
@@ -285,6 +292,74 @@ def add_pax_live(pdf, paths, config, state, rows):
         ax.set(xlabel="Elapsed time (s)", ylabel=unit)
         ax.grid(alpha=.2)
         ax.legend()
+    pdf.savefig(fig)
+    plt.close(fig)
+
+
+def vibration_report_rows(path):
+    from ..routines.pax_vibration import CSV_FIELDS, compact_report_rows
+    with path.open(newline='') as handle:
+        if tuple(next(csv.reader(handle), ())) == CSV_FIELDS:
+            return compact_report_rows(path)
+    # Legacy wide CSV: discard raw samples while streaming.
+    with path.open(newline='') as handle:
+        return [row for row in csv.DictReader(handle)
+                if row.get('record_type', 'pd_capture') in ('pd_capture', 'pax', 'spectrum')]
+
+
+def add_pax_vibration(pdf, paths):
+    summary = json.loads((paths.directory / "vibration.json").read_text())
+    sections = []
+    for condition, values in summary["pd"].items():
+        if not values.get("sample_count"):
+            sections.append((condition, "No completed PD captures"))
+            continue
+        sections.append((condition, "\n".join(f"{key}: {values.get(key)}" for key in
+                        ("sample_count", "acquired_s", "wall_span_s", "sampling_rate_hz", "dark_corrected_mean_v",
+                         "normalized_variance", "normalized_band_variance", "status"))))
+    sections.append(("Comparison", "\n".join(f"{key}: {value}" for key, value in summary['comparison'].items())))
+    sections.append(("PAX on: static polarization / power", "\n".join(f"{key}: {value}" for key, value in summary['pax'].items())))
+    text_page(pdf, f"PAX motor noise — variance, band {summary['band_hz']} Hz", sections)
+    fig, axes = plt.subplots(2, 2, figsize=(11.7, 8.3), constrained_layout=True)
+    records = vibration_report_rows(paths.csv)
+    rows = [row for row in records if row.get('record_type', 'pd_capture') == 'pd_capture']
+    pax = [row for row in records if row.get('record_type') == 'pax']
+    for condition in ('pax_on', 'pax_off'):
+        spectrum = paths.directory / f'{condition}-spectrum.npz'
+        selected = [row for row in records if row.get('record_type') == 'spectrum' and row['condition'] == condition]
+        if selected:
+            frequency, psd = column(selected, 'frequency_hz'), column(selected, 'normalized_psd_per_hz')
+            keep = (frequency > 0) & np.isfinite(psd) & (psd > 0)
+            axes[0, 0].loglog(frequency[keep], psd[keep], label=condition)
+        elif spectrum.exists():
+            with np.load(spectrum) as data:
+                frequency, psd = data['frequency_hz'], data['normalized_psd_per_hz']
+                keep = (frequency > 0) & np.isfinite(psd) & (psd > 0)
+                axes[0, 0].loglog(frequency[keep], psd[keep], label=condition)
+    axes[0, 0].axvspan(*summary['band_hz'], alpha=.08, color='gray')
+    axes[0, 0].set(xlabel='Frequency (Hz)', ylabel='Relative PD power PSD (1/Hz)', title='Identical PD bandwidth; shaded comparison band')
+    for condition in ('pax_on', 'pax_off'):
+        selected = [row for row in rows if row['condition'] == condition]
+        axes[0, 1].plot(column(selected, 'started_s'), column(selected, 'normalized_band_variance'), '.-', label=condition)
+    axes[0, 1].set(xlabel='Run elapsed time (s)', ylabel='Relative PD variance', title='Per-capture band variance')
+    if not any('record_type' in row for row in records) and (paths.directory / 'pax.csv').exists():
+        with (paths.directory / 'pax.csv').open(newline='') as handle:
+            pax = list(csv.DictReader(handle))
+    if pax:
+        elapsed = column(pax, 'elapsed_s')
+        power = column(pax, 'pax_ptotal')
+        axes[1, 0].plot(elapsed, power/power.mean(), linewidth=.8)
+        v = column(pax, 'v_rad')
+        for name, angle in (('u', np.unwrap(column(pax, 'u_rad'))), ('v', v)):
+            if name == 'u' and summary['pax'].get('u_variance_rad2') is None:
+                continue
+            axes[1, 1].plot(elapsed, np.degrees(angle-angle.mean()), label=name, linewidth=.8)
+    axes[1, 0].set(xlabel='Run elapsed time (s)', ylabel='PAX power / mean power', title='PAX on: slow reference only')
+    axes[1, 1].set(xlabel='Run elapsed time (s)', ylabel='Angle minus mean (deg)', title='Static S1-polar sphere coordinates')
+    for ax in axes.flat:
+        ax.grid(alpha=.2)
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend(fontsize=8)
     pdf.savefig(fig)
     plt.close(fig)
 

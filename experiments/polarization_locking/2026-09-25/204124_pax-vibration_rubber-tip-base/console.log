@@ -1,0 +1,20 @@
+Run comment: same run, but again. checking if strange behavior persists.
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+Connecting to PAX at localhost:38400...
+Starting PAX daemon; motor spin-up includes a 5-second settling wait. Please wait...
+PAX daemon connected; applying wavelength...
+PAX ready for setup. Fresh measurement validation runs before data logging.
+Block light to the PD on in2 to measure its signed dark offset. [Enter = ready, b = cancel] Restore PD light. Keep both detectors, optics and electronics fixed for both windows. [Enter = ready, b = cancel] pax_on: 30 s on in2; static outputs, identical PD settings.
+PAX motor commanded off; settling 5 s.
+pax_off: 30 s on in2; static outputs, identical PD settings.
+Variance comparison: {'normalized_variance_on_minus_off': -0.0016863848102720257, 'normalized_variance_on_over_off': 0.7578820363730119, 'normalized_band_variance_on_minus_off': 1.8696473111649248e-05, 'normalized_band_variance_on_over_off': 1.2018803654309542, 'interpretation': 'Signed on-minus-off excess, not proof of mechanical causation. Compare the same PD bandwidth, optical alignment, light level and gain. Sequential drift, shot noise and electronics can also differ. PAX power/angles have a much slower bandwidth.'}
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-25/204124_pax-vibration_rubber-tip-base/report.pdf

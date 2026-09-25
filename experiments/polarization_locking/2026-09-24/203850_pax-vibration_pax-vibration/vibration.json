@@ -1,0 +1,56 @@
+{
+  "pd": {
+    "pax_on": {
+      "sample_count": 425984,
+      "capture_count": 26,
+      "mean_v": -5.9010890813974234e-05,
+      "dark_corrected_mean_v": 0.008968105109838339,
+      "variance_v2": 2.317570345571442e-07,
+      "band_variance_v2": 5.4846615012598736e-08,
+      "normalized_variance": 0.002881585736494456,
+      "normalized_band_variance": 0.0006819435872456251,
+      "clipped_samples": 0,
+      "status": "ok",
+      "acquired_s": 27.917287423999994,
+      "wall_span_s": 30.729239230015082,
+      "sampling_rate_hz": 15258.789062499998
+    },
+    "pax_off": {
+      "sample_count": 458752,
+      "capture_count": 28,
+      "mean_v": -0.0003911818244627544,
+      "dark_corrected_mean_v": 0.008635934176189559,
+      "variance_v2": 2.8979976061773646e-07,
+      "band_variance_v2": 6.322420109825865e-09,
+      "normalized_variance": 0.003885790440311048,
+      "normalized_band_variance": 8.477439584499117e-05,
+      "clipped_samples": 0,
+      "status": "ok",
+      "acquired_s": 30.064771071999992,
+      "wall_span_s": 30.81515233698883,
+      "sampling_rate_hz": 15258.789062499998
+    }
+  },
+  "pax": {
+    "sample_count": 208,
+    "mean_power_w": 0.0005897880197115384,
+    "normalized_power_variance": 0.004857003170729862,
+    "u_variance_rad2": 0.008869818893533976,
+    "v_variance_rad2": 0.006143177722965522,
+    "mean_dop": 0.9430139423076924,
+    "minimum_sin_v": 0.5837689598839996,
+    "angle_note": "u unwrapped in acquisition order; coordinate noise grows near S1 poles",
+    "update_rate_hz": 6.772456845669043
+  },
+  "comparison": {
+    "normalized_variance_on_minus_off": -0.001004204703816592,
+    "normalized_variance_on_over_off": 0.7415700307975929,
+    "normalized_band_variance_on_minus_off": 0.000597169191400634,
+    "normalized_band_variance_on_over_off": 8.044216422285682,
+    "interpretation": "Signed on-minus-off excess, not proof of mechanical causation. Compare the same PD bandwidth, optical alignment, light level and gain. Sequential drift, shot noise and electronics can also differ. PAX power/angles have a much slower bandwidth."
+  },
+  "band_hz": [
+    5.0,
+    1000.0
+  ]
+}

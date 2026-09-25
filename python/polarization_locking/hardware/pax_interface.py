@@ -58,6 +58,7 @@ class PAXController:
         if yaqc is None:
             raise RuntimeError("yaqc is not installed in the active Python environment")
 
+        print(f"Connecting to PAX at {self.config.pax_host}:{self.config.pax_port}...", flush=True)
         if self.config.pax_host in {"localhost", "127.0.0.1", "::1"}:
             self._stop_existing_pax_daemons()
         try:
@@ -67,9 +68,12 @@ class PAXController:
                 raise RuntimeError(
                     f"PAX daemon refused the connection at {self.config.pax_host}:{self.config.pax_port}."
                 ) from exc
+            print("Starting PAX daemon; motor spin-up includes a 5-second settling wait. Please wait...", flush=True)
             self._start_daemon()
             self.client = self._wait_for_daemon(exc)
+        print("PAX daemon connected; applying wavelength...", flush=True)
         self._apply_measurement_configuration()
+        print("PAX ready for setup. Fresh measurement validation runs before data logging.", flush=True)
         self._test_mode = False
         return self.client
 
@@ -194,6 +198,17 @@ class PAXController:
             f"PAX daemon did not begin listening at {self.config.pax_host}:{self.config.pax_port} within "
             f"{startup_timeout_s:.1f} s."
         ) from original_error
+
+    def stop_rotation(self) -> None:
+        """Stop the waveplate motor through the existing daemon serial command.
+
+        Leave the daemon/device connected; do not request polarization while
+        stopped. Advancement must be re-established before any later fresh read.
+        """
+        if self.client is None:
+            raise RuntimeError("PAX connection is not established")
+        self.client.direct_serial_write(b"INPut:ROTation:STATe 0")
+        self._last_fresh_record = None
 
     def get_channel_names(self) -> list[str]:
         if self.client is None:

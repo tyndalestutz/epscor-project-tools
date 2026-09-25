@@ -45,16 +45,28 @@ def runtime_provenance():
 
 
 class Tee:
-    def __init__(self, terminal, logfile):
+    def __init__(self, terminal, logfile, stream_name="stdout"):
         self.terminal, self.logfile = terminal, logfile
+        self.stream_name = stream_name
+
+    def _current_stream(self):
+        # Library StreamHandlers can retain this object after its run ends.
+        # Forward stale references into the next run's tee (or the terminal).
+        current = getattr(sys, self.stream_name)
+        return self.terminal if current is self else current
 
     def write(self, text):
+        if self.logfile.closed:
+            return self._current_stream().write(text)
         self.terminal.write(text)
         self.logfile.write(text)
         self.logfile.flush()
         return len(text)
 
     def flush(self):
+        if self.logfile.closed:
+            self._current_stream().flush()
+            return
         self.terminal.flush()
         self.logfile.flush()
 
@@ -72,13 +84,16 @@ def execute(case, config, options, *, app_factory=None):
     paths = app._new_experiment_paths(case.key, options["label"])
     write_json(paths.directory / "recipe.json", recipe(case, config, options))
     state = {"test": case.key, "status": "running", "started_at": datetime.now(timezone.utc).isoformat(), "python": platform.python_version(), "source_sha256": source_fingerprint(), "required_setup": case.setup}
+    state["run_comment"] = options.get("comment", "")
     if case.key == "pax-live":
         state["data_disposition"] = "temporary"
     state["provenance"] = runtime_provenance()
     status_path = paths.directory / "run.json"
     write_json(status_path, state)
     print(f"Run folder: {paths.directory}")
-    with (paths.directory / "console.log").open("w") as logfile, redirect_stdout(Tee(sys.stdout, logfile)), redirect_stderr(Tee(sys.stderr, logfile)):
+    with (paths.directory / "console.log").open("w") as logfile, redirect_stdout(Tee(sys.stdout, logfile)), redirect_stderr(Tee(sys.stderr, logfile, "stderr")):
+        if state["run_comment"]:
+            print(f"Run comment: {state['run_comment']}")
         try:
             if case.pax_only:
                 # The live panel opens immediately; its worker owns the entire

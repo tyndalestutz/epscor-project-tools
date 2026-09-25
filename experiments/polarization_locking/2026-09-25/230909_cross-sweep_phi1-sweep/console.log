@@ -1,0 +1,19 @@
+Run comment: second sweep for phi1. just testing again.
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+Connecting to PAX at localhost:38400...
+Starting PAX daemon; motor spin-up includes a 5-second settling wait. Please wait...
+PAX daemon connected; applying wavelength...
+PAX ready for setup. Fresh measurement validation runs before data logging.
+Cross-sweep plan: 156 phi1 points per slice × 11 phi2 biases spanning 0..0.7750 V RP (1716 total readings)
+Warning: 1669/1716 cross-sweep readings had DOP below 0.900. They were logged, but are not suitable for a rough move.
+Cross-sweep saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-25/230909_cross-sweep_phi1-sweep/data.csv
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-25/230909_cross-sweep_phi1-sweep/report.pdf

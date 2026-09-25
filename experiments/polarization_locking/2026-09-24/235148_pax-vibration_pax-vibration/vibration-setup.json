@@ -1,0 +1,550 @@
+{
+  "data_format": "compact-vibration-v1",
+  "captures": [
+    {
+      "capture": -1,
+      "condition": "dark",
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384
+    },
+    {
+      "capture": 0,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:16.916837+00:00",
+      "started_s": 16.56987394200405,
+      "finished_s": 17.754404887993587,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 1,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:18.131886+00:00",
+      "started_s": 17.78491778401076,
+      "finished_s": 18.966832901991438,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 2,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:19.344674+00:00",
+      "started_s": 18.99770534900017,
+      "finished_s": 20.181326217018068,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 3,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:20.559162+00:00",
+      "started_s": 20.212193387997104,
+      "finished_s": 21.39322220798931,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 4,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:21.771851+00:00",
+      "started_s": 21.42487997500575,
+      "finished_s": 22.60567004600307,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 5,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:22.989539+00:00",
+      "started_s": 22.64257414700114,
+      "finished_s": 23.823954293999122,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 6,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:24.202436+00:00",
+      "started_s": 23.855467084009433,
+      "finished_s": 25.039406491996488,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 7,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:25.418042+00:00",
+      "started_s": 25.071074665000197,
+      "finished_s": 26.252024593995884,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 8,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:26.630622+00:00",
+      "started_s": 26.28365337100695,
+      "finished_s": 27.465129696996883,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 9,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:27.843888+00:00",
+      "started_s": 27.496919597004307,
+      "finished_s": 28.67977885599248,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 10,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:29.057831+00:00",
+      "started_s": 28.710862473992165,
+      "finished_s": 29.890786459000083,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 11,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:30.269212+00:00",
+      "started_s": 29.92224274101318,
+      "finished_s": 31.10372299599112,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 12,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:31.480097+00:00",
+      "started_s": 31.133129282010486,
+      "finished_s": 32.31571924299351,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 13,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:32.696244+00:00",
+      "started_s": 32.349275474000024,
+      "finished_s": 33.53006448299857,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 14,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:33.908263+00:00",
+      "started_s": 33.56129425900872,
+      "finished_s": 34.74215447399183,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 15,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:35.121113+00:00",
+      "started_s": 34.774143977003405,
+      "finished_s": 35.95487443800084,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 16,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:36.333599+00:00",
+      "started_s": 35.98663036400103,
+      "finished_s": 37.16599127498921,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 17,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:37.544182+00:00",
+      "started_s": 37.19721318400116,
+      "finished_s": 38.37799253500998,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 18,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:38.756217+00:00",
+      "started_s": 38.409245593007654,
+      "finished_s": 39.59068384900456,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 19,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:39.968455+00:00",
+      "started_s": 39.62148803198943,
+      "finished_s": 40.800948629999766,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 20,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:41.180938+00:00",
+      "started_s": 40.83396998498938,
+      "finished_s": 42.01682186301332,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 21,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:42.396198+00:00",
+      "started_s": 42.04922920599347,
+      "finished_s": 43.230192321992945,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 22,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:43.611214+00:00",
+      "started_s": 43.264247548009735,
+      "finished_s": 44.446506467007566,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 23,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:44.825399+00:00",
+      "started_s": 44.47842997699627,
+      "finished_s": 45.6565003519936,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 24,
+      "condition": "pax_on",
+      "utc": "2026-09-24T22:52:46.036380+00:00",
+      "started_s": 45.68940902501345,
+      "finished_s": 46.867213235003874,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 25,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:52:52.408675+00:00",
+      "started_s": 52.06171136899502,
+      "finished_s": 53.1510627779935,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 26,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:52:53.524545+00:00",
+      "started_s": 53.1775767999934,
+      "finished_s": 54.27225452999119,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 27,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:52:54.646822+00:00",
+      "started_s": 54.29985327200848,
+      "finished_s": 55.397249252011534,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 28,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:52:55.771321+00:00",
+      "started_s": 55.424351502006175,
+      "finished_s": 56.522193286014954,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 29,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:52:56.896315+00:00",
+      "started_s": 56.5493467010092,
+      "finished_s": 57.647369962011,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 30,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:52:58.022380+00:00",
+      "started_s": 57.67541115399217,
+      "finished_s": 58.77224909799406,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 31,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:52:59.149886+00:00",
+      "started_s": 58.80291862500599,
+      "finished_s": 59.8972209340136,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 32,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:00.273492+00:00",
+      "started_s": 59.92653417799738,
+      "finished_s": 61.02216262699221,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 33,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:01.401781+00:00",
+      "started_s": 61.054813936003484,
+      "finished_s": 62.1472180460114,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 34,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:02.524072+00:00",
+      "started_s": 62.1771047420043,
+      "finished_s": 63.272075920016505,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 35,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:03.645986+00:00",
+      "started_s": 63.299017095007,
+      "finished_s": 64.39712267499999,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 36,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:04.771091+00:00",
+      "started_s": 64.4241217180097,
+      "finished_s": 65.52212414800306,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 37,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:05.896002+00:00",
+      "started_s": 65.5490324110142,
+      "finished_s": 66.6470427820168,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 38,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:07.020746+00:00",
+      "started_s": 66.67377651500283,
+      "finished_s": 67.77216485701501,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 39,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:08.145904+00:00",
+      "started_s": 67.79893538999022,
+      "finished_s": 68.89724754000781,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 40,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:09.278863+00:00",
+      "started_s": 68.93189756799256,
+      "finished_s": 70.07372450799448,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 41,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:10.451254+00:00",
+      "started_s": 70.10428785401746,
+      "finished_s": 71.19728710100753,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 42,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:11.571167+00:00",
+      "started_s": 71.2241979780083,
+      "finished_s": 72.32219620299293,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 43,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:12.696340+00:00",
+      "started_s": 72.3493706890149,
+      "finished_s": 73.44721518098959,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 44,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:13.821670+00:00",
+      "started_s": 73.47470121301012,
+      "finished_s": 74.57224490700173,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 45,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:14.946405+00:00",
+      "started_s": 74.59943628899055,
+      "finished_s": 75.69729083401035,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 46,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:16.077579+00:00",
+      "started_s": 75.73061264201533,
+      "finished_s": 76.82280344999162,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 47,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:17.210447+00:00",
+      "started_s": 76.86348172699218,
+      "finished_s": 77.95293362200027,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 48,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:18.327355+00:00",
+      "started_s": 77.9803863390116,
+      "finished_s": 79.07360586000141,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 49,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:19.449244+00:00",
+      "started_s": 79.10227519800537,
+      "finished_s": 80.19719496101607,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 50,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:20.571824+00:00",
+      "started_s": 80.22485711300396,
+      "finished_s": 81.32230485399486,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    },
+    {
+      "capture": 51,
+      "condition": "pax_off",
+      "utc": "2026-09-24T22:53:21.697217+00:00",
+      "started_s": 81.35024806699948,
+      "finished_s": 82.44708430601167,
+      "sampling_time_s": 6.5536e-05,
+      "sample_count": 16384,
+      "dark_voltage_v": -0.008933715522289276
+    }
+  ],
+  "csv_layout": "capture blank: PAX; -1: dark; otherwise PD capture ID. Sample index is row order within capture; time=index*sampling_time_s.",
+  "pd_input": "in2",
+  "duration_per_condition_s": 30.0,
+  "band_hz": [
+    5.0,
+    1000.0
+  ],
+  "fpga_average": true,
+  "scope_decimation": 8192,
+  "phi1_bias_v": 0.0,
+  "phi2_bias_v": 0.0,
+  "off_definition": "rotation motor commanded off; PAX stays physically mounted and powered",
+  "motor_settle_s": 5.0,
+  "normalization": "(V - dark) / mean(V - dark); no clipping to zero; per-capture traces, per-condition summary",
+  "spectrum": "one-sided mean-removed Hann periodogram, averaged across fixed-length captures",
+  "timing": "FPGA records have host bounds and gaps; PAX host timestamps are not hardware-trigger synchronized",
+  "dark_voltage_v": -0.008933715522289276,
+  "pax_wavelength_nm": 830.0,
+  "motor_off_command_utc": "2026-09-24T22:52:47.305938+00:00"
+}

@@ -221,7 +221,9 @@ class PolarizationLockApp(DiagnosticsMixin, FeedbackMixin):
         """Allocate a dated folder so a run's raw data and report stay together."""
         now = datetime.now()
         root = Path(self.config.results_directory).expanduser() / now.strftime("%Y-%m-%d")
-        base_name = f"{now.strftime('%H%M%S')}_{kind}_{self._experiment_label(requested_name)}"
+        label = self._experiment_label(requested_name) if requested_name.strip() else kind
+        suffix_label = "" if label == kind else f"_{label}"
+        base_name = f"{now.strftime('%H%M%S')}_{kind}{suffix_label}"
         directory = root / base_name
         suffix = 2
         while directory.exists():
