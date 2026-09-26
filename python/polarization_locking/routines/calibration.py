@@ -25,17 +25,6 @@ class SweepPoint:
 
 
 @dataclass
-class CrossSweepPoint:
-    sweep_axis: str
-    bias_axis: str
-    bias_rp_voltage: float
-    sweep_rp_voltage: float
-    rp_out1_voltage: float
-    rp_out2_voltage: float
-    reading: PAXReading
-
-
-@dataclass
 class BidirectionalSweepPoint:
     sweep_axis: str
     bias_axis: str
@@ -229,66 +218,6 @@ class CalibrationSweep:
             print(f"Warning: {invalid_dop_count}/{len(self.points)} sweep readings had an invalid PAX DOP outside [0, 1].")
 
         return self.points
-
-    def run_cross_sweep(
-        self,
-        sweep_axis: str,
-        bias_values: list[float],
-        sweep_values: list[float],
-        settle_s: float,
-        output_file: Optional[str] = None,
-    ) -> list[CrossSweepPoint]:
-        """Sweep one phase at several fixed RP-voltage biases of the other.
-
-        The output CSV records both the electrical state and the PAX-derived
-        state, making each bias slice independently analysable.
-        """
-        if sweep_axis not in {"phi1", "phi2"}:
-            raise ValueError("sweep_axis must be 'phi1' or 'phi2'")
-        bias_axis = "phi2" if sweep_axis == "phi1" else "phi1"
-        lower = self.config.rp_output_min_voltage
-        upper = self.config.rp_output_max_voltage
-        values = [*bias_values, *sweep_values]
-        if any(value < lower or value > upper for value in values):
-            raise ValueError(f"Cross-sweep values must remain within [{lower}, {upper}] V")
-
-        points: list[CrossSweepPoint] = []
-        low_dop_count = 0
-        invalid_dop_count = 0
-        try:
-            for bias in bias_values:
-                for sweep in sweep_values:
-                    out1, out2 = (sweep, bias) if sweep_axis == "phi1" else (bias, sweep)
-                    self.rp.set_output_voltage(out1, out2)
-                    time.sleep(settle_s)
-                    reading = self.pax.read_polarization()
-                    if reading.dop < self.config.minimum_dop:
-                        low_dop_count += 1
-                    if not 0.0 <= reading.dop <= 1.0:
-                        invalid_dop_count += 1
-                    points.append(
-                        CrossSweepPoint(
-                            sweep_axis=sweep_axis,
-                            bias_axis=bias_axis,
-                            bias_rp_voltage=bias,
-                            sweep_rp_voltage=sweep,
-                            rp_out1_voltage=out1,
-                            rp_out2_voltage=out2,
-                            reading=reading,
-                        )
-                    )
-
-        finally:
-            if output_file is not None:
-                self.save_cross_csv(output_file, points)
-        if low_dop_count:
-            print(
-                f"Warning: {low_dop_count}/{len(points)} cross-sweep readings had DOP below "
-                f"{self.config.minimum_dop:.3f}. They were logged, but are not suitable for a rough move."
-            )
-        if invalid_dop_count:
-            print(f"Warning: {invalid_dop_count}/{len(points)} cross-sweep readings had an invalid PAX DOP outside [0, 1].")
-        return points
 
     def run_bidirectional_sweep(
         self,
@@ -893,35 +822,6 @@ class CalibrationSweep:
                     point.reading.s2,
                     point.reading.s3,
                     point.reading.dop,
-                    sphere.u,
-                    sphere.v,
-                ])
-
-    def save_cross_csv(self, output_file: str, points: list[CrossSweepPoint]) -> None:
-        path = Path(output_file)
-        with path.open("w", newline="") as fh:
-            writer = csv.writer(fh)
-            writer.writerow([
-                "sweep_axis", "bias_axis", "bias_rp_v", "sweep_rp_v", "rp_out1_v", "rp_out2_v",
-                "pax_timestamp", "theta", "eta", "s1", "s2", "s3", "dop", "pax_ptotal", "u", "v",
-            ])
-            for point in points:
-                sphere = pax_to_sphere_angles((point.reading.theta, point.reading.eta))
-                writer.writerow([
-                    point.sweep_axis,
-                    point.bias_axis,
-                    point.bias_rp_voltage,
-                    point.sweep_rp_voltage,
-                    point.rp_out1_voltage,
-                    point.rp_out2_voltage,
-                    point.reading.timestamp,
-                    point.reading.theta,
-                    point.reading.eta,
-                    point.reading.s1,
-                    point.reading.s2,
-                    point.reading.s3,
-                    point.reading.dop,
-                    point.reading.ptotal,
                     sphere.u,
                     sphere.v,
                 ])

@@ -62,9 +62,10 @@ phi1-step analysis scripts invoked by the lock CLI.
   when requested with the final `pdf` token, `report.pdf`. Use `live` for
   console-only monitoring or `live <label>` to log raw PAX data and converted
   `u,v` into its own folder.
-- `calibration.py`: reusable one-axis sweep collector that writes raw PAX,
-  Stokes, DOP, and converted `u,v` data to CSV. It also supports cross-sweeps
-  and forward/reverse sweeps that hold one phase at a fixed bias.
+- `calibration.py`: reusable stepped one-axis and forward/reverse collectors.
+  The existing `cross-sweep` menu entry now uses the continuous hardware-sine
+  collector while retaining the normal run folder, recipe, provenance, and
+  report workflow.
 - `control.py`: coordinate conversion and voltage-chain math only.
 - `pax_interface.py` and `rp_interface.py`: instrument wrappers with DOP and
   0–1 V safety checks.
@@ -80,15 +81,18 @@ phi1-step analysis scripts invoked by the lock CLI.
    0.0964 rad of azimuthal (`u`) motion.
 3. Run `sweep phi2 phi2.csv`. A 0.01 V RP command step predicts roughly
    0.3142 rad of polar (`v`) motion while staying on one canonical branch.
-4. Run `cross-sweep phi1 phi1-cross pdf` and `cross-sweep phi2 phi2-cross pdf`.
-   Each scan covers one V_lambda of the selected phase axis: 0–0.7230 V RP
-   command for phi1 and 0–0.2000 V for phi2. For each full fine sweep, the
-   other axis steps through eleven equally spaced biases spanning its own full
-   V_lambda (ten intervals, including zero and one V_lambda). Append `pdf` to
-   any sweep, diagnostic, or PID test command to automatically create a report
-   beside its CSV in the same dated run folder.
-5. Inspect the CSVs for the dominant predicted axis and cross-coupling. Confirm
-   polarity and effective Vlambda before attempting a target move.
+4. Wire OUT1 to IN1 and OUT2 to IN2, then select `cross-sweep` and set
+   `actuator = "both"`. This runs phi1 sine trajectories at every configured
+   phi2 bias, followed by phi2 sine trajectories at every configured phi1
+   bias. The default 0.1 Hz hardware sine records three cycles after one
+   retained warm-up cycle. Bias changes use a ramp and settling interval.
+   `data.csv` remains at PAX rate; `drive_trace.npz` is the single compact
+   experiment-level IN1/IN2 trace and is excluded from git by default.
+5. Inspect the report's measured-versus-commanded waveform, reference coverage,
+   cycle overlays, rising/falling branches, trajectory planes, power, and DoP
+   before interpreting model disagreement. A branch difference is descriptive
+   evidence and is not, by itself, proof of piezo hysteresis. Confirm polarity
+   and effective Vlambda before attempting a target move.
 6. Run `bidirectional-sweep phi1 phi1-hysteresis.csv` and
    `bidirectional-sweep phi2 phi2-hysteresis.csv`. They cover one V_lambda in
    both directions with a 0.5 s dwell, holding phi2=0.1 V for phi1 and

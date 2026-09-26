@@ -21,6 +21,11 @@ class TestCase:
     pax_only: bool = False
 
     def config_names(self) -> list[str]:
+        if self.key == "cross-sweep":
+            common = ("bench_", "rp_", "pax_", "phi1_v_lambda", "phi2_v_lambda", "phi1_actuator_", "phi2_actuator_", "phase_output_", "minimum_dop", "results_directory")
+            legacy = {"cross_sweep_bias_intervals", "cross_sweep_step_voltage"}
+            return [f.name for f in fields(PolarizationLockConfig)
+                    if f.name not in legacy and f.name.startswith(common + self.groups)]
         if self.key == "pax-vibration":
             return ["bench_notes", "bench_pax_location", "bench_voltage_chain", "rp_hostname", "rp_config", "pd_input", "results_directory", "sphere_pole_tolerance"] + [
                 f.name for f in fields(PolarizationLockConfig)
@@ -42,7 +47,7 @@ TESTS = (
     TestCase("live", "PAX monitor", "Log raw PAX angles, Stokes, DOP and u/v until Ctrl+C. No actuator scan; RP outputs are initialized to zero.", "PAX at the location recorded in bench_pax_location.", "_run_live_monitor", ("live_",)),
     TestCase("sweep", "Single-axis voltage sweep", "Step one output through an explicit RP voltage range; hold the other at zero. Log PAX response. This collects data; it does not fit V_pi.", "PAX must observe the selected actuator's optical response; record its location.", "_run_calibration_sweep", ("sweep_",), axis=True, report="sweep"),
     TestCase("bidirectional-sweep", "Forward / reverse sweep", "Sweep one configured V_lambda in both directions with the other actuator at a fixed bias; compare hysteresis.", FINAL, "_run_bidirectional_sweep", ("bidirectional_",), axis=True, report="bidirectional"),
-    TestCase("cross-sweep", "Cross-coupling sweep", "Sweep one V_lambda at each fixed-axis bias across the other V_lambda.", FINAL, "_run_cross_sweep", ("cross_sweep_",), axis=True, report="cross"),
+    TestCase("cross-sweep", "Continuous coupling trajectories", "Continuously sine-drive phi1, phi2, or both while stepping and settling the orthogonal bias; record PAX plus measured OUT1/OUT2 references.", FINAL + " Wire OUT1 to IN1 and OUT2 to IN2 as voltage references. 'both' runs the complete diagnostic for both actuators automatically.", "_run_cross_sweep", ("cross_sweep_",), axis=True, report="cross"),
     TestCase("diagnostic-suite", "Static stability holds", "Record baseline and held fractions of each V_lambda to distinguish drift from motion effects.", FINAL, "_run_diagnostic_suite", ("diagnostic_",), report="diagnostic"),
     TestCase("intensity-diagnostic", "Intensity versus polarization", "Sweep each axis independently; record PAX and photodiode mean/noise with ND correction.", PD, "_run_intensity_diagnostic", ("intensity_", "pd_"), report="intensity"),
     TestCase("phi2-path-test", "Phi2 path isolation", "Sweep phi2 for A only, B only and both paths; pause for manual beam-block changes.", PD, "_run_phi2_path_balance_test", ("intensity_", "pd_"), report="phi2-path-test"),
@@ -73,7 +78,7 @@ BY_KEY = {case.key: case for case in TESTS}
 def default_options(case: TestCase) -> dict:
     options = {"label": case.key, "comment": ""}
     if case.axis:
-        options["axis"] = "phi1"
+        options["actuator" if case.key == "cross-sweep" else "axis"] = "phi1"
     if case.timed:
         options["duration_s"] = 30.0 if case.key == "pax-vibration" else 12.0 if case.scope_only else 60.0
     options["report"] = "pdf"

@@ -56,6 +56,7 @@ class RPController:
         self.p = None
         self.asg1 = None
         self.asg2 = None
+        self._commanded_dc = np.zeros(2, dtype=float)
 
     def _clear_output_routes(self) -> None:
         """Disable competing Red Pitaya output modules so ASGs can drive the intended outputs cleanly."""
@@ -104,6 +105,7 @@ class RPController:
             amplitude=0.0,
             trigger_source="immediately",
         )
+        self._commanded_dc[:] = 0.0
 
         return self.p
 
@@ -215,6 +217,89 @@ class RPController:
             amplitude=0.0,
             trigger_source="immediately",
         )
+        self._commanded_dc[:] = (float(v1), float(v2))
+
+    def ramp_output_voltage(self, v1: float, v2: float, *, duration_s: float, updates_per_s: float = 50.0) -> None:
+        """Move both DC outputs linearly, including a final exact command.
+
+        This is used only between measurement segments. If an ASG was producing
+        a sine, its stored center/bias is the ramp start; changing it to DC ends
+        that waveform before the smooth transition.
+        """
+        self._validate_output_voltage(v1, v2)
+        if duration_s < 0 or updates_per_s <= 0:
+            raise ValueError("Ramp duration must be non-negative and update rate positive")
+        start = self._commanded_dc.copy()
+        steps = max(1, int(round(duration_s * updates_per_s)))
+        interval = duration_s / steps
+        for index in range(1, steps + 1):
+            fraction = index / steps
+            target = start + fraction * (np.asarray((v1, v2), dtype=float) - start)
+            self.set_output_voltage(float(target[0]), float(target[1]))
+            if interval:
+                time.sleep(interval)
+
+    def set_continuous_sine(
+        self, *, target_axis: str, fixed_voltage: float, center: float,
+        amplitude: float, frequency_hz: float,
+    ) -> dict[str, float]:
+        """Use one hardware ASG for a sine and hold the orthogonal ASG at DC."""
+        if self.p is None or self.asg1 is None or self.asg2 is None:
+            raise RuntimeError("Red Pitaya connection is not established")
+        if target_axis not in {"phi1", "phi2"}:
+            raise ValueError("target_axis must be phi1 or phi2")
+        if frequency_hz <= 0 or amplitude <= 0:
+            raise ValueError("Sine frequency and amplitude must be positive")
+        low, high = center - amplitude, center + amplitude
+        if target_axis == "phi1":
+            self._validate_output_voltage(low, fixed_voltage)
+            self._validate_output_voltage(high, fixed_voltage)
+            target, fixed = self.asg1, self.asg2
+            self._commanded_dc[:] = (center, fixed_voltage)
+        else:
+            self._validate_output_voltage(fixed_voltage, low)
+            self._validate_output_voltage(fixed_voltage, high)
+            target, fixed = self.asg2, self.asg1
+            self._commanded_dc[:] = (fixed_voltage, center)
+        fixed.setup(waveform="dc", offset=float(fixed_voltage), amplitude=0.0, trigger_source="immediately")
+        target.setup(
+            waveform="sin", frequency=float(frequency_hz), offset=float(center),
+            amplitude=float(amplitude), trigger_source="immediately",
+        )
+        return {
+            "frequency_hz": float(target.frequency),
+            "center_v": float(target.offset),
+            "amplitude_v": float(target.amplitude),
+            "fixed_v": float(fixed.offset),
+        }
+
+    @contextmanager
+    def dual_reference_monitor(self, *, block_duration_s: float):
+        """Configure simultaneous IN1/IN2 captures and restore scope state."""
+        if self.p is None:
+            raise RuntimeError("Red Pitaya connection is not established")
+        scope = self.p.rp.scope
+        names = (
+            "input1", "input2", "duration", "decimation", "average",
+            "trigger_source", "trigger_delay", "ch1_active", "ch2_active",
+            "rolling_mode", "trace_average",
+        )
+        previous = {name: getattr(scope, name) for name in names}
+        delay_register = scope._trigger_delay_register
+        try:
+            scope.setup(
+                input1="in1", input2="in2", duration=float(block_duration_s),
+                decimation=65536, average=True, trigger_source="immediately",
+                trigger_delay=0.0, ch1_active=True, ch2_active=True,
+                rolling_mode=False, trace_average=1,
+            )
+            yield scope
+        finally:
+            try:
+                scope.stop()
+            finally:
+                scope.setup(**previous)
+                scope._trigger_delay_register = delay_register
 
     def set_output_sweep(self, v1_values: list[float], v2_values: list[float], delay_s: float = 0.1) -> None:
         if len(v1_values) != len(v2_values):

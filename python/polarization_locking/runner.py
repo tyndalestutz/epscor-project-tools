@@ -109,7 +109,7 @@ def execute(case, config, options, *, app_factory=None):
             write_json(status_path, state)
             kwargs = {"output_file": str(paths.csv)}
             if case.axis:
-                kwargs["axis"] = options["axis"]
+                kwargs["axis"] = options.get("actuator", options.get("axis"))
             if case.timed or "gain_scan" in case.flags:
                 kwargs["duration_s"] = options.get("duration_s", 0.0)
             kwargs.update({flag: True for flag in case.flags})
@@ -117,6 +117,11 @@ def execute(case, config, options, *, app_factory=None):
                 kwargs = {}
             result = getattr(app, case.method)(**kwargs)
             state["status"] = "completed"
+            if case.key == "cross-sweep" and isinstance(result, dict):
+                # Keep achieved rates, timing assumptions, segment status, and
+                # transition provenance in committed JSON even when the raw
+                # experiment-level drive_trace.npz remains local.
+                state["acquisition"] = result
             if case.key == "pax-live":
                 result = result or {}
                 state["data_disposition"] = {"save": "saved", "discard": "discard"}.get(result.get("disposition"), "temporary")

@@ -192,6 +192,12 @@ def add_coupling_page(pdf: PdfPages, input_file: Path, png_file: Path | None = N
 
 def add_report(pdf: PdfPages, input_file: Path, png_directory: Path | None = None) -> None:
     """Add both response curves and the coupling/Vlambda summary."""
+    with input_file.open(newline="") as handle:
+        fields = set(next(csv.reader(handle), ()))
+    if "target_actuator" in fields:
+        from .plot_continuous_cross_sweep import add_report as add_continuous_report
+        add_continuous_report(pdf, input_file)
+        return
     add_page(pdf, input_file, png_file=png_directory / "response.png" if png_directory else None)
     add_coupling_page(pdf, input_file, png_file=png_directory / "coupling-summary.png" if png_directory else None)
 

@@ -73,6 +73,8 @@ def validate(config, case, options):
         raise ValueError(f"Options must be: {', '.join(expected)}")
     for name, value in options.items():
         coerce(value, type(expected[name]))
+    if "actuator" in options and options["actuator"] not in {"phi1", "phi2", "both"}:
+        raise ValueError("actuator must be phi1, phi2, or both")
     if "axis" in options and options["axis"] not in {"phi1", "phi2"}:
         raise ValueError("axis must be phi1 or phi2")
     if "duration_s" in options and options["duration_s"] <= 0:
@@ -124,6 +126,28 @@ def validate(config, case, options):
         if max(config.stokes_phase_sweep_sample_period_s, config.pax_measurement_wait_s +
                16384 * 8e-9 * config.pd_scope_decimation) * frequency > 0.05:
             raise ValueError("Stokes sweep needs at least 20 nominal samples per drive cycle; slow the drive or shorten acquisition settings")
+    if case.key == "cross-sweep":
+        frequency = config.cross_sweep_sine_frequency_hz
+        center = config.cross_sweep_sine_center_voltage
+        amplitude = config.cross_sweep_sine_amplitude_voltage
+        if frequency <= 0 or amplitude <= 0:
+            raise ValueError("Continuous cross-sweep frequency and amplitude must be positive")
+        if not config.rp_output_min_voltage <= center - amplitude < center + amplitude <= config.rp_output_max_voltage:
+            raise ValueError("Continuous cross-sweep center +/- amplitude must fit the RP output range")
+        if config.cross_sweep_warmup_cycles < 0 or config.cross_sweep_recorded_cycles < 1:
+            raise ValueError("Cross-sweep needs zero or more warm-up cycles and at least one recorded cycle")
+        for name in ("cross_sweep_phi1_bias_voltages", "cross_sweep_phi2_bias_voltages"):
+            biases = getattr(config, name)
+            if not biases or any(not config.rp_output_min_voltage <= value <= config.rp_output_max_voltage for value in biases):
+                raise ValueError(f"{name} must be nonempty and remain within the RP output range")
+        if not 0 < config.cross_sweep_reference_sample_rate_hz <= 1000:
+            raise ValueError("Cross-sweep saved reference rate must be within (0, 1000] samples/s")
+        if not 0 < config.cross_sweep_scope_block_s <= 8.5:
+            raise ValueError("Cross-sweep scope blocks must be within (0, 8.5] s at maximum FPGA decimation")
+        if config.cross_sweep_bias_ramp_updates_per_s <= 0 or config.cross_sweep_min_pax_samples_per_cycle <= 0:
+            raise ValueError("Cross-sweep ramp update rate and sample warning threshold must be positive")
+        if config.pax_fresh_read_timeout_s <= 0:
+            raise ValueError("PAX freshness timeout must be positive")
     for name in case.config_names():
         value = values[name]
         if isinstance(value, (int, float)) and ("sample_period_s" in name or "step_voltage" in name or name.endswith("step_rp_v")) and value <= 0:
@@ -215,7 +239,10 @@ def load_recipe(path):
     options = default_options(case)
     if not isinstance(data.get("options", {}), dict):
         raise ValueError("Recipe options must be an object")
-    options.update(data.get("options", {}))
+    loaded_options = dict(data.get("options", {}))
+    if case.key == "cross-sweep" and "axis" in loaded_options and "actuator" not in loaded_options:
+        loaded_options["actuator"] = loaded_options.pop("axis")
+    options.update(loaded_options)
     # Migrate the refactor's temporary defaults without changing recorded files.
     old_results = Path(__file__).resolve().parent / "results"
     if Path(config.results_directory).expanduser().resolve() == old_results:

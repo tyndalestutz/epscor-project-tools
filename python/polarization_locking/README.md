@@ -233,8 +233,13 @@ Historical gains and Vπ/Vλ values are candidates, not a current calibration.
 
 Each menu run creates `experiments/polarization_locking/YYYY-MM-DD/HHMMSS_test_label/`
 with `recipe.json`, `run.json`, `console.log`, and `report.pdf` if reporting
-succeeds. Measurement tests also write `data.csv`; contrast adds `visibility.json`,
-and PD mode retains raw scope/dark captures. The one-shot `rough` move records results in the log.
+succeeds. Measurement tests also write `data.csv`; continuous `cross-sweep`
+adds one compressed `drive_trace.npz` for all actuators, biases, cycles, and
+scope captures plus small `acquisition.json` timing/status metadata. The raw
+electrical reference is ignored by git while the CSV, metadata, and report
+remain normal experiment artifacts. Contrast adds
+`visibility.json`, and PD mode retains raw scope/dark captures. The one-shot
+`rough` move records results in the log.
 Review acquisition status, report status, and physical validity separately.
 
 ```bash

@@ -124,14 +124,27 @@ class PolarizationLockConfig:
     single_axis_pid_settle_s: float = 0.18
     single_axis_pid_target_settle_s: float = 0.75
 
-    # Cross-sweep defaults for characterizing phase cross-coupling. Each
-    # swept axis covers one of its own V_lambda values, and the fixed/bias
-    # axis spans its *entire* V_lambda in cross_sweep_bias_intervals equally
-    # sized intervals. Ten intervals yields eleven bias slices, including
-    # both endpoints.
+    # Legacy stepped cross-sweep settings are retained so old recipes still
+    # load, but the cross-sweep workflow now uses the continuous settings
+    # below. ``actuator=both`` (the run option, formerly ``axis``) runs the
+    # complete phi1-then-phi2 diagnostic in one parent experiment.
     cross_sweep_bias_intervals: int = 10
     cross_sweep_step_voltage: float = 0.005
-    cross_sweep_settle_s: float = 0.25
+    cross_sweep_sine_frequency_hz: float = 0.1
+    cross_sweep_sine_center_voltage: float = 0.3875
+    cross_sweep_sine_amplitude_voltage: float = 0.3875
+    cross_sweep_warmup_cycles: int = 1
+    cross_sweep_recorded_cycles: int = 3
+    cross_sweep_phi1_bias_voltages: tuple[float, ...] = (0.0, 0.0775, 0.155, 0.2325, 0.31, 0.3875, 0.465, 0.5425, 0.62, 0.6975, 0.775)
+    cross_sweep_phi2_bias_voltages: tuple[float, ...] = (0.0, 0.0775, 0.155, 0.2325, 0.31, 0.3875, 0.465, 0.5425, 0.62, 0.6975, 0.775)
+    cross_sweep_settle_s: float = 1.0
+    cross_sweep_bias_ramp_s: float = 1.0
+    cross_sweep_bias_ramp_updates_per_s: float = 50.0
+    # Pyrpl's longest FPGA scope decimation acquires at about 1.9 kSa/s.
+    # Traces are boxcar-decimated after capture to this compact saved rate.
+    cross_sweep_reference_sample_rate_hz: float = 400.0
+    cross_sweep_scope_block_s: float = 8.0
+    cross_sweep_min_pax_samples_per_cycle: float = 20.0
 
     # Bidirectional V_lambda characterizations use the cleanest bias slices
     # identified in the first cross-sweep.  The slower dwell makes forward /

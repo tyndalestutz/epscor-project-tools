@@ -2,3 +2,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 # Raw data, console.log, recipes, and reports are intentional run artifacts.
+# Decimated electrical references are reproducible from retained run metadata
+# but remain bulk binary acquisition data.
+**/drive_trace.npz

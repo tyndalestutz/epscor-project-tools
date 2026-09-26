@@ -114,44 +114,36 @@ class DiagnosticsMixin:
             sweep_values.append(one_lambda_rp_voltage)
         return sweep_values
 
-    def _cross_sweep_bias_values(self, sweep_axis: str) -> list[float]:
-        """Return full-V_lambda fixed-axis biases, including both endpoints."""
-        if sweep_axis not in {"phi1", "phi2"}:
-            raise ValueError("Cross-sweep axis must be 'phi1' or 'phi2'")
-        intervals = self.config.cross_sweep_bias_intervals
-        if intervals < 1:
-            raise ValueError("cross_sweep_bias_intervals must be at least one")
-        bias_axis = "phi2" if sweep_axis == "phi1" else "phi1"
-        return np.linspace(0.0, self._one_lambda_rp_voltage(bias_axis), intervals + 1).tolist()
-
-    def _run_cross_sweep(self, axis: str, output_file: str) -> None:
-        from .calibration import CalibrationSweep
-        sweep_values = self._one_lambda_sweep_values(axis, self.config.cross_sweep_step_voltage)
-        bias_values = self._cross_sweep_bias_values(axis)
-        bias_axis = "phi2" if axis == "phi1" else "phi1"
-        print(
-            f"Cross-sweep plan: {len(sweep_values)} {axis} points per slice × {len(bias_values)} "
-            f"{bias_axis} biases spanning 0..{bias_values[-1]:.4f} V RP "
-            f"({len(sweep_values) * len(bias_values)} total readings)"
+    def _run_cross_sweep(self, axis: str, output_file: str) -> dict | None:
+        from .continuous_cross_sweep import acquire_continuous_cross_sweep
+        axes = ("phi1", "phi2") if axis == "both" else (axis,)
+        segments = sum(
+            len(getattr(self.config, f"cross_sweep_{'phi2' if target == 'phi1' else 'phi1'}_bias_voltages"))
+            for target in axes
         )
-        sweep = CalibrationSweep(self.config, rp=self.rp, pax=self.pax)
+        seconds_per_segment = (
+            (self.config.cross_sweep_warmup_cycles + self.config.cross_sweep_recorded_cycles)
+            / self.config.cross_sweep_sine_frequency_hz
+            + self.config.cross_sweep_bias_ramp_s + self.config.cross_sweep_settle_s
+        )
+        print(
+            f"Continuous coupling plan: target={axis}; {segments} bias segments; "
+            f"{self.config.cross_sweep_sine_frequency_hz:g} Hz hardware sine; "
+            f"approximately {segments * seconds_per_segment / 60:.1f} minutes."
+        )
+        print("OUT1->IN1 and OUT2->IN2 are measured references; command and measurement remain separate.")
         completed = False
+        metadata = None
         try:
-            sweep.run_cross_sweep(
-                sweep_axis=axis,
-                bias_values=bias_values,
-                sweep_values=sweep_values,
-                settle_s=self.config.cross_sweep_settle_s,
-                output_file=output_file,
-            )
+            metadata = acquire_continuous_cross_sweep(self.rp, self.pax, self.config, output_file, axis)
             completed = True
         finally:
-            sweep.disconnect()
             self._applied_rp_voltages[:] = 0.0
             if completed:
-                print(f"Cross-sweep saved to {output_file}")
+                print(f"Continuous coupling data saved to {output_file} and drive_trace.npz")
             else:
-                print("Cross-sweep aborted; outputs were returned to zero.")
+                print("Continuous coupling run aborted; partial data was retained and outputs were returned to zero.")
+        return metadata
 
     def _run_bidirectional_sweep(self, axis: str, output_file: str) -> None:
         from .calibration import CalibrationSweep

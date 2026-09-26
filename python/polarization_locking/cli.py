@@ -49,6 +49,7 @@ class DiagnosticsMenu:
         entries += [("config", key, getattr(config, key)) for key in names]
         hints = {
             "axis": "phi1 = OUT1; phi2 = OUT2",
+            "actuator": "phi1 = OUT1; phi2 = OUT2; both = automatic complete phi1 then phi2 diagnostic",
             "duration_s": "seconds; calibration/settling adds time",
             "report": "pdf/both" if case.report.startswith("analyze_") or case.report == "power" else "pdf",
             "target_mode": "current = capture each run; explicit = target_u/target_v",

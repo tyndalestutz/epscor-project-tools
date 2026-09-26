@@ -50,7 +50,7 @@ of a measurement CSV. Report regeneration is offline.
 | --- | --- | --- |
 | `sweep` | Step one output through an explicit RP voltage range; hold the other at zero. Log PAX response. This collects data; it does not fit V_pi. | PAX must observe the selected actuator's optical response; record its location. |
 | `bidirectional-sweep` | Sweep one configured V_lambda in both directions with the other actuator at a fixed bias; compare hysteresis. | PAX at final output; both paths open unless prompted. |
-| `cross-sweep` | Sweep one V_lambda at each fixed-axis bias across the other V_lambda. | PAX at final output; both paths open unless prompted. |
+| `cross-sweep` | Hardware-sine drive phi1, phi2, or `both` for repeated cycles at each settled orthogonal bias. Preserve warm-up PAX rows, interpolate measured IN1/IN2 references to PAX time, and report cycle/branch/plane diagnostics. `both` runs phi1 then phi2 automatically in one experiment. | PAX at final output; both paths open. Wire OUT1→IN1 and OUT2→IN2 as direct RP output references; these inputs are not photodiodes for this test. |
 | `diagnostic-suite` | Record baseline and held fractions of each V_lambda to distinguish drift from motion effects. | PAX at final output; both paths open unless prompted. |
 | `intensity-diagnostic` | Sweep each axis independently; record PAX and photodiode mean/noise with ND correction. | PAX at final output; both paths open unless prompted. Photodiode connected to configured RP input. |
 | `phi1-step-map` | Acquire settled forward/reverse voltage steps for phase-slope and hysteresis analysis. | PAX at first-NPBS D port (requires moving it from the current C position). Photodiode at final F on the configured RP input. |

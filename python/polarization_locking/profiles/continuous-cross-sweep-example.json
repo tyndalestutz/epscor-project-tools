@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "test": "cross-sweep",
+  "options": {
+    "label": "continuous-coupling-both",
+    "comment": "Both runs the complete phi1 and phi2 continuous diagnostic automatically.",
+    "actuator": "both",
+    "report": "pdf"
+  },
+  "config": {
+    "cross_sweep_sine_frequency_hz": 0.1,
+    "cross_sweep_sine_center_voltage": 0.3875,
+    "cross_sweep_sine_amplitude_voltage": 0.3875,
+    "cross_sweep_warmup_cycles": 1,
+    "cross_sweep_recorded_cycles": 3,
+    "cross_sweep_phi1_bias_voltages": [
+      0.0,
+      0.0775,
+      0.155,
+      0.2325,
+      0.31,
+      0.3875,
+      0.465,
+      0.5425,
+      0.62,
+      0.6975,
+      0.775
+    ],
+    "cross_sweep_phi2_bias_voltages": [
+      0.0,
+      0.0775,
+      0.155,
+      0.2325,
+      0.31,
+      0.3875,
+      0.465,
+      0.5425,
+      0.62,
+      0.6975,
+      0.775
+    ],
+    "cross_sweep_settle_s": 1.0,
+    "cross_sweep_bias_ramp_s": 1.0,
+    "cross_sweep_bias_ramp_updates_per_s": 50.0,
+    "cross_sweep_reference_sample_rate_hz": 400.0,
+    "cross_sweep_scope_block_s": 8.0,
+    "cross_sweep_min_pax_samples_per_cycle": 20.0
+  }
+}

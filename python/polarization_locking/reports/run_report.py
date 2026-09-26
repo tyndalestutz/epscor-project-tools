@@ -87,6 +87,9 @@ def add_overview(pdf, case, paths, config, options, state, rows):
         ("Operator setup notes", config.bench_notes),
         ("Data", samples + "\nSource: data.csv; full acquisition settings: recipe.json; status: run.json"),
     ]
+    if case.report == "cross" and rows and "target_actuator" in rows[0]:
+        from .plot_continuous_cross_sweep import summary_text
+        sections.insert(1, ("Diagnostic summary", summary_text(paths.csv)))
     if rows and any(np.isfinite(column(rows, "dop"))):
         dop = column(rows, "dop")
         finite = dop[np.isfinite(dop)]
@@ -128,7 +131,7 @@ def add_telemetry(pdf, rows):
     groups = [
         ("Normalized Stokes", ("s1", "s2", "s3"), "Stokes"),
         ("Raw degree of polarization", ("dop",), "DOP"),
-        ("Actuator command history", ("rp_out1_v", "rp_out2_v", "phi1_rp_voltage", "phi2_rp_voltage", "phi1_rp_command_estimated_v"), "RP command (V)"),
+        ("Actuator command / reference history", ("rp_out1_v", "rp_out2_v", "phi1_rp_voltage", "phi2_rp_voltage", "phi1_rp_command_estimated_v", "nominal_target_command_v", "measured_in1_v", "measured_in2_v"), "RP output (V)"),
         ("Photodiode signal", ("pd_mean_v", "pd_v"), "PD (V)"),
         ("PAX total power", ("pax_ptotal", "ptotal"), "PAX native power units"),
         ("Sphere coordinates", ("u", "v"), "Angle (rad)"),
