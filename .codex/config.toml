@@ -1,0 +1,26 @@
+[agents]
+enabled = true
+
+# When Codex creates a generic subagent and doesn't explicitly choose
+# something else, use this as the slightly-conservative default.
+default_subagent_model = "gpt-5.6-terra"
+default_subagent_reasoning_effort = "medium"
+
+[agents.cheap]
+description = """
+Use for low-risk mechanical repository work where the desired behavior is
+already clear: documentation, naming, formatting, straightforward plotting,
+simple config/schema propagation, symbol lookup, and small boilerplate edits.
+Do not use for experimental interpretation, acquisition timing, hardware
+control semantics, or model discrepancies.
+"""
+config_file = "agents/cheap.toml"
+
+[agents.reviewer]
+description = """
+Use for an independent review of ordinary implementation work, tests,
+regressions, data handling, and whether a change preserves intended behavior.
+Do not substitute this role for the primary agent on difficult experimental
+physics or hardware-debugging questions.
+"""
+config_file = "agents/reviewer.toml"
