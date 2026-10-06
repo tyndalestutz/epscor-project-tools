@@ -16,7 +16,8 @@ from .visibility import _scope_sleep
 
 
 CSV_FIELDS = (
-    "utc", "elapsed_s", "pax_timestamp", "pax_requested_s", "pax_received_s",
+    "utc", "elapsed_s", "pax_transaction_midpoint_s", "pax_latency_correction_s",
+    "pax_timestamp", "pax_requested_s", "pax_received_s",
     "pax_timing_uncertainty_s", "sub_run", "target_actuator", "segment_id",
     "bias_index", "fixed_actuator", "fixed_command_v", "sine_frequency_hz",
     "sine_center_v", "sine_amplitude_v", "nominal_target_command_v",
@@ -142,11 +143,14 @@ def _write_csv(path: Path, pax_rows: list[dict[str, Any]], trace: dict[str, list
     os.replace(temporary, path)
 
 
-def _pax_sample(pax: Any, origin: float, segment: dict[str, Any]) -> dict[str, Any]:
+def _pax_sample(
+    pax: Any, origin: float, segment: dict[str, Any], latency_correction_s: float,
+) -> dict[str, Any]:
     requested = time.monotonic() - origin
     reading = pax.read_fresh_polarization()
     received = time.monotonic() - origin
-    elapsed = (requested + received) / 2
+    transaction_midpoint = (requested + received) / 2
+    elapsed = transaction_midpoint - latency_correction_s
     local = elapsed - segment["drive_started_s"]
     phase_rad = (2 * math.pi * segment["frequency_hz"] * local) % (2 * math.pi)
     raw = dict(pax.last_raw_record or {})
@@ -165,6 +169,8 @@ def _pax_sample(pax: Any, origin: float, segment: dict[str, Any]) -> dict[str, A
     cycle = math.floor(local * segment["frequency_hz"]) - segment["warmup_cycles"]
     return {
         "utc": datetime.now(timezone.utc).isoformat(), "elapsed_s": elapsed,
+        "pax_transaction_midpoint_s": transaction_midpoint,
+        "pax_latency_correction_s": latency_correction_s,
         "pax_timestamp": reading.timestamp, "pax_requested_s": requested,
         "pax_received_s": received, "pax_timing_uncertainty_s": (received - requested) / 2,
         "sub_run": segment["sub_run"], "target_actuator": segment["target_actuator"],
@@ -184,6 +190,79 @@ def _pax_sample(pax: Any, origin: float, segment: dict[str, Any]) -> dict[str, A
     }
 
 
+def _capture_start_timing(
+    scope: Any, origin: float, host_start: float, host_finish: float,
+    sample_count: int, dt: float,
+) -> tuple[float, float, dict[str, Any]]:
+    """Associate the first ADC sample with host monotonic time.
+
+    Pyrpl's FPGA exposes a 64-bit 125-MHz trigger counter and a current
+    counter in the same clock domain. Reading the current counter with a
+    bracketed host timestamp maps the exact trigger into host time without
+    using network-delayed scope completion. The older host request/completion
+    bracket remains an explicit fallback for test doubles or older FPGA builds.
+    """
+    trace_span = (sample_count - 1) * dt
+    end_derived_start = host_finish - trace_span
+    fallback_start = (host_start + end_derived_start) / 2
+    fallback_uncertainty = abs(end_derived_start - host_start) / 2 + dt
+    detail: dict[str, Any] = {
+        "source": "host_request_completion_fallback",
+        "host_scope_request_s": host_start,
+        "host_scope_result_s": host_finish,
+        "trace_span_s": trace_span,
+        "capture_start_s": fallback_start,
+        "uncertainty_s": fallback_uncertainty,
+    }
+    try:
+        current_requested = time.monotonic() - origin
+        current_tick = int(scope.current_timestamp)
+        current_received = time.monotonic() - origin
+        trigger_tick = int(scope.trigger_timestamp)
+        trigger_received = time.monotonic() - origin
+        correction = float(getattr(scope.parent, "frequency_correction", 1.0))
+        if not math.isfinite(correction) or correction <= 0:
+            raise ValueError(f"invalid FPGA frequency correction {correction!r}")
+        tick_period = 8e-9 / correction
+        trigger_age = ((current_tick - trigger_tick) & 0xFFFFFFFFFFFFFFFF) * tick_period
+        current_midpoint = (current_requested + current_received) / 2
+        capture_start = current_midpoint - trigger_age
+        if not (
+            0 <= trigger_age <= trace_span + 5.0
+            and host_start - 1.0 <= capture_start <= host_finish
+        ):
+            raise ValueError(
+                f"implausible FPGA timing: age={trigger_age:g}s, start={capture_start:g}s"
+            )
+        # The counter read is bracketed to sub-millisecond precision. Retain a
+        # conservative 100-ppm allowance for an uncalibrated RP oscillator and
+        # half a raw scope interval for the first-sample time convention.
+        uncertainty = (
+            (current_received - current_requested) / 2
+            + trigger_age * 100e-6
+            + dt / 2
+        )
+        detail.update({
+            "source": "fpga_trigger_timestamp",
+            "capture_start_s": capture_start,
+            "uncertainty_s": uncertainty,
+            "fpga_current_tick": current_tick,
+            "fpga_trigger_tick": trigger_tick,
+            "fpga_tick_period_s": tick_period,
+            "fpga_trigger_age_s": trigger_age,
+            "host_current_query_requested_s": current_requested,
+            "host_current_query_received_s": current_received,
+            "host_trigger_query_received_s": trigger_received,
+            "host_result_after_trace_end_s": host_finish - (capture_start + trace_span),
+            "fallback_capture_start_s": fallback_start,
+            "fallback_uncertainty_s": fallback_uncertainty,
+        })
+        return capture_start, uncertainty, detail
+    except (AttributeError, OSError, RuntimeError, TypeError, ValueError) as exc:
+        detail["fpga_timing_error"] = f"{type(exc).__name__}: {exc}"
+        return fallback_start, fallback_uncertainty, detail
+
+
 def _append_capture(
     scope: Any, pax: Any, config: Any, origin: float, segment: dict[str, Any],
     capture_id: int, trace: dict[str, list[np.ndarray]], pax_rows: list[dict[str, Any]],
@@ -196,7 +275,9 @@ def _append_capture(
         while not future.done():
             if time.monotonic() >= deadline:
                 raise TimeoutError("Dual RP reference capture timed out")
-            pax_rows.append(_pax_sample(pax, origin, segment))
+            pax_rows.append(_pax_sample(
+                pax, origin, segment, config.cross_sweep_pax_latency_s,
+            ))
             _scope_sleep(0.001)
         result = future.result()
     finally:
@@ -210,11 +291,10 @@ def _append_capture(
     relative, in1, in2, saved_rate = _boxcar_decimate(
         raw1, raw2, dt, config.cross_sweep_reference_sample_rate_hz,
     )
-    # Combine the request-time and completion-time estimates of the first ADC
-    # sample. Their disagreement is retained as timing uncertainty.
-    end_derived_start = host_finish - (len(raw1) - 1) * dt
-    capture_start = (host_start + end_derived_start) / 2
-    uncertainty = abs(end_derived_start - host_start) / 2 + dt
+    capture_start, uncertainty, timing = _capture_start_timing(
+        scope, origin, host_start, host_finish, len(raw1), dt,
+    )
+    segment.setdefault("reference_captures", []).append({"capture_id": capture_id, **timing})
     times = capture_start + relative
     clipped = bool(np.any(np.abs(raw1) >= 8190 / 8192) or np.any(np.abs(raw2) >= 8190 / 8192))
     local = times - segment["drive_started_s"]
@@ -242,6 +322,57 @@ def _append_capture(
     return capture_id + 1, clipped, saved_rate
 
 
+def _reference_validation(
+    trace: dict[str, list[np.ndarray]], segments: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Describe whether each target loopback represents the commanded sine.
+
+    This does not calibrate delivered actuator voltage. It rejects gross
+    amplitude/polarity failures so downstream reports cannot treat a present
+    but physically misleading RP input as a trustworthy voltage reference.
+    """
+    arrays = _concatenate_trace(trace)
+    results = []
+    for segment in segments:
+        segment_id = segment["segment_id"]
+        mask = (arrays["segment_id"] == segment_id) & arrays["valid_measurement"]
+        target = arrays["in1_v"][mask] if segment["target_actuator"] == "phi1" else arrays["in2_v"][mask]
+        times = arrays["time_s"][mask]
+        if len(target) < 4:
+            results.append({
+                "segment_id": segment_id, "target_actuator": segment["target_actuator"],
+                "status": "insufficient_data",
+            })
+            continue
+        phase = 2 * math.pi * segment["frequency_hz"] * (
+            times - segment["drive_started_s"]
+        )
+        design = np.column_stack((np.ones(len(target)), np.sin(phase), np.cos(phase)))
+        coefficients = np.linalg.lstsq(design, target, rcond=None)[0]
+        fitted = design @ coefficients
+        measured_amplitude = float(np.hypot(coefficients[1], coefficients[2]))
+        gain = measured_amplitude / segment["amplitude_v"]
+        phase_deg = float(np.degrees(np.arctan2(coefficients[2], coefficients[1])))
+        phase_error_deg = float((phase_deg + 180.0) % 360.0 - 180.0)
+        residual_rms = float(np.sqrt(np.mean((target - fitted) ** 2)))
+        trustworthy = (
+            0.5 <= gain <= 1.5
+            and abs(phase_error_deg) <= 45.0
+            and residual_rms <= max(0.02, 0.1 * measured_amplitude)
+        )
+        results.append({
+            "segment_id": segment_id, "target_actuator": segment["target_actuator"],
+            "status": "trustworthy" if trustworthy else "failed_sanity_check",
+            "measured_center_v": float(coefficients[0]),
+            "measured_amplitude_v": measured_amplitude,
+            "amplitude_gain_measured_per_command": gain,
+            "phase_deg_relative_to_command_clock": phase_error_deg,
+            "residual_rms_v": residual_rms,
+            "criteria": "gain 0.5..1.5; absolute phase <=45 deg; residual <=max(0.02 V, 10% measured amplitude)",
+        })
+    return results
+
+
 def acquire_continuous_cross_sweep(
     rp: Any, pax: Any, config: Any, output_file: str | Path, actuator: str,
 ) -> dict[str, Any]:
@@ -259,8 +390,21 @@ def acquire_continuous_cross_sweep(
         "requested_reference_sample_rate_hz": config.cross_sweep_reference_sample_rate_hz,
         "time_origin": "host_monotonic experiment origin; not persisted as an absolute clock",
         "synchronization": (
-            "RP sample times combine scope request/completion timing; PAX rows use the midpoint "
-            "of host request/receive times. Per-sample uncertainty and capture gaps are retained."
+            "RP sample times use the FPGA scope trigger/current 125-MHz counters mapped into host "
+            "monotonic time by a bracketed counter read. A host request/completion bracket is "
+            "retained per capture and used only as an explicit fallback. PAX elapsed_s is the host "
+            "request/receive midpoint minus the configured empirical latency. Raw timestamps, "
+            "uncertainties, counter values, and capture gaps are retained."
+        ),
+        "reference_timing_primary": "fpga_trigger_timestamp",
+        "reference_timing_fallback": "host_request_completion_bracket",
+        "fpga_counter_scale_uncertainty_assumption": "100 ppm plus half a raw scope interval",
+        "pax_latency_correction_s": config.cross_sweep_pax_latency_s,
+        "pax_latency_correction_basis": (
+            "Empirical 2026-09-29 cross-sweep lag sensitivity: branch separation was minimized "
+            "with PAX records associated 0.10--0.13 s before the transaction midpoint. This is "
+            "an empirical association estimate, not an instrument-provided timestamp; "
+            "branch matching cannot distinguish timing from physical hysteresis or drift."
         ),
         "reference_channels": {"in1": "OUT1 / phi1", "in2": "OUT2 / phi2"},
         "segments": [],
@@ -278,12 +422,13 @@ def acquire_continuous_cross_sweep(
                     transition_started = time.monotonic() - origin
                     v1, v2 = ((config.cross_sweep_sine_center_voltage, bias)
                               if target_axis == "phi1" else (bias, config.cross_sweep_sine_center_voltage))
-                    rp.ramp_output_voltage(
+                    transition_ramp = rp.ramp_output_voltage(
                         v1, v2, duration_s=config.cross_sweep_bias_ramp_s,
                         updates_per_s=config.cross_sweep_bias_ramp_updates_per_s,
                     )
                     transition_finished = time.monotonic() - origin
                     time.sleep(config.cross_sweep_settle_s)
+                    settle_finished = time.monotonic() - origin
                     settings = rp.set_continuous_sine(
                         target_axis=target_axis, fixed_voltage=bias,
                         center=config.cross_sweep_sine_center_voltage,
@@ -301,7 +446,9 @@ def acquire_continuous_cross_sweep(
                         "minimum_dop": config.minimum_dop,
                         "transition_started_s": transition_started,
                         "transition_finished_s": transition_finished,
+                        "transition_ramp": transition_ramp,
                         "settle_s": config.cross_sweep_settle_s,
+                        "settle_finished_s": settle_finished,
                         "scope_sampling_time_s": float(scope.sampling_time),
                         "scope_duration_s": float(scope.duration),
                         "scope_decimation": int(scope.decimation),
@@ -359,10 +506,11 @@ def acquire_continuous_cross_sweep(
         raise
     finally:
         try:
-            rp.ramp_output_voltage(
+            cleanup_ramp = rp.ramp_output_voltage(
                 0.0, 0.0, duration_s=config.cross_sweep_bias_ramp_s,
                 updates_per_s=config.cross_sweep_bias_ramp_updates_per_s,
             )
+            metadata["cleanup_ramp"] = cleanup_ramp
         finally:
             _save_trace(trace_path, trace, metadata)
             _write_csv(path, pax_rows, trace)
@@ -376,6 +524,8 @@ def acquire_continuous_cross_sweep(
     samples_per_cycle = pax_rate / frequency
     metadata["measured_pax_rate_hz"] = pax_rate if math.isfinite(pax_rate) else None
     metadata["estimated_pax_samples_per_cycle"] = samples_per_cycle if math.isfinite(samples_per_cycle) else None
+    metadata["reference_validation"] = _reference_validation(trace, metadata["segments"])
+    metadata["all_target_references_trustworthy"] = bool(metadata["reference_validation"]) and all(item["status"] == "trustworthy" for item in metadata["reference_validation"])
     if math.isfinite(samples_per_cycle) and samples_per_cycle < config.cross_sweep_min_pax_samples_per_cycle:
         print(
             f"Warning: measured PAX density is {samples_per_cycle:.1f} samples/cycle, below "

@@ -56,6 +56,55 @@ def test_reference_decimation_and_gap_safe_interpolation():
     assert valid and value == pytest.approx(0.5) and gap == pytest.approx(0.1)
 
 
+def test_pax_sample_preserves_midpoint_and_applies_explicit_latency(monkeypatch):
+    clock = _Clock()
+    monkeypatch.setattr(continuous.time, "monotonic", clock.monotonic)
+    segment = {
+        "drive_started_s": 0.0, "frequency_hz": 1.0, "warmup_cycles": 0,
+        "recorded_cycles": 1, "minimum_dop": 0.9, "sub_run": 0,
+        "target_actuator": "phi1", "segment_id": 0, "bias_index": 0,
+        "fixed_actuator": "phi2", "fixed_v": 0.2, "center_v": 0.4,
+        "amplitude_v": 0.3,
+    }
+    sample = continuous._pax_sample(_PAX(clock), 0.0, segment, 0.02)
+    assert sample["pax_requested_s"] == pytest.approx(0.0)
+    assert sample["pax_received_s"] == pytest.approx(0.1)
+    assert sample["pax_transaction_midpoint_s"] == pytest.approx(0.05)
+    assert sample["elapsed_s"] == pytest.approx(0.03)
+    assert sample["pax_latency_correction_s"] == pytest.approx(0.02)
+
+
+def test_reference_validation_rejects_attenuated_inverted_target():
+    phase = np.linspace(0, 4 * np.pi, 500, endpoint=False)
+    trace = {
+        name: [np.asarray(value, dtype=continuous.TRACE_DTYPES[name])]
+        for name, value in {
+            "time_s": phase / (2 * np.pi),
+            "in1_v": 0.4 + 0.4 * np.sin(phase),
+            "in2_v": 0.007 - 0.016 * np.sin(phase),
+            "commanded_target_v": 0.4 + 0.4 * np.sin(phase),
+            "commanded_fixed_v": np.zeros(len(phase)),
+            "segment_id": np.r_[np.zeros(250), np.ones(250)],
+            "actuator_id": np.r_[np.ones(250), np.full(250, 2)],
+            "bias_index": np.zeros(len(phase)),
+            "cycle_index": np.zeros(len(phase)),
+            "capture_id": np.zeros(len(phase)),
+            "valid_measurement": np.ones(len(phase), dtype=bool),
+            "input_clipped": np.zeros(len(phase), dtype=bool),
+            "time_uncertainty_s": np.zeros(len(phase)),
+        }.items()
+    }
+    segments = [
+        {"segment_id": 0, "target_actuator": "phi1", "frequency_hz": 1.0,
+         "drive_started_s": 0.0, "amplitude_v": 0.4},
+        {"segment_id": 1, "target_actuator": "phi2", "frequency_hz": 1.0,
+         "drive_started_s": 0.0, "amplitude_v": 0.4},
+    ]
+    result = continuous._reference_validation(trace, segments)
+    assert result[0]["status"] == "trustworthy"
+    assert result[1]["status"] == "failed_sanity_check"
+
+
 def _synthetic_rows(branch_offset=0.0):
     rows = []
     for cycle in (0, 1):
@@ -97,6 +146,44 @@ class _Clock:
         self.value += seconds
 
 
+def test_fpga_trigger_timestamp_anchors_first_adc_sample(monkeypatch):
+    samples = iter((101.1000, 101.1002, 101.1004))
+    monkeypatch.setattr(continuous.time, "monotonic", lambda: next(samples))
+
+    class Parent:
+        frequency_correction = 1.0
+
+    class Scope:
+        parent = Parent()
+        current_timestamp = 10_000_000_000
+        trigger_timestamp = current_timestamp - int(1.05 / 8e-9)
+
+    start, uncertainty, detail = continuous._capture_start_timing(
+        Scope(), origin=100.0, host_start=0.01, host_finish=1.08,
+        sample_count=1001, dt=0.001,
+    )
+    assert detail["source"] == "fpga_trigger_timestamp"
+    assert start == pytest.approx(0.0501)
+    assert uncertainty == pytest.approx(0.000705)
+    assert detail["fallback_capture_start_s"] == pytest.approx(0.045)
+
+
+def test_capture_timing_retains_explicit_host_fallback(monkeypatch):
+    monkeypatch.setattr(continuous.time, "monotonic", lambda: 101.1)
+
+    class ScopeWithoutFpgaTimestamps:
+        pass
+
+    start, uncertainty, detail = continuous._capture_start_timing(
+        ScopeWithoutFpgaTimestamps(), origin=100.0,
+        host_start=0.01, host_finish=1.08, sample_count=1001, dt=0.001,
+    )
+    assert detail["source"] == "host_request_completion_fallback"
+    assert detail["fpga_timing_error"].startswith("AttributeError:")
+    assert start == pytest.approx(0.045)
+    assert uncertainty == pytest.approx(0.036)
+
+
 class _Future:
     def __init__(self, scope):
         self.scope = scope
@@ -135,6 +222,7 @@ class _RP:
 
     def ramp_output_voltage(self, v1, v2, **_):
         self.ramps.append((v1, v2))
+        return {"requested_v": [v1, v2], "host_elapsed_s": 0.0}
 
     def set_output_voltage(self, v1, v2):
         self.ramps.append((v1, v2))
@@ -192,6 +280,9 @@ def test_both_mode_simulation_writes_one_trace_and_pax_rate_csv(tmp_path, monkey
     traces = list(tmp_path.glob("*.npz"))
     assert traces == [tmp_path / "drive_trace.npz"]
     assert (tmp_path / "acquisition.json").is_file()
+    acquisition = json.loads((tmp_path / "acquisition.json").read_text())
+    assert acquisition["segments"][0]["transition_ramp"]["requested_v"] == [0.4, 0.3]
+    assert acquisition["cleanup_ramp"]["requested_v"] == [0.0, 0.0]
     with np.load(traces[0]) as trace:
         assert set(("time_s", "in1_v", "in2_v", "segment_id", "actuator_id",
                     "bias_index", "cycle_index", "valid_measurement", "metadata_json")) <= set(trace.files)

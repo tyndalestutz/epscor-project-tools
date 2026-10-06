@@ -219,25 +219,68 @@ class RPController:
         )
         self._commanded_dc[:] = (float(v1), float(v2))
 
-    def ramp_output_voltage(self, v1: float, v2: float, *, duration_s: float, updates_per_s: float = 50.0) -> None:
+    def ramp_output_voltage(
+        self, v1: float, v2: float, *, duration_s: float, updates_per_s: float = 50.0,
+    ) -> dict[str, Any]:
         """Move both DC outputs linearly, including a final exact command.
 
         This is used only between measurement segments. If an ASG was producing
         a sine, its stored center/bias is the ramp start; changing it to DC ends
-        that waveform before the smooth transition.
+        that waveform before the smooth transition. Configure DC mode once,
+        then write only offsets that actually change. Re-running ``setup`` on
+        both ASGs for every ramp point caused 100 networked module setups per
+        50-point transition and audibly excited the actuator stack.
+
+        The returned timing is host-side control evidence, not a measurement of
+        delivered piezo voltage. Callers that do not need it may ignore it.
         """
+        if self.p is None:
+            raise RuntimeError("Red Pitaya connection is not established")
+        if self.asg1 is None or self.asg2 is None:
+            raise RuntimeError("ASG outputs are not initialized")
         self._validate_output_voltage(v1, v2)
         if duration_s < 0 or updates_per_s <= 0:
             raise ValueError("Ramp duration must be non-negative and update rate positive")
         start = self._commanded_dc.copy()
         steps = max(1, int(round(duration_s * updates_per_s)))
-        interval = duration_s / steps
+        destination = np.asarray((v1, v2), dtype=float)
+        changed = ~np.isclose(start, destination, rtol=0.0, atol=1e-12)
+
+        # Stop any prior periodic waveform once, at its stored center. The
+        # subsequent loop changes offsets only and never retriggers a waveform.
+        self.asg1.setup(
+            waveform="dc", offset=float(start[0]), amplitude=0.0,
+            trigger_source="immediately",
+        )
+        self.asg2.setup(
+            waveform="dc", offset=float(start[1]), amplitude=0.0,
+            trigger_source="immediately",
+        )
+        started = time.monotonic()
+        writes = 0
         for index in range(1, steps + 1):
             fraction = index / steps
-            target = start + fraction * (np.asarray((v1, v2), dtype=float) - start)
-            self.set_output_voltage(float(target[0]), float(target[1]))
-            if interval:
-                time.sleep(interval)
+            target = destination.copy() if index == steps else start + fraction * (destination - start)
+            if changed[0]:
+                self.asg1.offset = float(target[0])
+                writes += 1
+            if changed[1]:
+                self.asg2.offset = float(target[1])
+                writes += 1
+            self._commanded_dc[:] = target
+            deadline = started + duration_s * fraction
+            remaining = deadline - time.monotonic()
+            if remaining > 0:
+                time.sleep(remaining)
+        elapsed = time.monotonic() - started
+        return {
+            "start_v": start.tolist(), "requested_v": destination.tolist(),
+            "steps": steps, "offset_writes": writes,
+            "requested_duration_s": float(duration_s),
+            "host_elapsed_s": float(elapsed),
+            "changed_channels": [index + 1 for index, value in enumerate(changed) if value],
+            "asg_readback_v": [float(self.asg1.offset), float(self.asg2.offset)],
+        }
 
     def set_continuous_sine(
         self, *, target_axis: str, fixed_voltage: float, center: float,
@@ -264,7 +307,7 @@ class RPController:
         fixed.setup(waveform="dc", offset=float(fixed_voltage), amplitude=0.0, trigger_source="immediately")
         target.setup(
             waveform="sin", frequency=float(frequency_hz), offset=float(center),
-            amplitude=float(amplitude), trigger_source="immediately",
+            amplitude=float(amplitude), start_phase=0.0, trigger_source="immediately",
         )
         return {
             "frequency_hz": float(target.frequency),
@@ -323,6 +366,7 @@ class RPController:
             frequency=float(frequency_hz),
             offset=float(offset),
             amplitude=float(amplitude),
+            start_phase=0.0,
             trigger_source="immediately",
         )
 
@@ -340,6 +384,7 @@ class RPController:
             frequency=float(frequency_hz),
             offset=float(offset),
             amplitude=float(amplitude),
+            start_phase=0.0,
             trigger_source="immediately",
         )
 

@@ -44,6 +44,7 @@
     "cross_sweep_bias_ramp_updates_per_s": 50.0,
     "cross_sweep_reference_sample_rate_hz": 400.0,
     "cross_sweep_scope_block_s": 8.0,
-    "cross_sweep_min_pax_samples_per_cycle": 20.0
+    "cross_sweep_min_pax_samples_per_cycle": 20.0,
+    "cross_sweep_pax_latency_s": 0.12
   }
 }

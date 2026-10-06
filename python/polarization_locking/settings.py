@@ -146,6 +146,8 @@ def validate(config, case, options):
             raise ValueError("Cross-sweep scope blocks must be within (0, 8.5] s at maximum FPGA decimation")
         if config.cross_sweep_bias_ramp_updates_per_s <= 0 or config.cross_sweep_min_pax_samples_per_cycle <= 0:
             raise ValueError("Cross-sweep ramp update rate and sample warning threshold must be positive")
+        if not 0 <= config.cross_sweep_pax_latency_s <= 1:
+            raise ValueError("Cross-sweep PAX latency correction must be within [0, 1] s")
         if config.pax_fresh_read_timeout_s <= 0:
             raise ValueError("PAX freshness timeout must be positive")
     for name in case.config_names():

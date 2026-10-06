@@ -145,6 +145,11 @@ class PolarizationLockConfig:
     cross_sweep_reference_sample_rate_hz: float = 400.0
     cross_sweep_scope_block_s: float = 8.0
     cross_sweep_min_pax_samples_per_cycle: float = 20.0
+    # Empirical association of a PAX record with the RP command clock. The
+    # 2026-09-29 cross-sweeps minimized rising/falling branch separation when
+    # the PAX transaction midpoint was shifted 0.10--0.13 s earlier. Preserve
+    # raw transaction times and apply this explicit, reversible correction.
+    cross_sweep_pax_latency_s: float = 0.120
 
     # Bidirectional V_lambda characterizations use the cleanest bias slices
     # identified in the first cross-sweep.  The slower dwell makes forward /
