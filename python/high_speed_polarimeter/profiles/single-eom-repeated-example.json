@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "experiment": "single_eom_characterization",
+  "label": "eom2-repeat",
+  "comment": "Endpoint states occur in both directions; no hysteresis calculation.",
+  "config": {
+    "selected_eom": "eom2",
+    "start_command_v": 0.0,
+    "stop_command_v": 0.1,
+    "points": 11,
+    "bidirectional": true,
+    "repeats": 2
+  }
+}

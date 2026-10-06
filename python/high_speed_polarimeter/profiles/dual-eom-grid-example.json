@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "experiment": "dual_eom_characterization",
+  "label": "dual-grid",
+  "comment": "EOM1 is outer loop, EOM2 is inner loop. No state optimization.",
+  "config": {
+    "eom1_commands_v": [
+      0.0,
+      0.1
+    ],
+    "eom2_commands_v": [
+      0.0,
+      0.1
+    ],
+    "repeats": 1
+  }
+}

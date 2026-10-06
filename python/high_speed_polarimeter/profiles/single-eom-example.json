@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "experiment": "single_eom_characterization",
+  "label": "eom1-forward",
+  "comment": "Edit and verify EOM voltage chain, PAX plane, channel mapping and wavelength before --run.",
+  "config": {
+    "selected_eom": "eom1",
+    "start_command_v": 0.0,
+    "stop_command_v": 0.1,
+    "points": 11,
+    "settle_s": 1.0,
+    "pd_input": "in1",
+    "pd_duration_s": 0.01,
+    "pd_scope_decimation": 64,
+    "pd_scope_timeout_s": 2.0,
+    "pax_samples_per_point": 1
+  }
+}

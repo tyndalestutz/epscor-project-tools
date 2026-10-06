@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+results/
+*.log
+*.tmp
+local-config*.json

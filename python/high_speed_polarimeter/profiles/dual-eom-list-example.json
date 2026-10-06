@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "experiment": "dual_eom_characterization",
+  "label": "dual-list",
+  "comment": "Explicit order retained, including repeated states.",
+  "config": {
+    "states_v": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.1,
+        0.0
+      ],
+      [
+        0.1,
+        0.1
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ]
+  }
+}

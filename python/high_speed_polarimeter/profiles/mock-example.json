@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "experiment": "mock_lifecycle",
+  "label": "smoke",
+  "comment": "Infrastructure validation only; no optical measurements."
+}
