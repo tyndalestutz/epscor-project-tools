@@ -2,12 +2,13 @@
 
 ## A. Campaign status and purpose
 
-**PR 0 merged; PR 1 in progress — offline regression infrastructure.** This staged campaign makes an
+**PRs 0–1 merged; PR 2 in progress — repository hygiene and onboarding.** This staged campaign makes an
 already functional experimental repository reproducible, maintainable, portable
 and shareable as a laboratory software platform. Preserving working experiments
-is the overriding constraint. The integrated baseline is `754c9e40c3ae799505a73a92aade0d15fd774799`,
-following [baseline PR #1](https://github.com/tyndalestutz/epscor-project-tools/pull/1)
-and [foundation PR #2](https://github.com/tyndalestutz/epscor-project-tools/pull/2).
+is the overriding constraint. The verified integrated starting point for PR 2 is `582709158e8ed19f76810cc4d3c4597a6a50fa20`,
+following [baseline PR #1](https://github.com/tyndalestutz/epscor-project-tools/pull/1),
+[foundation PR #2](https://github.com/tyndalestutz/epscor-project-tools/pull/2),
+and [offline regression PR #3](https://github.com/tyndalestutz/epscor-project-tools/pull/3).
 The sequence below is revisable as evidence arrives;
 it authorizes no implementation beyond the active PR.
 
@@ -297,12 +298,12 @@ they do not authorize them now.
 
 ## J. Open architectural decisions
 
-All entries initially have status **Open / Not yet decided**. Candidate directions
-above are not approved designs.
+Except for the retention policy below, entries remain **Open / Not yet decided**.
+Candidate directions above are not approved designs.
 
 | Decision | Evidence needed | Likely phase |
 | --- | --- | --- |
-| Archival datasets versus transient generated files | Record ownership, reproduction sources, retention needs and tracked-artifact inventory | PR 2 |
+| Archival datasets versus transient generated files | [Inventory](data-inventory.md) and [retention policy](data-retention.md) define future Git/archive handling and optional `experiments/_local/`; existing records/defaults stay intact. Archive ownership/location, replication, recovery and migration authorization remain open. | Policy in PR 2; migration separate |
 | Shared run-reader model/version compatibility | Representative legacy/EOM/PAX-only schemas, consumer needs and failure cases | PR 4 |
 | Bench-profile format/calibration-record ownership | Historical recipes, effective-default comparisons, units and calibration provenance | PR 5 |
 | Cross-application instrument locking | Actual access paths, exclusive-use requirements and fault/recovery behavior | PR 6 |
@@ -318,8 +319,8 @@ Blank links mean no actual GitHub PR is recorded. Planned entries are unimplemen
 | Planning ID | Objective | Status | GitHub PR | Notes / blockers |
 | --- | --- | --- | --- | --- |
 | PR 0 | Campaign foundation | Merged | [#2](https://github.com/tyndalestutz/epscor-project-tools/pull/2) | Integrated after baseline PR #1; merge `754c9e4` |
-| PR 1 | Offline regression infrastructure | In progress | [#3 (draft)](https://github.com/tyndalestutz/epscor-project-tools/pull/3) | [Offline testing guide](offline-testing.md); review clean-environment, Actions and failure-propagation evidence in the PR before merge |
-| PR 2 | Hygiene and onboarding | Planned | | Classify records; qualify environment |
+| PR 1 | Offline regression infrastructure | Merged | [#3](https://github.com/tyndalestutz/epscor-project-tools/pull/3) | Merge `5827091`; [offline testing guide](offline-testing.md), 445 software checks and failure-propagation evidence |
+| PR 2 | Hygiene and onboarding | In progress | | Inventory/retention policy, onboarding and optional local-data convention; no historical migration. Review/merge pending |
 | PR 3 | Characterization/fixtures | Planned | | Select evidence and physical protocols |
 | PR 4 | Read-only run interfaces | Planned | | Requires qualified schemas/fixtures |
 | PR 5 | Portable configuration | Planned | | Preserve effective recipe behavior |
