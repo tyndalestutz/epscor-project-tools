@@ -50,6 +50,9 @@ def execute(recipe, *, session_factory=None, acquire=None, mode="mock",
             session_factory = lambda: MockAcquisitionSession(recipe.acquisition_config())
         else:
             def session_factory():
+                if recipe.experiment == "eom_vpi_hysteresis":
+                    from .hardware.vpi import VpiSession
+                    return VpiSession(recipe.acquisition_config())
                 from .hardware.legacy import BenchSession
                 return BenchSession(recipe.acquisition_config())
     timestamp = datetime.now(timezone.utc)
@@ -99,6 +102,9 @@ def execute(recipe, *, session_factory=None, acquire=None, mode="mock",
                     state["cleanup_status"] = "COMPLETED"
                 except BaseException as exc:
                     state.update(cleanup_status="FAILED", cleanup_error=f"{type(exc).__name__}: {exc}")
+                finally:
+                    if hasattr(session, "cleanup_evidence"):
+                        state["cleanup_evidence"] = session.cleanup_evidence
             state["finished_at"] = now()
             print(f"Execution: {state['status']}; cleanup: {state['cleanup_status']}. Partial artifacts retained.")
             write_json(directory / "run.json", state)

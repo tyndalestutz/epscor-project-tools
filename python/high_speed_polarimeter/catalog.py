@@ -1,4 +1,4 @@
-"""Explicit discovery of acquisition experiments; no fitting/calibration dispatch."""
+"""Explicit discovery of implemented bench experiments."""
 from dataclasses import dataclass
 
 
@@ -12,6 +12,7 @@ EXPERIMENTS = (
     Experiment("mock_lifecycle", "Synthetic lifecycle events; no optical measurements or hardware."),
     Experiment("single_eom_characterization", "One EOM sweep: mandatory raw PD, PAX reference and host timing."),
     Experiment("dual_eom_characterization", "Ordered two-EOM grid/list: mandatory raw PD, PAX reference and host timing."),
+    Experiment("eom_vpi_hysteresis", "PAX-only forward/reverse EOM sweep; rough trajectory-phase Vpi and direction difference."),
 )
 BY_KEY = {experiment.key: experiment for experiment in EXPERIMENTS}
 PLANNED = (

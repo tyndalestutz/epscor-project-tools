@@ -1,0 +1,314 @@
+{
+  "run_directory": "experiments/polarization_locking/2026-09-29/diagnostic-development/2026-09-29/213414_cross-sweep_fpga-timestamp-validation",
+  "method": "Per-capture/cycle rising/falling branch mismatch at equal drive voltage, using raw PAX transaction midpoints. Combined score is the median of each axis/observable curve normalized to its own minimum.",
+  "primary_reference": "fpga_measured_reference",
+  "configured_latency_s": 0.12,
+  "scan": {
+    "minimum_s": 0.0,
+    "maximum_s": 0.25,
+    "step_s": 0.001
+  },
+  "analyses": {
+    "nominal_command_clock": {
+      "method": "Nominal ASG sine voltage and command start time.",
+      "segments": [
+        {
+          "segment_id": 0,
+          "target_actuator": "phi1",
+          "analysis_rows": 118,
+          "fraction_dop_below_0_9": 0.00847457627118644,
+          "metrics": {
+            "stokes_branch_rms": {
+              "units": "deg",
+              "best_lag_s": 0.154,
+              "best_value": 10.448365262198683,
+              "zero_lag_value": 37.76074418062734,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 12.101745434945009,
+              "configured_improvement_vs_zero_fraction": 0.6795151764738352
+            },
+            "power_branch_rms_normalized": {
+              "units": "fraction",
+              "best_lag_s": 0.009000000000000001,
+              "best_value": 0.2834471657563544,
+              "zero_lag_value": 0.2837419262590637,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 0.33801647780350264,
+              "configured_improvement_vs_zero_fraction": -0.19128139524535714
+            },
+            "dop_branch_rms": {
+              "units": "absolute_dop",
+              "best_lag_s": 0.23700000000000002,
+              "best_value": 0.0066647795619412765,
+              "zero_lag_value": 0.022450827241243494,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 0.017722312204349767,
+              "configured_improvement_vs_zero_fraction": 0.21061651698103873
+            }
+          }
+        },
+        {
+          "segment_id": 1,
+          "target_actuator": "phi2",
+          "analysis_rows": 118,
+          "fraction_dop_below_0_9": 0.211864406779661,
+          "metrics": {
+            "stokes_branch_rms": {
+              "units": "deg",
+              "best_lag_s": 0.11800000000000001,
+              "best_value": 9.56335094526962,
+              "zero_lag_value": 36.518333169383155,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 9.574874816769006,
+              "configured_improvement_vs_zero_fraction": 0.737806356813773
+            },
+            "power_branch_rms_normalized": {
+              "units": "fraction",
+              "best_lag_s": 0.126,
+              "best_value": 0.032660036136524684,
+              "zero_lag_value": 0.1692605597856644,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 0.033017405939625696,
+              "configured_improvement_vs_zero_fraction": 0.8049314856252642
+            },
+            "dop_branch_rms": {
+              "units": "absolute_dop",
+              "best_lag_s": 0.107,
+              "best_value": 0.014793184369012422,
+              "zero_lag_value": 0.04377631606871801,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 0.015661984185298364,
+              "configured_improvement_vs_zero_fraction": 0.6422269941419256
+            }
+          }
+        }
+      ],
+      "combined": {
+        "best_lag_s": 0.116,
+        "best_score": 1.1015102803378551,
+        "zero_lag_score": 3.4913056581268167,
+        "configured_lag_score": 1.108486344607328,
+        "configured_improvement_vs_zero_fraction": 0.6825009170918418,
+        "within_5_percent_of_best_s": [
+          0.10300000000000001,
+          0.134
+        ],
+        "within_10_percent_of_best_s": [
+          0.1,
+          0.14
+        ]
+      }
+    },
+    "fpga_measured_reference": {
+      "method": "Measured RP target voltage interpolated within each independently FPGA-timestamped capture; capture gaps are never interpolated.",
+      "segments": [
+        {
+          "segment_id": 0,
+          "target_actuator": "phi1",
+          "analysis_rows": 118,
+          "fraction_dop_below_0_9": 0.00847457627118644,
+          "metrics": {
+            "stokes_branch_rms": {
+              "units": "deg",
+              "best_lag_s": 0.152,
+              "best_value": 10.16810806729633,
+              "zero_lag_value": 36.74108521957219,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 11.5058686170475,
+              "configured_improvement_vs_zero_fraction": 0.6868391734134663,
+              "contributing_captures_min": 2,
+              "contributing_captures_max": 2
+            },
+            "power_branch_rms_normalized": {
+              "units": "fraction",
+              "best_lag_s": 0.0,
+              "best_value": 0.32868512792591187,
+              "zero_lag_value": 0.32868512792591187,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 0.40289403086150566,
+              "configured_improvement_vs_zero_fraction": -0.22577505530557818,
+              "contributing_captures_min": 2,
+              "contributing_captures_max": 2
+            },
+            "dop_branch_rms": {
+              "units": "absolute_dop",
+              "best_lag_s": 0.234,
+              "best_value": 0.006128884627973631,
+              "zero_lag_value": 0.008662818773436297,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 0.007008116051955873,
+              "configured_improvement_vs_zero_fraction": 0.1910120440882835,
+              "contributing_captures_min": 2,
+              "contributing_captures_max": 2
+            }
+          },
+          "fpga_reference_captures": 2
+        },
+        {
+          "segment_id": 1,
+          "target_actuator": "phi2",
+          "analysis_rows": 118,
+          "fraction_dop_below_0_9": 0.211864406779661,
+          "metrics": {
+            "stokes_branch_rms": {
+              "units": "deg",
+              "best_lag_s": 0.097,
+              "best_value": 16.01004269796775,
+              "zero_lag_value": 32.393560906982955,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 17.49405998520956,
+              "configured_improvement_vs_zero_fraction": 0.45995254935253405,
+              "contributing_captures_min": 2,
+              "contributing_captures_max": 2
+            },
+            "power_branch_rms_normalized": {
+              "units": "fraction",
+              "best_lag_s": 0.123,
+              "best_value": 0.05658014103370733,
+              "zero_lag_value": 0.18600897332039604,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 0.056659439230014486,
+              "configured_improvement_vs_zero_fraction": 0.6953940542834999,
+              "contributing_captures_min": 2,
+              "contributing_captures_max": 2
+            },
+            "dop_branch_rms": {
+              "units": "absolute_dop",
+              "best_lag_s": 0.097,
+              "best_value": 0.014193143993786059,
+              "zero_lag_value": 0.0365687809571954,
+              "configured_lag_s": 0.12,
+              "configured_lag_value": 0.016825578934735668,
+              "configured_improvement_vs_zero_fraction": 0.5398922661810795,
+              "contributing_captures_min": 2,
+              "contributing_captures_max": 2
+            }
+          },
+          "fpga_reference_captures": 2
+        }
+      ],
+      "combined": {
+        "best_lag_s": 0.106,
+        "best_score": 1.1048514018312452,
+        "zero_lag_score": 2.2999189129326725,
+        "configured_lag_score": 1.1375106778270925,
+        "configured_improvement_vs_zero_fraction": 0.5054127032780343,
+        "within_5_percent_of_best_s": [
+          0.098,
+          0.131
+        ],
+        "within_10_percent_of_best_s": [
+          0.07,
+          0.157
+        ]
+      }
+    }
+  },
+  "segments": [
+    {
+      "segment_id": 0,
+      "target_actuator": "phi1",
+      "analysis_rows": 118,
+      "fraction_dop_below_0_9": 0.00847457627118644,
+      "metrics": {
+        "stokes_branch_rms": {
+          "units": "deg",
+          "best_lag_s": 0.152,
+          "best_value": 10.16810806729633,
+          "zero_lag_value": 36.74108521957219,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 11.5058686170475,
+          "configured_improvement_vs_zero_fraction": 0.6868391734134663,
+          "contributing_captures_min": 2,
+          "contributing_captures_max": 2
+        },
+        "power_branch_rms_normalized": {
+          "units": "fraction",
+          "best_lag_s": 0.0,
+          "best_value": 0.32868512792591187,
+          "zero_lag_value": 0.32868512792591187,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 0.40289403086150566,
+          "configured_improvement_vs_zero_fraction": -0.22577505530557818,
+          "contributing_captures_min": 2,
+          "contributing_captures_max": 2
+        },
+        "dop_branch_rms": {
+          "units": "absolute_dop",
+          "best_lag_s": 0.234,
+          "best_value": 0.006128884627973631,
+          "zero_lag_value": 0.008662818773436297,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 0.007008116051955873,
+          "configured_improvement_vs_zero_fraction": 0.1910120440882835,
+          "contributing_captures_min": 2,
+          "contributing_captures_max": 2
+        }
+      },
+      "fpga_reference_captures": 2
+    },
+    {
+      "segment_id": 1,
+      "target_actuator": "phi2",
+      "analysis_rows": 118,
+      "fraction_dop_below_0_9": 0.211864406779661,
+      "metrics": {
+        "stokes_branch_rms": {
+          "units": "deg",
+          "best_lag_s": 0.097,
+          "best_value": 16.01004269796775,
+          "zero_lag_value": 32.393560906982955,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 17.49405998520956,
+          "configured_improvement_vs_zero_fraction": 0.45995254935253405,
+          "contributing_captures_min": 2,
+          "contributing_captures_max": 2
+        },
+        "power_branch_rms_normalized": {
+          "units": "fraction",
+          "best_lag_s": 0.123,
+          "best_value": 0.05658014103370733,
+          "zero_lag_value": 0.18600897332039604,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 0.056659439230014486,
+          "configured_improvement_vs_zero_fraction": 0.6953940542834999,
+          "contributing_captures_min": 2,
+          "contributing_captures_max": 2
+        },
+        "dop_branch_rms": {
+          "units": "absolute_dop",
+          "best_lag_s": 0.097,
+          "best_value": 0.014193143993786059,
+          "zero_lag_value": 0.0365687809571954,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 0.016825578934735668,
+          "configured_improvement_vs_zero_fraction": 0.5398922661810795,
+          "contributing_captures_min": 2,
+          "contributing_captures_max": 2
+        }
+      },
+      "fpga_reference_captures": 2
+    }
+  ],
+  "combined": {
+    "best_lag_s": 0.106,
+    "best_score": 1.1048514018312452,
+    "zero_lag_score": 2.2999189129326725,
+    "configured_lag_score": 1.1375106778270925,
+    "configured_improvement_vs_zero_fraction": 0.5054127032780343,
+    "within_5_percent_of_best_s": [
+      0.098,
+      0.131
+    ],
+    "within_10_percent_of_best_s": [
+      0.07,
+      0.157
+    ]
+  },
+  "limitations": [
+    "Branch mismatch includes physical hysteresis, drift, and PAX error as well as timing.",
+    "Low DoP weakens normalized-Stokes evidence and is reported per segment.",
+    "PAX transaction duration and internal instrument integration impose a finite timing resolution.",
+    "Recalibrate after PAX daemon, rotation rate, mode, transport, or cadence changes."
+  ]
+}

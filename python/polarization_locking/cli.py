@@ -1,24 +1,52 @@
 """Numbered bench menu. Browsing and editing only require the standard library."""
 import argparse
 from copy import deepcopy
+from dataclasses import asdict
 import json
 from pathlib import Path
 
 from .catalog import BY_KEY, TESTS, default_options
 from .config import PolarizationLockConfig
-from .settings import TYPES, load_recipe, parse_value, recipe, validate, write_json
+from .settings import TYPES, coerce, load_recipe, parse_value, recipe, validate, write_json
 
 PROFILES = Path(__file__).resolve().parent / "profiles"
+LOCAL_SETTINGS = Path(__file__).resolve().parent / ".local-settings.json"
 BACK = {"b", "back"}
 QUIT = {"q", "quit", "exit"}
 
 
 class DiagnosticsMenu:
-    def __init__(self, config=None, *, input_fn=input, output=print, run_test=None):
+    def __init__(self, config=None, *, input_fn=input, output=print, run_test=None, state_path=None):
         self.base_config = config or PolarizationLockConfig()
         self.input, self.print = input_fn, output
         self.sessions = {}
         self.run_test = run_test
+        self.state_path = Path(state_path) if state_path else None
+        if self.state_path and self.state_path.exists():
+            try:
+                raw = json.loads(self.state_path.read_text())
+                if raw.get("schema_version") != 1 or not isinstance(raw.get("tests"), dict):
+                    raise ValueError("Unsupported local settings schema")
+                restored = {}
+                for key, entry in raw["tests"].items():
+                    case = BY_KEY[key]
+                    values = entry["config"]
+                    if set(values) - TYPES.keys():
+                        raise ValueError("Unknown stored configuration field")
+                    config = PolarizationLockConfig(**{k: coerce(v, TYPES[k]) for k, v in values.items()})
+                    options = default_options(case)
+                    for k, v in entry["options"].items():
+                        options[k] = coerce(v, type(options[k]))
+                    restored[key] = (config, options)
+                self.sessions = restored
+            except (ValueError, OSError, KeyError, TypeError, AttributeError) as exc:
+                raise ValueError(f"Cannot restore local settings {self.state_path}: {exc}") from exc
+
+    def persist(self):
+        if self.state_path:
+            write_json(self.state_path, {"schema_version": 1, "tests": {
+                key: {"config": asdict(config), "options": options}
+                for key, (config, options) in self.sessions.items()}})
 
     def ask(self, prompt):
         return self.input(prompt).strip()
@@ -88,6 +116,7 @@ class DiagnosticsMenu:
                     setattr(config, key, value)
                 else:
                     options[key] = value
+                self.persist()
                 self.print("Updated for this test. Values are checked together before save/run.")
             except KeyboardInterrupt:
                 self.print("Edit cancelled.")
@@ -110,6 +139,7 @@ class DiagnosticsMenu:
             return None
         case, config, options = load_recipe(text)
         self.sessions[case.key] = (config, options)
+        self.persist()
         return case
 
     def choose_contrast(self, config):
@@ -130,6 +160,7 @@ class DiagnosticsMenu:
                     break
                 self.print(f"Choose {' / '.join(choices)}.")
         config.visibility_source, config.visibility_mode = chosen
+        self.persist()
         return True
 
     def run_details(self, case, options):
@@ -167,10 +198,13 @@ class DiagnosticsMenu:
                     case = self.load() or case
                 elif action in {"d", "defaults"}:
                     self.sessions.pop(case.key, None)
+                    self.persist()
                 elif action in {"r", "run"}:
                     validate(config, case, options)
                     run_options = self.run_details(case, options)
                     validate(config, case, run_options)
+                    options.update(run_options)
+                    self.persist()
                     if self.run_test is None:
                         from .runner import execute
                         self.run_test = execute
@@ -234,9 +268,9 @@ def main(argv=None):
     parser.add_argument("--frequency", type=float, help="external or requested active drive frequency in Hz for contrast measurement")
     parser.add_argument("--dark-voltage", type=float, help="blocked-light PD voltage for contrast or vibration measurement")
     args = parser.parse_args(argv)
-    menu = DiagnosticsMenu()
     case = None
     try:
+        menu = DiagnosticsMenu(state_path=LOCAL_SETTINGS if not any((args.list, args.show, args.run, args.dry_run)) else None)
         if args.profile:
             case, config, options = load_recipe(args.profile)
             menu.sessions[case.key] = (config, options)
@@ -282,6 +316,7 @@ def main(argv=None):
             state = execute(case, *menu.settings(case))
             return 0 if state["status"] == "completed" else 1
         else:
+            menu.persist()
             menu.run(case)
     except (ValueError, OSError, RuntimeError, ImportError) as exc:
         parser.exit(2, f"Error: {exc}\n")

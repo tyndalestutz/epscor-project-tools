@@ -1,0 +1,103 @@
+{
+  "run_directory": "experiments/polarization_locking/2026-09-29/diagnostic-development/2026-09-29/211549_cross-sweep_timing-calibration-post-in2-lv",
+  "method": "Per-cycle rising/falling branch mismatch at equal nominal ASG voltage, using raw PAX transaction midpoints. Combined score is the median of each axis/observable curve normalized to its own minimum.",
+  "configured_latency_s": 0.12,
+  "scan": {
+    "minimum_s": 0.0,
+    "maximum_s": 0.25,
+    "step_s": 0.001
+  },
+  "segments": [
+    {
+      "segment_id": 0,
+      "target_actuator": "phi1",
+      "analysis_rows": 237,
+      "fraction_dop_below_0_9": 1.0,
+      "metrics": {
+        "stokes_branch_rms": {
+          "units": "deg",
+          "best_lag_s": 0.11,
+          "best_value": 11.087457358273678,
+          "zero_lag_value": 17.30973255577538,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 11.282890171815545,
+          "configured_improvement_vs_zero_fraction": 0.34817651656605075
+        },
+        "power_branch_rms_normalized": {
+          "units": "fraction",
+          "best_lag_s": 0.159,
+          "best_value": 0.35596347220848057,
+          "zero_lag_value": 0.41610335356521116,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 0.36167676731532467,
+          "configured_improvement_vs_zero_fraction": 0.13080064311800083
+        },
+        "dop_branch_rms": {
+          "units": "absolute_dop",
+          "best_lag_s": 0.112,
+          "best_value": 0.019800731423409323,
+          "zero_lag_value": 0.021525150322495697,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 0.019816474702321764,
+          "configured_improvement_vs_zero_fraction": 0.07938042682973577
+        }
+      }
+    },
+    {
+      "segment_id": 1,
+      "target_actuator": "phi2",
+      "analysis_rows": 236,
+      "fraction_dop_below_0_9": 0.8177966101694916,
+      "metrics": {
+        "stokes_branch_rms": {
+          "units": "deg",
+          "best_lag_s": 0.137,
+          "best_value": 17.959773674641422,
+          "zero_lag_value": 41.16117788655187,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 18.584775690057594,
+          "configured_improvement_vs_zero_fraction": 0.5484877585067945
+        },
+        "power_branch_rms_normalized": {
+          "units": "fraction",
+          "best_lag_s": 0.137,
+          "best_value": 0.07348157026087063,
+          "zero_lag_value": 0.19801738137270827,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 0.07768563657958051,
+          "configured_improvement_vs_zero_fraction": 0.6076827395603186
+        },
+        "dop_branch_rms": {
+          "units": "absolute_dop",
+          "best_lag_s": 0.135,
+          "best_value": 0.03446039107737871,
+          "zero_lag_value": 0.06876594815238872,
+          "configured_lag_s": 0.12,
+          "configured_lag_value": 0.03523413723300385,
+          "configured_improvement_vs_zero_fraction": 0.4876223162818424
+        }
+      }
+    }
+  ],
+  "combined": {
+    "best_lag_s": 0.136,
+    "best_score": 1.003096621039143,
+    "zero_lag_score": 1.7783531849191574,
+    "configured_lag_score": 1.0200398400543085,
+    "configured_improvement_vs_zero_fraction": 0.4264132407980146,
+    "within_5_percent_of_best_s": [
+      0.108,
+      0.158
+    ],
+    "within_10_percent_of_best_s": [
+      0.092,
+      0.167
+    ]
+  },
+  "limitations": [
+    "Branch mismatch includes physical hysteresis, drift, and PAX error as well as timing.",
+    "Nominal ASG time is used because host-derived RP trace time has separate uncertainty.",
+    "Low DoP weakens normalized-Stokes evidence and is reported per segment.",
+    "Recalibrate after PAX daemon, rotation rate, mode, transport, or cadence changes."
+  ]
+}

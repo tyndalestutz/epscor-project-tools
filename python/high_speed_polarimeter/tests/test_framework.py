@@ -23,7 +23,7 @@ def recipe_for(tmp_path):
 
 def test_import_catalog_recipe(tmp_path):
     assert high_speed_polarimeter.__version__
-    assert set(BY_KEY) == {"mock_lifecycle", "single_eom_characterization", "dual_eom_characterization"}
+    assert set(BY_KEY) == {"mock_lifecycle", "single_eom_characterization", "dual_eom_characterization", "eom_vpi_hysteresis"}
     assert not set(BY_KEY).intersection(PLANNED)
     profile = Path(__file__).resolve().parents[1] / "profiles/mock-example.json"
     assert load_recipe(profile).experiment == "mock_lifecycle"

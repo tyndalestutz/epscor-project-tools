@@ -242,8 +242,8 @@ def test_manual_setup_back_aborts(monkeypatch):
 
 
 def test_direct_launch_is_hardware_free():
-    path = Path(__file__).resolve().parents[1] / "lock.py"
-    script = "import runpy, sys; sys.argv = ['lock.py', '--list'];\ntry: runpy.run_path(%r, run_name='__main__')\nexcept SystemExit as e: assert e.code == 0\nassert 'numpy' not in sys.modules\nassert 'yaqc' not in sys.modules" % str(path)
+    path = Path(__file__).resolve().parents[1] / "test-suite.py"
+    script = "import runpy, sys; sys.argv = ['test-suite.py', '--list'];\ntry: runpy.run_path(%r, run_name='__main__')\nexcept SystemExit as e: assert e.code == 0\nassert 'numpy' not in sys.modules\nassert 'yaqc' not in sys.modules" % str(path)
     result = subprocess.run([sys.executable, "-c", script], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
 

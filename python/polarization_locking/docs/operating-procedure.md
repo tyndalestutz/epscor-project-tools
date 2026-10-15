@@ -11,7 +11,7 @@ PAX polarization response, electrical calibration, path balance, and lock stabil
 measure different quantities. Open test details without instrument access:
 
 ```bash
-python python/polarization_locking/lock.py --show pd-visibility
+python python/polarization_locking/test-suite.py --show pd-visibility
 ```
 
 Use test names in shared instructions; menu numbers are navigation conveniences.
@@ -76,7 +76,7 @@ processes. Confirm the serial in [pax1000.toml](../hardware/pax1000.toml).
 
 1. Use a descriptive `label`, such as `in2-both-paths-dc-gain10`.
 2. Save edited settings with **s**. Share reviewed recipes, not private credentials.
-3. Validate with `python python/polarization_locking/lock.py --profile path/to/recipe.json --dry-run`.
+3. Validate with `python python/polarization_locking/test-suite.py --profile path/to/recipe.json --dry-run`.
 4. Select **r**, or use `--profile path/to/recipe.json --run TEST`. This explicitly
    starts hardware acquisition. Record the printed run folder.
 5. Follow manual beam-block prompts and verify each condition physically.

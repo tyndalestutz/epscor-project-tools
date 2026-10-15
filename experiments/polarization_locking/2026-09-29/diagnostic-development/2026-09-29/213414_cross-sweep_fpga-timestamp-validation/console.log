@@ -1,0 +1,22 @@
+Run comment: Measurement-tool calibration only: validate FPGA trigger/current timestamp anchoring on repaired dual references; two cycles per axis, raw FPGA and host fallback timing retained. Not a system characterization run.
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+Connecting to PAX at localhost:38400...
+Starting PAX daemon; motor spin-up includes a 5-second settling wait. Please wait...
+PAX daemon connected; applying wavelength...
+PAX ready for setup. Fresh measurement validation runs before data logging.
+Continuous coupling plan: target=both; 2 bias segments; 0.1 Hz hardware sine; approximately 0.7 minutes.
+OUT1->IN1 and OUT2->IN2 are measured references; command and measurement remain separate.
+WARNING:pyrpl.modules:Trying to load attribute decimation of module scope that are invalid setup_attributes.
+Segment 0: phi1 sine 0.116415 Hz, phi2=0.154907 V; 0 warm-up + 2 recorded cycles.
+Segment 1: phi2 sine 0.116415 Hz, phi1=0.387451 V; 0 warm-up + 2 recorded cycles.
+Continuous coupling data saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-29/diagnostic-development/2026-09-29/213414_cross-sweep_fpga-timestamp-validation/data.csv and drive_trace.npz
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-29/diagnostic-development/2026-09-29/213414_cross-sweep_fpga-timestamp-validation/report.pdf

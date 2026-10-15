@@ -1,0 +1,31 @@
+{
+  "source": "both",
+  "mode": "active",
+  "pd_input": "in1",
+  "captures": 3,
+  "valid_captures": 3,
+  "visibility_mean": 0.7707863307267949,
+  "visibility_std": 0.002756584725359609,
+  "dark_voltage_v": -0.012307994067668915,
+  "dark_source": "measured",
+  "external_frequency_hz": 0.46566128730773926,
+  "definition": "(Imax-Imin)/(Imax+Imin), I = polarity*(V-Vdark); extrema of 1/64-period averages",
+  "interpretation": "Signed raw voltage is retained. Contrast uses a measured or explicitly provided blocked-light baseline; none is inferred from fringe minima. DC coupling, linear response and full fringe excursion are required. Capture scatter is not total uncertainty.",
+  "pax": {
+    "source": "pax",
+    "samples": 87,
+    "recorded_duration_s": 12.978307099998347,
+    "external_frequency_hz": 0.46566128730773926,
+    "power_min_w": 6.477408e-05,
+    "power_max_w": 0.0005620178,
+    "power_mean_w": 0.00024917157126436786,
+    "visibility": 0.7933155100860593,
+    "sample_interval_median_s": 0.14630515799217392,
+    "sample_interval_max_s": 0.3026130440121051,
+    "samples_per_drive_cycle": 14.678113044482494,
+    "status": "observed PAX total-power contrast",
+    "definition": "(Pmax-Pmin)/(Pmax+Pmin), extrema of recorded PAX total optical power in watts",
+    "interpretation": "Uses instrument-reported total power, with no additional optical-background subtraction. No PD voltage zero or polarity is applied. Finite sampling may miss narrow extrema; full fringe coverage and suitable drive speed must be checked. This is not a noise-corrected fit."
+  },
+  "comparison": "Concurrent PD captures and PAX polling; linked capture IDs and common host time origin in data.csv/pax.csv. PD uses binned extrema, PAX uses sampled extrema; bandwidth and integration windows differ. No hardware-trigger synchronization is claimed."
+}

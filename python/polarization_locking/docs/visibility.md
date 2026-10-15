@@ -6,9 +6,9 @@ drive one RP phase output. Follow the
 [operating procedure](operating-procedure.md).
 
 ```bash
-python python/polarization_locking/lock.py --run pd-visibility --pd-input in2 --frequency 0.5
-python python/polarization_locking/lock.py --run pd-visibility --source pax --frequency 0.5
-python python/polarization_locking/lock.py --run pd-visibility --source both --mode active --frequency 0.5
+python python/polarization_locking/test-suite.py --run pd-visibility --pd-input in2 --frequency 0.5
+python python/polarization_locking/test-suite.py --run pd-visibility --source pax --frequency 0.5
+python python/polarization_locking/test-suite.py --run pd-visibility --source both --mode active --frequency 0.5
 ```
 
 Replace 0.5 with the actual drive frequency. Use the menu or

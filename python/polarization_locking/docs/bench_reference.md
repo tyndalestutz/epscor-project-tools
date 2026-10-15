@@ -56,7 +56,7 @@ phi1-step analysis scripts invoked by the lock CLI.
 `archive/effective_fits/` folder. Start new physical characterization with its
 [measurement protocol](../../field_propogation/docs/measurement_acquisition.md).
 
-- `lock.py`: interactive one-shot rough move and live PAX monitor. Targets are
+- `test-suite.py`: interactive one-shot rough move and live PAX monitor. Targets are
   entered directly as `u v`; it includes a bounded PID test mode. Every command
   that records data creates a dated experiment folder containing `data.csv` and,
   when requested with the final `pdf` token, `report.pdf`. Use `live` for

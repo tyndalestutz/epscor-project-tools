@@ -26,6 +26,9 @@ class ReportPages:
 
     def savefig(self, fig):
         self.page += 1
+        engine = fig.get_layout_engine()
+        if isinstance(engine, matplotlib.layout_engine.ConstrainedLayoutEngine):
+            engine.set(rect=(0, .035, 1, .965))  # Reserve a footer band below axis labels.
         fig.text(.985, .008, f"Polarization diagnostics  |  {self.page}", ha="right", fontsize=7, color=NAVY)
         self.pdf.savefig(fig)
 
@@ -63,6 +66,79 @@ def column(rows, key):
         except (TypeError, ValueError):
             values.append(float("nan"))
     return np.asarray(values)
+
+
+def descriptive_statistics(rows, fields):
+    """Sample-weighted finite-record summaries; variance uses ddof=1."""
+    summaries = []
+    for field in fields:
+        values = column(rows, field)
+        valid = values[np.isfinite(values)]
+        summaries.append(dict(field=field, n=len(valid), total=len(values),
+                              mean=float(valid.mean()) if len(valid) else np.nan,
+                              std=float(valid.std(ddof=1)) if len(valid) > 1 else np.nan,
+                              variance=float(valid.var(ddof=1)) if len(valid) > 1 else np.nan,
+                              minimum=float(valid.min()) if len(valid) else np.nan,
+                              maximum=float(valid.max()) if len(valid) else np.nan))
+    return summaries
+
+
+def add_polarization_supplement(pdf, rows):
+    """Add a compact sphere and separate numeric summaries without changing traces."""
+    from .poincare_trajectory import draw_trajectory, trajectory
+    data = trajectory(rows)
+    if not data['available']:
+        return  # Original plots and unavailable-data behavior remain intact.
+    fig = plt.figure(figsize=(11.7, 8.3), facecolor='white')
+    fig.text(.065, .94, 'Polarization trajectory and descriptive statistics',
+             fontsize=18, weight='bold', color=NAVY)
+    grid = fig.add_gridspec(1, 1, left=.055, right=.405, bottom=.44, top=.87)
+    caption = draw_trajectory(fig, grid[0, 0], rows)
+    fig.text(.065, .40, '\n'.join(textwrap.wrap(caption, width=63)),
+             fontsize=8, color=NAVY, va='top', linespacing=1.35)
+
+    groups = [('Normalized Stokes direction', ('s1', 's2', 's3'), 'Dimensionless; variance dimensionless².', .66),
+              ('Recorded angles', ('theta_deg', 'eta_deg'), 'Degrees; variance deg². Linear statistics; no unwrapping.', .39)]
+    summary_rows = [dict(row) for row in rows]
+    if not any(key in row for row in rows for key in ('s1', 's2', 's3')):
+        for row, point in zip(summary_rows, data['xyz']):
+            row.update(zip(('s1', 's2', 's3'), point))
+    for degree, radian in (('theta_deg', 'theta'), ('eta_deg', 'eta')):
+        if not any(degree in row for row in rows):
+            for row, value in zip(summary_rows, np.degrees(column(rows, radian))):
+                row[degree] = value
+    for title, fields, unit, bottom in groups:
+        ax = fig.add_axes([.445, bottom, .51, .14])
+        ax.axis('off')
+        fig.text(.445, bottom+.19, title, fontsize=12, weight='bold', color=NAVY)
+        fig.text(.445, bottom+.16, unit, fontsize=8, color=NAVY)
+        entries = descriptive_statistics(summary_rows, fields)
+        def fmt(value):
+            return f'{value:.5g}' if np.isfinite(value) else '—'
+        cells = [[item['field'], str(item['n']), *[fmt(item[key]) for key in
+                  ('mean', 'std', 'variance', 'minimum', 'maximum')]] for item in entries]
+        table = ax.table(cellText=cells, colLabels=['Field', 'N', 'Mean', 'SD', 'Variance', 'Min', 'Max'],
+                         colWidths=[.17, .09, .14, .14, .17, .145, .145],
+                         cellLoc='right', bbox=[0, 0, 1, 1])
+        table.auto_set_font_size(False)
+        table.set_fontsize(8)
+        for (row, col), cell in table.get_celld().items():
+            cell.set_edgecolor('white')
+            cell.set_facecolor(NAVY if row == 0 else ('#edf4f7' if row % 2 else 'white'))
+            if row == 0:
+                cell.set_text_props(color='white', weight='bold')
+            if col == 0:
+                cell.set_text_props(ha='left')
+    notes = ('Statistics describe the entire recorded run, including drift and abrupt jumps; they are not measurement '
+             'uncertainties or short-term noise estimates. Each finite sample has equal weight (not time weighting). '
+             f'N is the finite count per field out of {len(rows):,} rows; invalid entries are excluded only from '
+             'that field’s statistics. No low-DoP filtering. SD and variance use N−1; unavailable for N<2. '
+             'Angle means/SD/variance are linear statistics of the displayed wrapped angles; a wrap boundary can '
+             'inflate spread. No circular-statistics interpretation is implied.')
+    fig.text(.445, .30, '\n'.join(textwrap.wrap(notes, width=91)), fontsize=8,
+             color=NAVY, va='top', linespacing=1.35)
+    pdf.savefig(fig)
+    plt.close(fig)
 
 
 def add_overview(pdf, case, paths, config, options, state, rows):
@@ -155,6 +231,7 @@ def add_telemetry(pdf, rows):
             ax.text(.5, .5, "Not recorded", transform=ax.transAxes, ha="center", color="gray")
     pdf.savefig(fig)
     plt.close(fig)
+    add_polarization_supplement(pdf, rows)
 
 
 def add_specialized(pdf, case, paths, options):
@@ -181,6 +258,7 @@ def add_specialized(pdf, case, paths, options):
             ax.grid(alpha=.2)
             pdf.savefig(fig)
             plt.close(fig)
+            add_polarization_supplement(pdf, rows)
             if source == "pax":
                 return
         dark_path = paths.directory / "dark.npz"
@@ -297,6 +375,7 @@ def add_pax_live(pdf, paths, config, state, rows):
         ax.legend()
     pdf.savefig(fig)
     plt.close(fig)
+    add_polarization_supplement(pdf, rows)
 
 
 def vibration_report_rows(path):
@@ -323,10 +402,13 @@ def add_pax_vibration(pdf, paths):
     sections.append(("Comparison", "\n".join(f"{key}: {value}" for key, value in summary['comparison'].items())))
     sections.append(("PAX on: static polarization / power", "\n".join(f"{key}: {value}" for key, value in summary['pax'].items())))
     text_page(pdf, f"PAX motor noise — variance, band {summary['band_hz']} Hz", sections)
-    fig, axes = plt.subplots(2, 2, figsize=(11.7, 8.3), constrained_layout=True)
     records = vibration_report_rows(paths.csv)
     rows = [row for row in records if row.get('record_type', 'pd_capture') == 'pd_capture']
     pax = [row for row in records if row.get('record_type') == 'pax']
+    if not any('record_type' in row for row in records) and (paths.directory / 'pax.csv').exists():
+        with (paths.directory / 'pax.csv').open(newline='') as handle:
+            pax = list(csv.DictReader(handle))
+    fig, axes = plt.subplots(2, 2, figsize=(11.7, 8.3), constrained_layout=True)
     for condition in ('pax_on', 'pax_off'):
         spectrum = paths.directory / f'{condition}-spectrum.npz'
         selected = [row for row in records if row.get('record_type') == 'spectrum' and row['condition'] == condition]
@@ -345,9 +427,6 @@ def add_pax_vibration(pdf, paths):
         selected = [row for row in rows if row['condition'] == condition]
         axes[0, 1].plot(column(selected, 'started_s'), column(selected, 'normalized_band_variance'), '.-', label=condition)
     axes[0, 1].set(xlabel='Run elapsed time (s)', ylabel='Relative PD variance', title='Per-capture band variance')
-    if not any('record_type' in row for row in records) and (paths.directory / 'pax.csv').exists():
-        with (paths.directory / 'pax.csv').open(newline='') as handle:
-            pax = list(csv.DictReader(handle))
     if pax:
         elapsed = column(pax, 'elapsed_s')
         power = column(pax, 'pax_ptotal')
@@ -365,6 +444,7 @@ def add_pax_vibration(pdf, paths):
             ax.legend(fontsize=8)
     pdf.savefig(fig)
     plt.close(fig)
+    add_polarization_supplement(pdf, pax)
 
 
 def main(argv=None):

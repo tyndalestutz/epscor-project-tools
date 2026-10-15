@@ -1,0 +1,17 @@
+{
+  "status": "failed",
+  "started_at": "2026-09-29T20:06:10.930138+00:00",
+  "purpose": "Electrical OUT1/OUT2 loopback verification; not delivered actuator-voltage calibration.",
+  "safe_command_range_v": [
+    0.0,
+    0.775
+  ],
+  "reference_map_under_test": {
+    "out1": "in1",
+    "out2": "in2"
+  },
+  "static": {},
+  "sine": {},
+  "error": "RuntimeError: pyrpl is not installed in the active Python environment",
+  "finished_at": "2026-09-29T20:06:10.930229+00:00"
+}

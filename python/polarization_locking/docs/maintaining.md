@@ -4,7 +4,7 @@
 
 | Location | Responsibility |
 | --- | --- |
-| `lock.py`, `__main__.py`, `cli.py` | Launch/menu/argument handling; browsing stays hardware-free |
+| `test-suite.py`, `__main__.py`, `cli.py` | Launch/menu/argument handling; browsing stays hardware-free |
 | `catalog.py` | Supported test names, purposes, setup, parameters, method/report dispatch |
 | `config.py`, `settings.py`, `profiles/` | Defaults, validation, versioned recipes and examples |
 | `runner.py` | One run's recipe, provenance, log, status, cleanup and reporting |
@@ -88,8 +88,8 @@ git diff --stat
 git diff -- python/polarization_locking
 git status --short -- experiments/polarization_locking
 python -m pytest python/polarization_locking/tests
-python python/polarization_locking/lock.py --list
-python python/polarization_locking/lock.py --profile python/polarization_locking/profiles/visibility-in2-example.json --dry-run
+python python/polarization_locking/test-suite.py --list
+python python/polarization_locking/test-suite.py --profile python/polarization_locking/profiles/visibility-in2-example.json --dry-run
 ```
 
 `git diff` excludes untracked files. Review new code, recipes, documentation,

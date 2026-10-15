@@ -5,3 +5,5 @@ results/
 *.log
 *.tmp
 local-config*.json
+.local-settings.json*
+.local-pax-settings.json*

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "experiment": "eom_vpi_hysteresis",
+  "label": "eom1-vpi",
+  "comment": "Verify voltage limits, cabling, PAX reference plane and wavelength. Record temperature stabilization and monitored value if available.",
+  "config": {
+    "selected_eom": "eom1",
+    "eom1_output": "out1",
+    "eom2_output": "out2",
+    "stop_command_v": 0.9,
+    "rp_output_max_voltage": 0.9,
+    "points": 31,
+    "repeats": 1,
+    "pax_samples_per_point": 3,
+    "ramp_duration_s": 0.15,
+    "settle_s": 0.25,
+    "undriven_baseline_s": 60.0,
+    "stage_settle_s": 3.0,
+    "vpi_fit_max_command_v": 0.45,
+    "output_map_confirmed": false,
+    "voltage_chain": "",
+    "pax_reference_plane": ""
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "status": "completed",
+  "started_at": "2026-09-29T18:43:45.524911+00:00",
+  "purpose": "Electrical OUT1/OUT2 loopback verification; not delivered actuator-voltage calibration.",
+  "safe_command_range_v": [
+    0.0,
+    0.775
+  ],
+  "reference_map_under_test": {
+    "out1": "in1",
+    "out2": "in2"
+  },
+  "static": {
+    "phi1": {
+      "in1": {
+        "intercept_v": -0.005278170108795262,
+        "slope_measured_per_command": 1.0094000716363232,
+        "residual_rms_v": 0.00015765811744399182,
+        "correlation": 0.9999998375339988
+      },
+      "in2": {
+        "intercept_v": -0.00885170847177505,
+        "slope_measured_per_command": 8.044319768105127e-05,
+        "residual_rms_v": 2.0921229546693385e-05,
+        "correlation": 0.7253022112220567
+      },
+      "ramp_host_elapsed_s": [
+        1.0001076350017684,
+        1.0001157099977718,
+        1.0001042549993144,
+        1.0001303370008827,
+        1.0001074130050256
+      ]
+    },
+    "phi2": {
+      "in1": {
+        "intercept_v": -0.005160152912139889,
+        "slope_measured_per_command": 0.00012358926957653054,
+        "residual_rms_v": 5.7994551589762676e-05,
+        "correlation": 0.5042463152159595
+      },
+      "in2": {
+        "intercept_v": -0.008819051086902622,
+        "slope_measured_per_command": 0.04006964545096121,
+        "residual_rms_v": 1.949892628054102e-05,
+        "correlation": 0.9999984229482151
+      },
+      "ramp_host_elapsed_s": [
+        1.0001123260008171,
+        1.0001280379947275,
+        1.0001344999982393,
+        1.000106612998934,
+        1.0001049119964591
+      ]
+    }
+  },
+  "sine": {
+    "phi1": {
+      "settings": {
+        "frequency_hz": 0.11641532182693481,
+        "center_v": 0.387451171875,
+        "amplitude_v": 0.387451171875,
+        "fixed_v": 0.0
+      },
+      "scope_samples": 16384,
+      "scope_dt_s": 0.000524288,
+      "scope_capture_elapsed_s": 8.622967191004136,
+      "in1": {
+        "center_v": 0.3857516050338739,
+        "amplitude_v": 0.39090716684210053,
+        "phase_deg_relative_to_capture_start": 11.355159934717285,
+        "residual_rms_v": 0.0002713535645577047
+      },
+      "in2": {
+        "center_v": -0.00883187353610994,
+        "amplitude_v": 7.498199066149948e-06,
+        "phase_deg_relative_to_capture_start": 29.403355715523972,
+        "residual_rms_v": 7.247876413022503e-05
+      }
+    },
+    "phi2": {
+      "settings": {
+        "frequency_hz": 0.11641532182693481,
+        "center_v": 0.387451171875,
+        "amplitude_v": 0.387451171875,
+        "fixed_v": 0.0
+      },
+      "scope_samples": 16384,
+      "scope_dt_s": 0.000524288,
+      "scope_capture_elapsed_s": 8.618212515997584,
+      "in1": {
+        "center_v": -0.005126163363456787,
+        "amplitude_v": 4.3007049988839237e-05,
+        "phase_deg_relative_to_capture_start": 14.155734236052059,
+        "residual_rms_v": 0.00014562354608811011
+      },
+      "in2": {
+        "center_v": 0.006713092327117941,
+        "amplitude_v": 0.015544870802619442,
+        "phase_deg_relative_to_capture_start": -169.1438985803864,
+        "residual_rms_v": 7.11408948905515e-05
+      }
+    }
+  },
+  "finished_at": "2026-09-29T18:44:39.186855+00:00"
+}

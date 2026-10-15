@@ -1,0 +1,25 @@
+Run comment: isolated MZI single input test with E1
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+Connecting to PAX at localhost:38400...
+Starting PAX daemon; motor spin-up includes a 5-second settling wait. Please wait...
+PAX daemon connected; applying wavelength...
+PAX ready for setup. Fresh measurement validation runs before data logging.
+Active contrast on in1; requested/declared drive 0.5 Hz.
+DC coupling and a full fringe excursion are required. Extrema use 1/64-period bin averages.
+Raw voltages retain their sign. A blocked-light baseline is required for contrast.
+Block all light reaching the PD on in1, keeping electronics/settings unchanged. [Enter = ready, b = cancel] Measured signed dark baseline: -0.0122044981 V; saved dark.npz and dark.json.
+Unblock the PD and restore the measurement beam. Leave detector settings unchanged. [Enter = ready, b = cancel] Contrast drive: {'mode': 'active', 'frequency_hz': 0.46566128730773926, 'axis': 'phi2', 'output': 'out2', 'waveform': 'sin', 'asg_waveform': 'sin', 'offset_v': 0.387451171875, 'amplitude_v': 0.387451171875, 'requested_frequency_hz': 0.5, 'started_at': '2026-10-05T21:51:55.826371+00:00'}
+Capture 1: 92.46%; low=-0.0050354 V, high=0.170839 V, Vpp=0.175875 V (dark-corrected)
+Capture 2: 92.55%; low=-0.0051136 V, high=0.170943 V, Vpp=0.176057 V (dark-corrected)
+Capture 3: 92.47%; low=-0.0050621 V, high=0.170355 V, Vpp=0.175417 V (dark-corrected)
+Mean observed visibility: 92.49% (3/3 valid captures).
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-10-05/225117_pd-visibility_phi2-vis-test_path-E1/report.pdf

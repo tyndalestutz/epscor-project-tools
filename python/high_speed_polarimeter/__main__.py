@@ -11,7 +11,7 @@ from .runner import execute
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    action = parser.add_mutually_exclusive_group(required=True)
+    action = parser.add_mutually_exclusive_group()
     action.add_argument("--list", action="store_true")
     action.add_argument("--dry-run", action="store_true")
     action.add_argument("--mock-run", action="store_true")
@@ -19,7 +19,26 @@ def main(argv=None):
     action.add_argument("--reevaluate", metavar="RUN_DIRECTORY")
     parser.add_argument("--profile")
     parser.add_argument("--results-directory")
+    parser.add_argument("--tool", choices=("pax-live",), help="Reuse an existing bench tool with high speed run storage")
     args = parser.parse_args(argv)
+    if not any((args.list, args.dry_run, args.mock_run, args.run, args.reevaluate)):
+        if args.profile or args.results_directory or args.tool:
+            parser.error("profile/results-directory/tool require an explicit action")
+        from .cli import HighSpeedMenu, LOCAL_SETTINGS
+        try:
+            HighSpeedMenu(state_path=LOCAL_SETTINGS).run()
+        except (ValueError, OSError, TypeError) as exc:
+            parser.error(str(exc))
+        return 0
+    if args.tool:
+        if not (args.run or args.dry_run):
+            parser.error("--tool requires --run or --dry-run")
+        try:
+            from .shared_tools import launch
+            return launch(args.tool, profile=args.profile, results_directory=args.results_directory,
+                          dry_run=args.dry_run)
+        except (ValueError, OSError, TypeError, RuntimeError, ImportError) as exc:
+            parser.error(str(exc))
     if (args.list or args.reevaluate) and (args.profile or args.results_directory):
         parser.error("profile/results-directory apply only to dry-run, mock-run or run")
     try:

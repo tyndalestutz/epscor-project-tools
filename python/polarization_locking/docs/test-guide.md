@@ -90,9 +90,9 @@ a photodiode; no ND correction or theoretical phase conversion is applied.
 OUT2 remains at zero and outputs are returned to zero on exit.
 
 ```bash
-python python/polarization_locking/lock.py --show stokes-phase-sweep
-python python/polarization_locking/lock.py --profile python/polarization_locking/profiles/stokes-phase-sweep-example.json --dry-run
-python python/polarization_locking/lock.py --profile python/polarization_locking/profiles/stokes-phase-sweep-example.json --run stokes-phase-sweep
+python python/polarization_locking/test-suite.py --show stokes-phase-sweep
+python python/polarization_locking/test-suite.py --profile python/polarization_locking/profiles/stokes-phase-sweep-example.json --dry-run
+python python/polarization_locking/test-suite.py --profile python/polarization_locking/profiles/stokes-phase-sweep-example.json --run stokes-phase-sweep
 ```
 
 Defaults: 60 s (30 electrical cycles), 0.5 Hz, 0.3875 V amplitude and 0.3875 V
