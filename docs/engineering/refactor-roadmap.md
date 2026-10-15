@@ -318,7 +318,7 @@ Blank links mean no actual GitHub PR is recorded. Planned entries are unimplemen
 | Planning ID | Objective | Status | GitHub PR | Notes / blockers |
 | --- | --- | --- | --- | --- |
 | PR 0 | Campaign foundation | Merged | [#2](https://github.com/tyndalestutz/epscor-project-tools/pull/2) | Integrated after baseline PR #1; merge `754c9e4` |
-| PR 1 | Offline regression infrastructure | In progress | | [Offline testing guide](offline-testing.md); verify clean-environment execution, Actions and failure propagation before completion |
+| PR 1 | Offline regression infrastructure | In progress | [#3 (draft)](https://github.com/tyndalestutz/epscor-project-tools/pull/3) | [Offline testing guide](offline-testing.md); review clean-environment, Actions and failure-propagation evidence in the PR before merge |
 | PR 2 | Hygiene and onboarding | Planned | | Classify records; qualify environment |
 | PR 3 | Characterization/fixtures | Planned | | Select evidence and physical protocols |
 | PR 4 | Read-only run interfaces | Planned | | Requires qualified schemas/fixtures |
