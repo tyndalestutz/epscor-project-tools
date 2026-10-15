@@ -17,6 +17,42 @@ Never sacrifice the first three merely to reduce usage or make output look clean
 
 ---
 
+## Repository modernization campaign
+
+This repository is undergoing an incremental, regression-preserving modernization
+campaign. The authoritative strategy, architecture baseline, sequence, risks and
+progress ledger are in [docs/engineering/refactor-roadmap.md](docs/engineering/refactor-roadmap.md).
+
+For campaign tasks:
+
+1. **Read the roadmap before planning changes**, and inspect the current source;
+   the roadmap does not replace implementation review.
+2. **Preserve established behavior by default.** Working procedures, hardware
+   semantics, analysis outputs and operator workflows are compatibility requirements.
+3. **Prioritize scientific and hardware regressions over stylistic consistency.**
+   Protect timing, synchronization, mapping, actuator commands, calibration, raw
+   data, provenance and cleanup.
+4. **Work within one bounded PR objective.** State permitted scope, exclusions,
+   acceptance criteria, validation evidence and remaining bench checks.
+5. **Characterize high-risk code before refactoring.** Distinguish software tests,
+   offline artifact comparisons and physical validation; passing tests alone do
+   not establish measurement equivalence.
+6. **Prefer additive, reversible migrations.** Preserve recipes, entry points,
+   formats and defaults until explicit compatibility plans and regression gates
+   justify changes.
+7. **Do not implement future phases opportunistically.** Roadmap direction and
+   dependencies do not authorize additional work.
+8. **Keep the roadmap synchronized with significant decisions.** Update changed
+   architecture, scope, priorities and risks; link merged PRs without duplicating
+   extensive implementation notes.
+9. **Report uncertainty and incomplete validation.** Unexecuted tests are not
+   passing results, mocks are not bench verification, and proposals are not facts.
+
+The active PR's explicit scope and acceptance criteria determine authorized work,
+subject to the repository's scientific-integrity and safety policies.
+
+---
+
 ## Root-agent responsibility
 
 The root agent should retain tasks involving:
