@@ -1,0 +1,20 @@
+{
+  "fixture_version": 1,
+  "origin": "synthetic analytic references; no physical measurements",
+  "source_revision": "42e8d61c7d5d4b8198510cc34eb3df5fb33187b6",
+  "jones_states": [
+    {"name": "x", "field_re_im": [[1, 0], [0, 0]], "raw_stokes": [1, -1, 0, 0]},
+    {"name": "y", "field_re_im": [[0, 0], [1, 0]], "raw_stokes": [1, 1, 0, 0]},
+    {"name": "diagonal", "field_re_im": [[1, 0], [1, 0]], "raw_stokes": [2, 0, 2, 0]},
+    {"name": "antidiagonal", "field_re_im": [[1, 0], [-1, 0]], "raw_stokes": [2, 0, -2, 0]},
+    {"name": "positive_imaginary_y", "field_re_im": [[1, 0], [0, 1]], "raw_stokes": [2, 0, 0, -2]},
+    {"name": "unequal_elliptical", "field_re_im": [[2, 0], [1, 2]], "raw_stokes": [9, 1, 4, -8]}
+  ],
+  "eom": {
+    "config": {"points": 2, "settle_s": 0.0, "pd_duration_s": 0.001, "pax_samples_per_point": 1},
+    "prefix": ["acquisition_started", "pax_baseline"],
+    "point_events": ["command_requested", "command_completed", "settled", "pd_capture", "pax_sample", "point_completed"],
+    "partial_events": ["command_requested", "command_completed", "settled", "pd_capture", "acquisition_error"],
+    "signed_pd_period_v": [-0.004, -0.003, -0.002, -0.001, 0.0, 0.001, 0.002, 0.003]
+  }
+}
