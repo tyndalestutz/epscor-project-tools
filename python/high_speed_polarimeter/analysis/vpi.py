@@ -1,6 +1,7 @@
 """Explicit fixed-axis rotation model; no edits to source measurements."""
 import csv
 import hashlib
+import json
 from pathlib import Path
 
 import numpy as np
@@ -72,6 +73,51 @@ def estimate(volts, forward, backward, config):
                 return_separation_deg=float(np.degrees(np.arctan2(np.linalg.norm(np.cross(forward[0],backward[0])), forward[0]@backward[0]))))
 
 
+def acquisition_errors(directory, rows):
+    """Check retained acquisition evidence, without interpreting physical timing."""
+    errors = []
+    try:
+        metadata = read_json(directory/'acquisition.json')
+        if not isinstance(metadata, dict) or metadata.get('schema_version') != 1 or metadata.get('experiment') != 'eom_vpi_hysteresis':
+            errors.append('Missing/unsupported Vpi acquisition metadata.')
+    except (OSError, ValueError):
+        errors.append('Missing or unreadable acquisition.json.')
+    try:
+        with (directory/'events.jsonl').open() as stream:
+            events = [json.loads(line) for line in stream]
+        if not events or any(not isinstance(event, dict) or 'kind' not in event for event in events):
+            raise ValueError('Invalid event records')
+        if events[-1]['kind'] != 'acquisition_completed':
+            errors.append('Retained event log does not establish acquisition completion.')
+        samples = [event for event in events if event['kind'] == 'pax_sample']
+        if len(samples) != len(rows):
+            errors.append('PAX event count does not match retained CSV rows.')
+        else:
+            for event, row in zip(samples, rows):
+                reading = event.get('interface_reading', {})
+                if (event.get('synthetic') is not False
+                        or not isinstance(event.get('raw_record'), dict) or not event['raw_record']
+                        or any(float(row[key]) != float(reading.get(key, np.nan))
+                               for key in ('s1', 's2', 's3'))
+                        or float(row['pax_timestamp']) != float(reading.get('timestamp', np.nan))
+                        or float(row['elapsed_s']) != float(event.get('received_s', np.nan))):
+                    errors.append('PAX events lack raw evidence or disagree with CSV directions/timestamps.')
+                    break
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        errors.append('Missing, malformed or inconsistent events.jsonl.')
+    for field in ('elapsed_s', 'pax_timestamp'):
+        try:
+            values = np.array([float(row[field]) for row in rows])
+            valid = len(values) >= 2 and np.isfinite(values).all() and (np.diff(values) > 0).all()
+            if field == 'pax_timestamp':
+                valid = valid and (values > 0).all()
+            if not valid:
+                errors.append(f'{field} must contain finite, strictly advancing records.')
+        except (ValueError, TypeError, KeyError):
+            errors.append(f'Missing or invalid {field} records.')
+    return errors
+
+
 def analyze(directory):
     recipe = load_recipe(directory/'recipe.json')
     config = recipe.acquisition_config()
@@ -82,7 +128,7 @@ def analyze(directory):
             rows = list(csv.DictReader(stream))
     else:
         rows = []
-    result = dict(schema_version=1, evaluator='eom_vpi_hysteresis', evaluator_version='1',
+    result = dict(schema_version=1, evaluator='eom_vpi_hysteresis', evaluator_version='2',
                   source_sha256=hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None,
                   mode=run['mode'], cycles=[],
                   method='Per-point arithmetic means of all configured fresh PAX directions; common SVD plane per cycle; atan2 phase unwrapped per branch; linear fit only within configured interval.',
@@ -98,9 +144,13 @@ def analyze(directory):
     result['undriven_baseline'] = summarize(rows)
     if run['mode'] != 'hardware' or any(row['synthetic'].lower() == 'true' for row in rows):
         result.update(status='SYNTHETIC_ONLY', reason='Mock records establish software behavior, not optical Vpi.')
-    elif run['status'] != 'COMPLETED' or run.get('cleanup_status') != 'COMPLETED':
-        result.update(status='INCOMPLETE', reason='Acquisition or cleanup incomplete; no calibrated result.')
     else:
+        result['acquisition_errors'] = acquisition_errors(directory, rows)
+        if run['status'] != 'COMPLETED' or run.get('cleanup_status') != 'COMPLETED':
+            result.update(status='INCOMPLETE', reason='Acquisition or cleanup incomplete; no calibrated result.')
+        elif result['acquisition_errors']:
+            result.update(status='INVALID_ACQUISITION', reason='; '.join(result['acquisition_errors']))
+    if result.get('status') is None:
         for cycle in range(config.repeats):
             branches = []
             voltages = None

@@ -2,6 +2,7 @@
 import csv
 import json
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -142,3 +143,97 @@ def test_pax_only_adapter_orders_read_before_rp_and_records_zero():
     assert session.read_pax()['interface_reading']['dop']==.1  # Retained, no purity cut.
     session.disconnect()
     assert session.cleanup_evidence['final_asg_offset_settings_v']==[0.,0.]
+
+
+def synthetic_hardware_evidence(tmp_path):
+    """Hardware-shaped test evidence only; this session never imports drivers."""
+    class SyntheticSession(MockAcquisitionSession):
+        mode = 'hardware'
+
+        def read_pax(self):
+            reading = super().read_pax()
+            phase = np.pi*self.commands[0]/.775
+            reading['interface_reading'].update(zip(('s1','s2','s3'), directions(np.array([phase]))[0]))
+            # Exercise the hardware-evidence branch using explicitly synthetic fixtures.
+            reading['synthetic'] = False
+            return reading
+
+    recipe = small_recipe(tmp_path, output_map_confirmed=True,
+                          voltage_chain='SYNTHETIC TEST ONLY', pax_reference_plane='NO HARDWARE')
+    session = SyntheticSession(recipe.acquisition_config())
+    state = execute(recipe, mode='hardware', session_factory=lambda: session)
+    assert state['status'] == state['cleanup_status'] == state['report_status'] == 'COMPLETED'
+    return Path(state['directory'])
+
+
+def test_offline_vpi_checks_complete_evidence_without_claiming_calibration(tmp_path):
+    from high_speed_polarimeter.quality_vpi import evaluate
+    directory = synthetic_hardware_evidence(tmp_path)
+    raw = {name:(directory/name).read_bytes() for name in
+           ('recipe.json','run.json','acquisition.json','events.jsonl','data.csv')}
+    quality = evaluate(directory).to_dict()
+    assert quality['status'] == 'UNKNOWN'
+    assert next(check for check in quality['checks'] if check['name']=='acquisition_evidence')['status'] == 'PASS'
+    analysis = json.loads((directory/'analysis.json').read_text())
+    assert analysis['cycles'][0]['status'] == 'MODEL_SUPPORTED'
+    assert analysis['cycles'][0]['fits'][0]['vpi_linear_branch_command_v'] == pytest.approx(.775)
+    assert raw == {name:(directory/name).read_bytes() for name in raw}
+
+
+@pytest.mark.parametrize('fault,expected', [
+    ('missing_metadata','acquisition.json'), ('missing_events','events.jsonl'),
+    ('malformed_events','events.jsonl'), ('incomplete_events','completion'),
+    ('missing_sample','event count'), ('direction_mismatch','disagree'),
+    ('constant_host_time','elapsed_s'), ('constant_device_time','pax_timestamp'),
+])
+def test_offline_vpi_rejects_invalid_evidence_before_model_fit(tmp_path, monkeypatch, fault, expected):
+    from high_speed_polarimeter.quality import reevaluate
+    directory = synthetic_hardware_evidence(tmp_path)
+    events_path, csv_path = directory/'events.jsonl', directory/'data.csv'
+    if fault == 'missing_metadata':
+        (directory/'acquisition.json').unlink()
+    elif fault == 'missing_events':
+        events_path.unlink()
+    elif fault == 'malformed_events':
+        events_path.write_text('{broken\n')
+    elif fault in {'incomplete_events','missing_sample'}:
+        events = [json.loads(line) for line in events_path.read_text().splitlines()]
+        if fault == 'incomplete_events':
+            events.pop()
+        else:
+            events.pop(next(i for i,event in enumerate(events) if event['kind']=='pax_sample'))
+        events_path.write_text(''.join(json.dumps(event)+'\n' for event in events))
+    else:
+        with csv_path.open(newline='') as stream:
+            reader = csv.DictReader(stream)
+            fields, rows = reader.fieldnames, list(reader)
+        if fault == 'direction_mismatch':
+            rows[-1]['s1'] = '.9'
+        else:
+            field = 'elapsed_s' if fault == 'constant_host_time' else 'pax_timestamp'
+            for row in rows:
+                row[field] = '1'
+            events = [json.loads(line) for line in events_path.read_text().splitlines()]
+            for event in events:
+                if event['kind'] == 'pax_sample':
+                    if field == 'elapsed_s':
+                        event['received_s'] = 1.
+                    else:
+                        event['interface_reading']['timestamp'] = 1.
+                        event['raw_record']['timestamp'] = 1.
+            events_path.write_text(''.join(json.dumps(event)+'\n' for event in events))
+        with csv_path.open('w',newline='') as stream:
+            writer = csv.DictWriter(stream, fieldnames=fields)
+            writer.writeheader(); writer.writerows(rows)
+    raw = {path.name:path.read_bytes() for path in directory.iterdir()
+           if path.name in {'recipe.json','run.json','acquisition.json','events.jsonl','data.csv'}}
+    monkeypatch.setattr('high_speed_polarimeter.analysis.vpi.estimate',
+                        lambda *args: pytest.fail('Invalid acquisition reached optical model'))
+    quality = reevaluate(directory).to_dict()
+    assert quality['status'] == 'FAIL'
+    check = next(check for check in quality['checks'] if check['name']=='acquisition_evidence')
+    assert check['status'] == 'FAIL' and expected in check['message']
+    analysis = json.loads((directory/'analysis.json').read_text())
+    assert analysis['status'] == 'INVALID_ACQUISITION' and analysis['cycles'] == []
+    assert 'Vπ unavailable:' in (directory/'report.md').read_text()
+    assert raw == {name:(directory/name).read_bytes() for name in raw}

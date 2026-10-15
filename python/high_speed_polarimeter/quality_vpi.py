@@ -13,6 +13,10 @@ def evaluate(directory):
     if result['status'] == 'SYNTHETIC_ONLY':
         checks.append(QualityCheck('optical_vpi',QualityStatus.UNKNOWN,'Synthetic software check; no optical Vpi inference.',evidence=evidence))
     else:
+        errors = result['acquisition_errors']
+        checks.append(QualityCheck('acquisition_evidence', QualityStatus.FAIL if errors else QualityStatus.PASS,
+            '; '.join(errors) if errors else 'Retained setup/events agree with CSV directions/timestamps; host/device records advance. This does not establish integration timing or delivered voltage.',
+            evidence={'artifacts':['acquisition.json','events.jsonl','data.csv']}))
         baseline = result['undriven_baseline']
         requested = read_json(directory/'recipe.json')['config']['undriven_baseline_s']
         covered = baseline.get('covered_s',0)
@@ -33,4 +37,4 @@ def evaluate(directory):
                 'Pi change observed; crossing is interpolated between adjacent sampled commands.' if reached else 'Pi not established: any linear-branch Vpi is extrapolated, not an achieved operating point.', evidence=evidence))
         checks.append(QualityCheck('calibration_validity',QualityStatus.UNKNOWN,
             'Rough model-based check; hysteresis is confounded with settling/time drift. Delivered voltage and temperature unmeasured.',evidence=evidence))
-    return RunQuality(tuple(checks),'eom_vpi_hysteresis','1')
+    return RunQuality(tuple(checks),'eom_vpi_hysteresis','2')
