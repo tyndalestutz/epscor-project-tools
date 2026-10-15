@@ -322,7 +322,7 @@ Blank links mean no actual GitHub PR is recorded. Planned entries are unimplemen
 | PR 0 | Campaign foundation | Merged | [#2](https://github.com/tyndalestutz/epscor-project-tools/pull/2) | Integrated after baseline PR #1; merge `754c9e4` |
 | PR 1 | Offline regression infrastructure | Merged | [#3](https://github.com/tyndalestutz/epscor-project-tools/pull/3) | Merge `5827091`; [offline testing guide](offline-testing.md), 445 software checks and failure-propagation evidence |
 | PR 2 | Hygiene and onboarding | Merged | [#4](https://github.com/tyndalestutz/epscor-project-tools/pull/4) | Merge `42e8d61`; retention policy and optional local workspace; no historical migration |
-| PR 3 | Characterization/fixtures | In progress | | [Coverage/fixtures](scientific-regression.md) and [bench requirements](bench-regression-checklist.md); synthetic evidence only, review/merge pending |
+| PR 3 | Characterization/fixtures | In progress | [#5 (draft)](https://github.com/tyndalestutz/epscor-project-tools/pull/5) | [Coverage/fixtures](scientific-regression.md) and [bench requirements](bench-regression-checklist.md); synthetic evidence only, review/merge pending |
 | PR 4 | Read-only run interfaces | Planned | | Requires qualified schemas/fixtures |
 | PR 5 | Portable configuration | Planned | | Preserve effective recipe behavior |
 | PR 6 | Lifecycle/ownership | Planned | | Bench access and approved protocol required |
