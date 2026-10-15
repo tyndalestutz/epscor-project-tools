@@ -8,6 +8,81 @@ characterization. This package acquires data; it does not interpret the EOM yet.
 
 ## Experiments and recipes
 
+The menu includes **`eom_vpi_hysteresis`**, the PAX-only rough Vπ check. Defaults
+are one 0→0.9→0 V command cycle (31 points per direction, duplicate turning point,
+3 fresh PAX records per point), preceded by a **60-second undriven baseline**.
+Both outputs are commanded zero before the baseline. **3-second stage pauses**
+occur before baseline, before forward sweep, at reversal, and after return to zero;
+individual points use a 0.15 s ramp and 0.25 s settling. The unselected output stays
+zero. Edit `undriven_baseline_s`, `stage_settle_s`, `ramp_duration_s`, `settle_s`,
+limits, points, repeats and sample count in the usual persistent menu.
+
+Baseline `s1/s2/s3` time means are **not unit-renormalized**. Time integrals use
+trapezoidal estimates over adjacent valid host-time records, excluding intervals
+over 5× median cadence and reversed/invalid times. The report records valid time
+coverage, excluded intervals, temporal variance/SD, angular RMS wander, DoP and
+power. Temporal variance uses time-weighted population moments, not N−1 sample
+variance. This is a downstream **zero-drive PAX reference**, not an independently
+measured pre-EOM input state. Low-DoP samples are retained with uncertainty warnings.
+
+The sweep saves every raw PAX record in `events.jsonl` and `data.csv`, with
+`acquisition.json`, resolved `recipe.json`, `run.json`, source provenance and
+zero-setting cleanup evidence. No PD buffers are acquired. `analysis.json`,
+`quality.json`, `report.md` and `report.pdf` are derived offline. A circle-plane
+model infers trajectory phase from explicit three-sample point means; configured
+fit range defaults to 0–0.45 command V. These defaults reproduce the initial bench
+check, not a universally established linear range. Model residual/coverage checks
+are configurable; inspect them and the observed curve. Too-small/nonplanar or
+ambiguous trajectories yield **Vπ unavailable**, while retaining baseline-relative
+Poincaré excursions. Linear-branch π/slope estimates are labeled **extrapolated**
+when π is unobserved; actual crossings are separately interpolated between adjacent
+sampled commands. Plateaus stay visible. Phase unwrapping cannot rule out whole
+unobserved turns between coarse command steps. Use sufficiently fine sampling.
+Forward/reverse differences include hysteresis, drift and settling; temperature
+and terminal voltage are not independently measured. Do not equate small response
+with zero coupling or claim 100% efficiency without an axis/reference calibration.
+
+Example recipe (hardware confirmation intentionally unset):
+
+```bash
+PYTHONPATH=python python -m high_speed_polarimeter --dry-run --profile python/high_speed_polarimeter/profiles/vpi-hysteresis-example.json
+PYTHONPATH=python python -m high_speed_polarimeter --mock-run --profile python/high_speed_polarimeter/profiles/vpi-hysteresis-example.json --results-directory /tmp/vpi-mock
+```
+
+For hardware, edit/confirm physical channel mapping, limits, voltage chain and PAX
+reference plane first; record input-polarization and temperature conditions in the
+run comment. Select the menu's Vπ test and Run, or use `--run --profile` with your
+local recipe. A constant mock PAX record validates workflow only and never produces
+an optical Vπ. Offline `--reevaluate RUN_DIRECTORY` regenerates derived analysis and
+reports without instrument access or changing source data.
+
+Open the numbered interactive suite, just like polarization locking:
+
+```bash
+python python/high_speed_polarimeter/test-suite.py
+# Or, from inside python/high_speed_polarimeter:
+python test-suite.py
+# Equivalent module launcher from the repository root:
+PYTHONPATH=python python -m high_speed_polarimeter
+```
+
+Select a test by number or name. The detail menu supports `r run`, `e edit`,
+`all edit all`, `s save`, `l load`, `d defaults`, `b back`, and `q quit`, followed
+by optional run-name/comment prompts. Recipes and settings persist while the menu
+is open. Edited settings, loaded recipes, and run names/comments also persist
+across restarts in ignored local settings files, separately for each test.
+`d defaults` resets the selected test persistently. Explicit command-line runs
+continue to use their recipes/defaults rather than interactive saved settings.
+Runs return to the detail menu; cleanup failure closes the suite.
+The PAX entry reuses the polarization-locking detail menu and alignment panel.
+Its recipes default to this package's `profiles` folder and loaded PAX recipes
+are routed to high speed experiment storage. Acquisition recipes retain their
+configured results directory. Browsing/editing does not connect instruments.
+`mock_lifecycle` Run is explicitly synthetic; EOM Run uses hardware and retains
+the existing output-map/voltage-chain/reference-plane validation. Planned tools
+are displayed separately and cannot be run. Existing command-line actions remain
+available for automation.
+
 - `single_eom_characterization`: select `eom1` or `eom2`, sweep RP command volts
   from start to stop over a configured point count, hold the other EOM at its
   configured command, optionally reverse, and repeat. Both visits to the turning
@@ -62,6 +137,29 @@ Runtime acquisition requires NumPy (`requirements.txt`); tests require pytest
 (`requirements-dev.txt`). Bench mode uses the existing `polarization_locking`
 driver environment, including Pyrpl/YAQC/YAQD and USB/VISA support; it adds no
 new hardware or plotting dependency. Mock signals verify data flow, not physics.
+
+## Shared PAX alignment panel
+
+Launch the existing polarization-locking PAX panel from this suite, without copying
+its implementation:
+
+```bash
+PYTHONPATH=python python -m high_speed_polarimeter --dry-run --tool pax-live
+PYTHONPATH=python python -m high_speed_polarimeter --run --tool pax-live
+```
+
+The panel retains its Save/Discard controls. Saved runs use the existing dated
+`pax-live` folder layout, CSV, recipe, metadata, console log and PDF under
+`experiments/high_speed_polarimeter`. This tool retains the polarization-locking
+run schema and reporting; high speed acquisition quality/re-evaluation does not
+apply to it. Only PAX is connected, with the existing PAX worker/cleanup behavior.
+Opening the panel requires the existing GUI and PAX driver environment.
+
+Use `--profile python/polarization_locking/profiles/pax-live-example.json` for a
+polarization-locking PAX recipe; EOM recipes are not compatible. The launcher
+overrides any results folder in that recipe with the high speed default, or with
+an explicit `--results-directory`. Other polarization-locking tools are not yet
+exposed by this launcher.
 
 For a local bench recipe, copy an example to `local-config-eom.json`, then edit
 addresses/profile, PD input, EOM-to-output mapping, RP command limits, wavelength,
@@ -218,7 +316,9 @@ states, actual delivered voltages and PAX timing must be verified at the bench.
 Scientific sequence remains reference-path characterization → independent EOM
 characterization → combined-component comparison → analyzer-state design → empirical
 instrument matrix calibration → withheld-state validation → high-speed reconstruction.
-Only acquisition portions of the two EOM experiments now exist. No Vπ, sinusoidal/
-retardance/Mueller/Poincare fitting, axis extraction, hysteresis/drift metrics,
-state optimization, Stokes reconstruction, calibration inversion, GUI, or broader
-shared-infrastructure refactor was added. Basler/OAM workflows remain out of scope.
+The original two EOM experiments remain acquisition-only; the separate PAX-only
+Vπ/hysteresis routine adds the explicit rough fixed-axis model and direction
+comparison described above. It does not establish calibrated terminal-voltage
+retardance, an independently verified physical eigenaxis, or intrinsic hysteresis.
+State optimization, Stokes reconstruction and calibration inversion remain pending.
+Basler/OAM workflows remain out of scope.

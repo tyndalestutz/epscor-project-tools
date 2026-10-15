@@ -1,0 +1,31 @@
+Run comment: same as phi1
+INFO:pyrpl:All your PyRPL settings will be saved to the config file
+    /home/augustus/pyrpl_user_dir/config/scope_config.yml
+If you would like to restart PyRPL with these settings, type "pyrpl.exe scope_config" in a windows terminal or 
+    from pyrpl import Pyrpl
+    p = Pyrpl('scope_config')
+in a python terminal.
+INFO:pyrpl.redpitaya:Correct FPGA image detected, skipping reload
+WARNING:pyrpl.redpitaya:no pyrpl instance
+WARNING:pyrpl.redpitaya:no pyrpl instance
+INFO:pyrpl.redpitaya:Successfully connected to Redpitaya with hostname 192.168.1.98.
+Connecting to PAX at localhost:38400...
+Starting PAX daemon; motor spin-up includes a 5-second settling wait. Please wait...
+PAX daemon connected; applying wavelength...
+PAX ready for setup. Fresh measurement validation runs before data logging.
+Continuous coupling plan: target=phi2; 11 bias segments; 0.1 Hz hardware sine; approximately 7.7 minutes.
+OUT1->IN1 and OUT2->IN2 are measured references; command and measurement remain separate.
+WARNING:pyrpl.modules:Trying to load attribute decimation of module scope that are invalid setup_attributes.
+Segment 0: phi2 sine 0.116415 Hz, phi1=0 V; 1 warm-up + 3 recorded cycles.
+Segment 1: phi2 sine 0.116415 Hz, phi1=0.0773926 V; 1 warm-up + 3 recorded cycles.
+Segment 2: phi2 sine 0.116415 Hz, phi1=0.154907 V; 1 warm-up + 3 recorded cycles.
+Segment 3: phi2 sine 0.116415 Hz, phi1=0.232422 V; 1 warm-up + 3 recorded cycles.
+Segment 4: phi2 sine 0.116415 Hz, phi1=0.309937 V; 1 warm-up + 3 recorded cycles.
+Segment 5: phi2 sine 0.116415 Hz, phi1=0.387451 V; 1 warm-up + 3 recorded cycles.
+Segment 6: phi2 sine 0.116415 Hz, phi1=0.464966 V; 1 warm-up + 3 recorded cycles.
+Segment 7: phi2 sine 0.116415 Hz, phi1=0.54248 V; 1 warm-up + 3 recorded cycles.
+Segment 8: phi2 sine 0.116415 Hz, phi1=0.619995 V; 1 warm-up + 3 recorded cycles.
+Segment 9: phi2 sine 0.116415 Hz, phi1=0.697388 V; 1 warm-up + 3 recorded cycles.
+Segment 10: phi2 sine 0.116415 Hz, phi1=0.774902 V; 1 warm-up + 3 recorded cycles.
+Continuous coupling data saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-29/220235_cross-sweep_phi2-rerun/data.csv and drive_trace.npz
+PDF report saved to /home/augustus/Documents/code/repos/epscor-project-tools/experiments/polarization_locking/2026-09-29/220235_cross-sweep_phi2-rerun/report.pdf

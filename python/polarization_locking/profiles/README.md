@@ -13,7 +13,7 @@ Minimal templates inherit unspecified defaults from the current code. Open one
 in the menu, edit the settings and `bench_notes`, then save a named recipe:
 
 ```bash
-python python/polarization_locking/lock.py --profile python/polarization_locking/profiles/visibility-in2-example.json
+python python/polarization_locking/test-suite.py --profile python/polarization_locking/profiles/visibility-in2-example.json
 ```
 
 Saved menu recipes and each run's `recipe.json` contain the full configuration

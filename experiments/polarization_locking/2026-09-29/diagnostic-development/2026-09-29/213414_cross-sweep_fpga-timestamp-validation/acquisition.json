@@ -1,0 +1,247 @@
+{
+  "format_version": 1,
+  "status": "completed",
+  "requested_actuator": "both",
+  "requested_reference_sample_rate_hz": 400.0,
+  "time_origin": "host_monotonic experiment origin; not persisted as an absolute clock",
+  "synchronization": "RP sample times use the FPGA scope trigger/current 125-MHz counters mapped into host monotonic time by a bracketed counter read. A host request/completion bracket is retained per capture and used only as an explicit fallback. PAX elapsed_s is the host request/receive midpoint minus the configured empirical latency. Raw timestamps, uncertainties, counter values, and capture gaps are retained.",
+  "reference_timing_primary": "fpga_trigger_timestamp",
+  "reference_timing_fallback": "host_request_completion_bracket",
+  "fpga_counter_scale_uncertainty_assumption": "100 ppm plus half a saved ADC interval",
+  "pax_latency_correction_s": 0.12,
+  "pax_latency_correction_basis": "Empirical 2026-09-29 cross-sweep lag sensitivity: branch separation was minimized with PAX records associated 0.10--0.13 s before the transaction midpoint. This is a timing calibration, not an instrument-provided timestamp.",
+  "reference_channels": {
+    "in1": "OUT1 / phi1",
+    "in2": "OUT2 / phi2"
+  },
+  "segments": [
+    {
+      "sub_run": 0,
+      "target_actuator": "phi1",
+      "fixed_actuator": "phi2",
+      "segment_id": 0,
+      "bias_index": 0,
+      "fixed_v": 0.1549072265625,
+      "frequency_hz": 0.11641532182693481,
+      "center_v": 0.387451171875,
+      "amplitude_v": 0.387451171875,
+      "warmup_cycles": 0,
+      "recorded_cycles": 2,
+      "minimum_dop": 0.9,
+      "transition_started_s": 0.30673768000269774,
+      "transition_finished_s": 1.3356706160047906,
+      "transition_ramp": {
+        "start_v": [
+          0.0,
+          0.0
+        ],
+        "requested_v": [
+          0.3875,
+          0.155
+        ],
+        "steps": 50,
+        "offset_writes": 100,
+        "requested_duration_s": 1.0,
+        "host_elapsed_s": 1.0000991060005617,
+        "changed_channels": [
+          1,
+          2
+        ],
+        "asg_readback_v": [
+          0.387451171875,
+          0.1549072265625
+        ]
+      },
+      "settle_s": 1.0,
+      "settle_finished_s": 2.33703311499994,
+      "scope_sampling_time_s": 0.000524288,
+      "scope_duration_s": 8.589934592,
+      "scope_decimation": 65536,
+      "scope_fpga_average": true,
+      "drive_started_s": 2.3689417240020703,
+      "status": "completed",
+      "input_clipped": false,
+      "reference_captures": [
+        {
+          "capture_id": 0,
+          "source": "fpga_trigger_timestamp",
+          "host_scope_request_s": 2.369003922001866,
+          "host_scope_result_s": 11.088427063004929,
+          "trace_span_s": 8.589410304000001,
+          "capture_start_s": 2.37422010700449,
+          "uncertainty_s": 0.0012525397129373324,
+          "fpga_current_tick": 236143585133023,
+          "fpga_trigger_tick": 236142495783381,
+          "fpga_tick_period_s": 8e-09,
+          "fpga_trigger_age_s": 8.714797136000001,
+          "host_current_query_requested_s": 11.088898327005154,
+          "host_current_query_received_s": 11.089136159003829,
+          "host_trigger_query_received_s": 11.089397766001639,
+          "host_result_after_trace_end_s": 0.12479665200043755,
+          "fallback_capture_start_s": 2.434010340503397,
+          "fallback_uncertainty_s": 0.06553070650153066
+        },
+        {
+          "capture_id": 1,
+          "source": "fpga_trigger_timestamp",
+          "host_scope_request_s": 11.089603927001008,
+          "host_scope_result_s": 19.801850563002517,
+          "trace_span_s": 8.589410304000001,
+          "capture_start_s": 11.094134005000859,
+          "uncertainty_s": 0.0012492255609793162,
+          "fpga_current_tick": 236144674288836,
+          "fpga_trigger_tick": 236143585744384,
+          "fpga_tick_period_s": 8e-09,
+          "fpga_trigger_age_s": 8.708355616,
+          "host_current_query_requested_s": 19.80237337500148,
+          "host_current_query_received_s": 19.80260586700024,
+          "host_trigger_query_received_s": 19.802827758001513,
+          "host_result_after_trace_end_s": 0.11830625400165928,
+          "fallback_capture_start_s": 11.151022093001762,
+          "fallback_uncertainty_s": 0.061942454000754224
+        }
+      ],
+      "finished_s": 23.882931468004244,
+      "stop_center_wait_s": 4.040776486003074,
+      "achieved_reference_rate_hz": 381.4697265625
+    },
+    {
+      "sub_run": 1,
+      "target_actuator": "phi2",
+      "fixed_actuator": "phi1",
+      "segment_id": 1,
+      "bias_index": 0,
+      "fixed_v": 0.387451171875,
+      "frequency_hz": 0.11641532182693481,
+      "center_v": 0.387451171875,
+      "amplitude_v": 0.387451171875,
+      "warmup_cycles": 0,
+      "recorded_cycles": 2,
+      "minimum_dop": 0.9,
+      "transition_started_s": 23.901196698003332,
+      "transition_finished_s": 24.929166553003597,
+      "transition_ramp": {
+        "start_v": [
+          0.3875,
+          0.155
+        ],
+        "requested_v": [
+          0.3875,
+          0.3875
+        ],
+        "steps": 50,
+        "offset_writes": 50,
+        "requested_duration_s": 1.0,
+        "host_elapsed_s": 1.0000796609965619,
+        "changed_channels": [
+          2
+        ],
+        "asg_readback_v": [
+          0.387451171875,
+          0.387451171875
+        ]
+      },
+      "settle_s": 1.0,
+      "settle_finished_s": 25.929261838005914,
+      "scope_sampling_time_s": 0.000524288,
+      "scope_duration_s": 8.589934592,
+      "scope_decimation": 65536,
+      "scope_fpga_average": true,
+      "drive_started_s": 25.96161960500467,
+      "status": "completed",
+      "input_clipped": false,
+      "reference_captures": [
+        {
+          "capture_id": 2,
+          "source": "fpga_trigger_timestamp",
+          "host_scope_request_s": 25.96168807500362,
+          "host_scope_result_s": 34.81731788600155,
+          "trace_span_s": 8.589410304000001,
+          "capture_start_s": 25.966783866502055,
+          "uncertainty_s": 0.0012729202299291379,
+          "fpga_current_tick": 236146551175870,
+          "fpga_trigger_tick": 236145444778710,
+          "fpga_tick_period_s": 8e-09,
+          "fpga_trigger_age_s": 8.85117728,
+          "host_current_query_requested_s": 34.81783548800013,
+          "host_current_query_received_s": 34.818086805003986,
+          "host_trigger_query_received_s": 34.81833679000556,
+          "host_result_after_trace_end_s": 0.26112371549949387,
+          "fallback_capture_start_s": 26.094797828502585,
+          "fallback_uncertainty_s": 0.13363404149896205
+        },
+        {
+          "capture_id": 3,
+          "source": "fpga_trigger_timestamp",
+          "host_scope_request_s": 34.81854315200326,
+          "host_scope_result_s": 43.82066512900201,
+          "trace_span_s": 8.589410304000001,
+          "capture_start_s": 34.823527019001865,
+          "uncertainty_s": 0.001279705298758641,
+          "fpga_current_tick": 236147676558707,
+          "fpga_trigger_tick": 236146551843330,
+          "fpga_tick_period_s": 8e-09,
+          "fpga_trigger_age_s": 8.997723016,
+          "host_current_query_requested_s": 43.82113224600471,
+          "host_current_query_received_s": 43.821367823999026,
+          "host_trigger_query_received_s": 43.82159040600527,
+          "host_result_after_trace_end_s": 0.407727806000139,
+          "fallback_capture_start_s": 35.024898988502635,
+          "fallback_uncertainty_s": 0.20688012449937673
+        }
+      ],
+      "finished_s": 47.47485084100481,
+      "stop_center_wait_s": 3.6147089010012015,
+      "achieved_reference_rate_hz": 381.4697265625
+    }
+  ],
+  "cleanup_ramp": {
+    "start_v": [
+      0.3875,
+      0.3875
+    ],
+    "requested_v": [
+      0.0,
+      0.0
+    ],
+    "steps": 50,
+    "offset_writes": 100,
+    "requested_duration_s": 1.0,
+    "host_elapsed_s": 1.0001015000016196,
+    "changed_channels": [
+      1,
+      2
+    ],
+    "asg_readback_v": [
+      0.0,
+      0.0
+    ]
+  },
+  "measured_pax_rate_hz": 6.89932035004093,
+  "estimated_pax_samples_per_cycle": 68.9932035004093,
+  "reference_validation": [
+    {
+      "segment_id": 0,
+      "target_actuator": "phi1",
+      "status": "trustworthy",
+      "measured_center_v": 0.3862137776122636,
+      "measured_amplitude_v": 0.39124096340931475,
+      "amplitude_gain_measured_per_command": 1.009781339713014,
+      "phase_deg_relative_to_command_clock": 0.10251708724922537,
+      "residual_rms_v": 0.00021935645723923853,
+      "criteria": "gain 0.5..1.5; absolute phase <=45 deg; residual <=max(0.02 V, 10% measured amplitude)"
+    },
+    {
+      "segment_id": 1,
+      "target_actuator": "phi2",
+      "status": "trustworthy",
+      "measured_center_v": 0.3950875887791855,
+      "measured_amplitude_v": 0.3944836511518871,
+      "amplitude_gain_measured_per_command": 1.0181506207423627,
+      "phase_deg_relative_to_command_clock": 0.10889418501929526,
+      "residual_rms_v": 0.00015289812694698312,
+      "criteria": "gain 0.5..1.5; absolute phase <=45 deg; residual <=max(0.02 V, 10% measured amplitude)"
+    }
+  ],
+  "all_target_references_trustworthy": true
+}

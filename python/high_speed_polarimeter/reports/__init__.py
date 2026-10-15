@@ -6,6 +6,9 @@ from ..io import read_json
 def create_report(directory):
     directory = Path(directory)
     run = read_json(directory / "run.json")
+    if run['experiment'] == 'eom_vpi_hysteresis':
+        from .vpi import create_report as create_vpi_report
+        return create_vpi_report(directory)
     quality = read_json(directory / "quality.json")
     lifecycle_only = run["experiment"] == "mock_lifecycle"
     setup = "Hardware-free mock. Synthetic software events only." if lifecycle_only else (

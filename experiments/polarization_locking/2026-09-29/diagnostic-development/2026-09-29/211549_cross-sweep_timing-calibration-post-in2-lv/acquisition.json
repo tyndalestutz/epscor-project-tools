@@ -1,0 +1,164 @@
+{
+  "format_version": 1,
+  "status": "completed",
+  "requested_actuator": "both",
+  "requested_reference_sample_rate_hz": 400.0,
+  "time_origin": "host_monotonic experiment origin; not persisted as an absolute clock",
+  "synchronization": "RP sample times combine scope request/completion timing. PAX elapsed_s is the host request/receive midpoint minus the configured empirical latency; the raw midpoint, request, receive, per-sample uncertainty, and RP capture gaps are retained.",
+  "pax_latency_correction_s": 0.12,
+  "pax_latency_correction_basis": "Empirical 2026-09-29 cross-sweep lag sensitivity: branch separation was minimized with PAX records associated 0.10--0.13 s before the transaction midpoint. This is a timing calibration, not an instrument-provided timestamp.",
+  "reference_channels": {
+    "in1": "OUT1 / phi1",
+    "in2": "OUT2 / phi2"
+  },
+  "segments": [
+    {
+      "sub_run": 0,
+      "target_actuator": "phi1",
+      "fixed_actuator": "phi2",
+      "segment_id": 0,
+      "bias_index": 0,
+      "fixed_v": 0.1549072265625,
+      "frequency_hz": 0.11641532182693481,
+      "center_v": 0.387451171875,
+      "amplitude_v": 0.387451171875,
+      "warmup_cycles": 1,
+      "recorded_cycles": 4,
+      "minimum_dop": 0.9,
+      "transition_started_s": 0.30879359699611086,
+      "transition_finished_s": 1.3371432839994668,
+      "transition_ramp": {
+        "start_v": [
+          0.0,
+          0.0
+        ],
+        "requested_v": [
+          0.3875,
+          0.155
+        ],
+        "steps": 50,
+        "offset_writes": 100,
+        "requested_duration_s": 1.0,
+        "host_elapsed_s": 1.0000878179998836,
+        "changed_channels": [
+          1,
+          2
+        ],
+        "asg_readback_v": [
+          0.387451171875,
+          0.1549072265625
+        ]
+      },
+      "settle_s": 2.0,
+      "settle_finished_s": 3.3391830979962833,
+      "scope_sampling_time_s": 0.000524288,
+      "scope_duration_s": 8.589934592,
+      "scope_decimation": 65536,
+      "scope_fpga_average": true,
+      "drive_started_s": 3.3759028719941853,
+      "status": "completed",
+      "input_clipped": false,
+      "finished_s": 50.65984925099474,
+      "stop_center_wait_s": 2.718781021996712,
+      "achieved_reference_rate_hz": 381.4697265625
+    },
+    {
+      "sub_run": 1,
+      "target_actuator": "phi2",
+      "fixed_actuator": "phi1",
+      "segment_id": 1,
+      "bias_index": 0,
+      "fixed_v": 0.387451171875,
+      "frequency_hz": 0.11641532182693481,
+      "center_v": 0.387451171875,
+      "amplitude_v": 0.387451171875,
+      "warmup_cycles": 1,
+      "recorded_cycles": 4,
+      "minimum_dop": 0.9,
+      "transition_started_s": 50.712792076999904,
+      "transition_finished_s": 51.74069340300048,
+      "transition_ramp": {
+        "start_v": [
+          0.3875,
+          0.155
+        ],
+        "requested_v": [
+          0.3875,
+          0.3875
+        ],
+        "steps": 50,
+        "offset_writes": 50,
+        "requested_duration_s": 1.0,
+        "host_elapsed_s": 1.0000926249995246,
+        "changed_channels": [
+          2
+        ],
+        "asg_readback_v": [
+          0.387451171875,
+          0.387451171875
+        ]
+      },
+      "settle_s": 2.0,
+      "settle_finished_s": 53.7421192759939,
+      "scope_sampling_time_s": 0.000524288,
+      "scope_duration_s": 8.589934592,
+      "scope_decimation": 65536,
+      "scope_fpga_average": true,
+      "drive_started_s": 53.781328237993876,
+      "status": "completed",
+      "input_clipped": false,
+      "finished_s": 101.06470481299766,
+      "stop_center_wait_s": 3.1302859669941405,
+      "achieved_reference_rate_hz": 381.4697265625
+    }
+  ],
+  "cleanup_ramp": {
+    "start_v": [
+      0.3875,
+      0.3875
+    ],
+    "requested_v": [
+      0.0,
+      0.0
+    ],
+    "steps": 50,
+    "offset_writes": 100,
+    "requested_duration_s": 1.0,
+    "host_elapsed_s": 1.0000732020052965,
+    "changed_channels": [
+      1,
+      2
+    ],
+    "asg_readback_v": [
+      0.0,
+      0.0
+    ]
+  },
+  "measured_pax_rate_hz": 6.909305205366419,
+  "estimated_pax_samples_per_cycle": 69.09305205366418,
+  "reference_validation": [
+    {
+      "segment_id": 0,
+      "target_actuator": "phi1",
+      "status": "trustworthy",
+      "measured_center_v": 0.3865682511116113,
+      "measured_amplitude_v": 0.39129274348916043,
+      "amplitude_gain_measured_per_command": 1.0099149825655962,
+      "phase_deg_relative_to_command_clock": -7.298028300539556,
+      "residual_rms_v": 0.006632105213676213,
+      "criteria": "gain 0.5..1.5; absolute phase <=45 deg; residual <=max(0.02 V, 10% measured amplitude)"
+    },
+    {
+      "segment_id": 1,
+      "target_actuator": "phi2",
+      "status": "trustworthy",
+      "measured_center_v": 0.3955221926274425,
+      "measured_amplitude_v": 0.3941135593340412,
+      "amplitude_gain_measured_per_command": 1.0171954247210035,
+      "phase_deg_relative_to_command_clock": -4.984458894506133,
+      "residual_rms_v": 0.0139935096132084,
+      "criteria": "gain 0.5..1.5; absolute phase <=45 deg; residual <=max(0.02 V, 10% measured amplitude)"
+    }
+  ],
+  "all_target_references_trustworthy": true
+}

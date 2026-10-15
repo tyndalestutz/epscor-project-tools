@@ -1,0 +1,171 @@
+{
+  "status": "completed",
+  "started_at": "2026-09-29T19:46:36.660075+00:00",
+  "purpose": "Static PAX high/low/high power stability; distinguishes dynamic trajectory error from low-power static measurement/system instability.",
+  "duration_s_per_condition": 20.0,
+  "settle_s": 5.0,
+  "conditions": [
+    {
+      "name": "high_before",
+      "phi1_command_v": 0.3875,
+      "phi2_command_v": 0.155,
+      "ramp": {
+        "start_v": [
+          0.0,
+          0.0
+        ],
+        "requested_v": [
+          0.3875,
+          0.155
+        ],
+        "steps": 50,
+        "offset_writes": 100,
+        "requested_duration_s": 1.0,
+        "host_elapsed_s": 1.0000859630017658,
+        "changed_channels": [
+          1,
+          2
+        ],
+        "asg_readback_v": [
+          0.387451171875,
+          0.1549072265625
+        ]
+      },
+      "summary": {
+        "samples": 140,
+        "mean_power_w": 0.0009726965942857142,
+        "power_std_w": 3.398848728477624e-05,
+        "power_5th_w": 0.00090765477,
+        "power_95th_w": 0.0010178704,
+        "mean_dop": 0.9435560371428571,
+        "dop_std": 0.0012224729567761282,
+        "dop_5th": 0.94164208,
+        "fraction_dop_below_0_9": 0.0,
+        "mean_stokes": [
+          -0.21878940142754555,
+          -0.08033310909595653,
+          0.9724596595262723
+        ],
+        "angular_rms_deg": 5.209900238521036,
+        "angular_95th_deg": 9.180261205810485
+      }
+    },
+    {
+      "name": "low",
+      "phi1_command_v": 0.3875,
+      "phi2_command_v": 0.5425,
+      "ramp": {
+        "start_v": [
+          0.3875,
+          0.155
+        ],
+        "requested_v": [
+          0.3875,
+          0.5425
+        ],
+        "steps": 50,
+        "offset_writes": 50,
+        "requested_duration_s": 1.0,
+        "host_elapsed_s": 1.0000871299998835,
+        "changed_channels": [
+          2
+        ],
+        "asg_readback_v": [
+          0.387451171875,
+          0.54248046875
+        ]
+      },
+      "summary": {
+        "samples": 140,
+        "mean_power_w": 0.0004772658571428571,
+        "power_std_w": 3.82705030732214e-05,
+        "power_5th_w": 0.000423810765,
+        "power_95th_w": 0.0005524235199999999,
+        "mean_dop": 0.9339466785714285,
+        "dop_std": 0.013654635208805133,
+        "dop_5th": 0.90924383,
+        "fraction_dop_below_0_9": 0.0,
+        "mean_stokes": [
+          0.9863811197873464,
+          -0.0319831491139362,
+          0.16133618533923594
+        ],
+        "angular_rms_deg": 6.120429682934761,
+        "angular_95th_deg": 10.840801904368508
+      }
+    },
+    {
+      "name": "high_after",
+      "phi1_command_v": 0.3875,
+      "phi2_command_v": 0.155,
+      "ramp": {
+        "start_v": [
+          0.3875,
+          0.5425
+        ],
+        "requested_v": [
+          0.3875,
+          0.155
+        ],
+        "steps": 50,
+        "offset_writes": 50,
+        "requested_duration_s": 1.0,
+        "host_elapsed_s": 1.000072299000749,
+        "changed_channels": [
+          2
+        ],
+        "asg_readback_v": [
+          0.387451171875,
+          0.1549072265625
+        ]
+      },
+      "summary": {
+        "samples": 140,
+        "mean_power_w": 0.0008593511042857142,
+        "power_std_w": 6.109820764146719e-05,
+        "power_5th_w": 0.0007667006450000001,
+        "power_95th_w": 0.00095512682,
+        "mean_dop": 0.94426726,
+        "dop_std": 0.0010372089723869576,
+        "dop_5th": 0.94260114,
+        "fraction_dop_below_0_9": 0.0,
+        "mean_stokes": [
+          -0.3804126513822043,
+          -0.047905756029960805,
+          0.9235752558441349
+        ],
+        "angular_rms_deg": 6.126417807209789,
+        "angular_95th_deg": 10.148406241437753
+      }
+    }
+  ],
+  "comparisons": {
+    "high_before_to_after_mean_stokes_deg": 9.863600140062482,
+    "low_to_high_before_mean_stokes_deg": 93.23018463834568,
+    "low_to_high_after_mean_stokes_deg": 102.9848597230463,
+    "low_vs_mean_high_angular_rms_ratio": 1.079791455787476
+  },
+  "cleanup_ramp": {
+    "start_v": [
+      0.3875,
+      0.15500000000000003
+    ],
+    "requested_v": [
+      0.0,
+      0.0
+    ],
+    "steps": 50,
+    "offset_writes": 100,
+    "requested_duration_s": 1.0,
+    "host_elapsed_s": 1.0000799580011517,
+    "changed_channels": [
+      1,
+      2
+    ],
+    "asg_readback_v": [
+      0.0,
+      0.0
+    ]
+  },
+  "finished_at": "2026-09-29T19:48:08.913198+00:00"
+}

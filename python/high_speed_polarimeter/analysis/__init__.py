@@ -1,1 +1,1 @@
-"""Reserved for measurement analysis; none implemented."""
+"""Explicit derived analyses; rough PAX trajectory-phase checks are model based."""

@@ -108,6 +108,47 @@ class AcquisitionConfig:
 
 
 @dataclass(frozen=True)
+class VpiConfig(AcquisitionConfig):
+    stop_command_v: float = 0.9
+    points: int = 31
+    settle_s: float = 0.25
+    repeats: int = 1
+    pax_samples_per_point: int = 3
+    rp_output_max_voltage: float = 0.9
+    ramp_duration_s: float = 0.15
+    pax_fresh_read_timeout_s: float = 5.0
+    vpi_fit_max_command_v: float = 0.45
+    vpi_min_phase_span_deg: float = 60.0
+    vpi_max_plane_rms: float = 0.01
+    vpi_max_linear_rms_deg: float = 2.0
+    vpi_warn_below_dop: float = 0.9
+    undriven_baseline_s: float = 60.0
+    stage_settle_s: float = 3.0
+
+    def validate(self, experiment):
+        # Validate shared fields using their existing type/range conventions.
+        shared = {f.name: getattr(self, f.name) for f in fields(AcquisitionConfig)}
+        AcquisitionConfig(**shared).validate("single_eom_characterization")
+        if self.start_command_v != 0 or self.stop_command_v <= 0 or self.other_eom_command_v != 0:
+            raise ValueError("Vpi sweep starts at zero, stops above zero, and holds the other output zero")
+        if self.points < 5 or self.bidirectional or self.states_v is not None:
+            raise ValueError("Vpi routine always runs both directions; need >=5 points and no states_v/bidirectional override")
+        for name in ('ramp_duration_s', 'pax_fresh_read_timeout_s', 'vpi_fit_max_command_v',
+                     'vpi_min_phase_span_deg', 'vpi_max_plane_rms', 'vpi_max_linear_rms_deg',
+                     'undriven_baseline_s', 'stage_settle_s'):
+            value = getattr(self, name)
+            if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
+                raise ValueError(f"{name} must be a positive finite number")
+        if self.vpi_fit_max_command_v > self.stop_command_v or self.vpi_min_phase_span_deg >= 180:
+            raise ValueError("Fit limit must be within sweep; minimum model span must be below 180 deg")
+        if type(self.vpi_warn_below_dop) not in (int, float) or not 0 <= self.vpi_warn_below_dop <= 1:
+            raise ValueError("vpi_warn_below_dop must be in [0,1]")
+        if sum(i*self.stop_command_v/(self.points-1) <= self.vpi_fit_max_command_v+1e-12 for i in range(self.points)) < 4:
+            raise ValueError("Need at least four points within the configured Vpi fit range")
+        return self
+
+
+@dataclass(frozen=True)
 class Recipe:
     schema_version: int = 1
     experiment: str = "mock_lifecycle"
@@ -132,10 +173,11 @@ class Recipe:
         return self
 
     def acquisition_config(self):
-        unknown = self.config.keys() - {f.name for f in fields(AcquisitionConfig)}
+        kind = VpiConfig if self.experiment == "eom_vpi_hysteresis" else AcquisitionConfig
+        unknown = self.config.keys() - {f.name for f in fields(kind)}
         if unknown:
             raise ValueError(f"Unknown acquisition config fields: {sorted(unknown)}")
-        return AcquisitionConfig(**self.config).validate(self.experiment)
+        return kind(**self.config).validate(self.experiment)
 
     def resolved(self):
         self.validate()

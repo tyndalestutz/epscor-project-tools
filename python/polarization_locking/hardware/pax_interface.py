@@ -158,7 +158,7 @@ class PAXController:
         if not daemon_path.is_file():
             raise RuntimeError(f"Project PAX daemon was not found: {daemon_path}")
         # Do not discard daemon stderr: when VISA cannot open the USB device,
-        # that error is the only useful diagnosis available to lock.py.
+        # that error is the only useful diagnosis available to test-suite.py.
         self._daemon_log_path = config_path.with_name("pax1000-daemon.log")
         try:
             with self._daemon_log_path.open("a", encoding="utf-8") as daemon_log:

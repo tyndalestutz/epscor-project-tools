@@ -5,6 +5,26 @@ polarimeter, and photodiode (PD). Use the menu to select a test, review its
 setup, save a recipe, and acquire one labelled run. Automated software tests
 are in `tests/`; they do not connect instruments.
 
+Polarization reports retain the original telemetry plots and add a supplementary
+page with a compact 3D **Poincaré Trajectory** panel and separate tables of mean,
+sample standard deviation, sample variance, minimum, maximum and finite count for
+normalized Stokes components and recorded angles. These are sample-weighted,
+full-run descriptive statistics (including drift/jumps), not measurement
+uncertainty. Angle statistics are linear in degrees without unwrapping; wrap
+boundaries can inflate their spread. The trajectory is
+colored by physical elapsed time. It uses recorded `s1/s2/s3` directions unchanged
+(the suite derives these from PAX angles, independently of DoP). Raw `S1/S2/S3`
+with `S0` are divided by positive finite `S0` when normalized fields are absent.
+No fitting, smoothing, interpolation, DoP filtering or unit-sphere projection is
+applied. The caption documents timestamp consistency and the gap rule: segments
+are broken over invalid rows, nonincreasing time, missing sample/capture numbers,
+inconsistent adjacent UTC/elapsed intervals, and intervals above five times the
+median positive recorded cadence. This cadence rule is a plotting heuristic,
+not evidence of a physical discontinuity. Consecutive polarization jumps remain
+visible. Device timestamp units are not assumed; physical time unavailable means
+the panel is unavailable. Low-DoP directions are uncertain, including when the
+angle-derived direction lies on the unit sphere. Saved source data are unchanged.
+
 | Start here | Purpose |
 | --- | --- |
 | [Operating procedure](docs/operating-procedure.md) | Prepare, run, check quality, repeat, and hand over |
@@ -25,20 +45,24 @@ RP FPGA/profile and PAX configuration are bench prerequisites; installing Python
 packages alone does not configure them.
 
 ```bash
-python python/polarization_locking/lock.py --list
-python python/polarization_locking/lock.py
+python python/polarization_locking/test-suite.py --list
+python python/polarization_locking/test-suite.py
 ```
 
 Select a test by name or number. **e** edits, **s** saves a recipe, **l** loads,
 **r** runs, **b** goes back, and **q** quits. **d** restores that test's defaults;
 **all** exposes every configuration field. Enter keeps an existing value.
-Edits persist for that test during the session; save a recipe to keep them.
+Edits persist automatically for each test across suite restarts, along with loaded
+recipes and run names/comments. Local settings are ignored by Git and do not
+modify saved recipes or experiment data. **d** resets the selected test's saved
+settings to defaults. Explicit command-line runs use their recipes/defaults,
+independently of interactive saved settings.
 Only Run connects instruments. Ctrl+C stops a run and retains partial data.
 
 ### PAX vibration diagnostic
 
 ```bash
-python python/polarization_locking/lock.py --run pax-vibration --pd-input in2
+python python/polarization_locking/test-suite.py --run pax-vibration --pd-input in2
 ```
 
 Use IN1 or IN2. The default is **30 seconds per condition**: first PD + fresh
@@ -98,7 +122,7 @@ Partial data survive interruption. See [example recipe](profiles/pax-vibration-e
 ### Live manual alignment
 
 ```bash
-python python/polarization_locking/lock.py --run pax-live
+python python/polarization_locking/test-suite.py --run pax-live
 ```
 
 `pax-live` opens a simple Qt panel with large power (µW), DoP (fraction),
@@ -208,9 +232,9 @@ detector and mode first; actuator/waveform settings stay in the parameter table.
 Choose the actual external drive frequency before using this IN2 example:
 
 ```bash
-python python/polarization_locking/lock.py --run pd-visibility --pd-input in2 --frequency 0.5
-python python/polarization_locking/lock.py --run pd-visibility --source pax --frequency 0.5
-python python/polarization_locking/lock.py --run pd-visibility --source both --mode active --frequency 0.5
+python python/polarization_locking/test-suite.py --run pd-visibility --pd-input in2 --frequency 0.5
+python python/polarization_locking/test-suite.py --run pd-visibility --source pax --frequency 0.5
+python python/polarization_locking/test-suite.py --run pd-visibility --source both --mode active --frequency 0.5
 ```
 
 PD mode measures a signed blocked-light baseline unless `--dark-voltage` is
@@ -220,9 +244,9 @@ For routine use, load a template, edit its setup notes and settings, save it, an
 run it from the menu. Each run stores a full recipe for replay:
 
 ```bash
-python python/polarization_locking/lock.py --profile python/polarization_locking/profiles/visibility-in2-example.json
-python python/polarization_locking/lock.py --profile path/to/run/recipe.json --dry-run
-python python/polarization_locking/lock.py --profile path/to/run/recipe.json --run pd-visibility
+python python/polarization_locking/test-suite.py --profile python/polarization_locking/profiles/visibility-in2-example.json
+python python/polarization_locking/test-suite.py --profile path/to/run/recipe.json --dry-run
+python python/polarization_locking/test-suite.py --profile path/to/run/recipe.json --run pd-visibility
 ```
 
 The package entry point is `PYTHONPATH=python python -m polarization_locking`.

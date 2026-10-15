@@ -64,6 +64,9 @@ reference their evidence, and record their own version. No console state is used
     directory = Path(directory)
     from .config import load_recipe
     recipe = load_recipe(directory / "recipe.json")
+    if recipe.experiment == "eom_vpi_hysteresis":
+        from .quality_vpi import evaluate
+        return evaluate(directory)
     if recipe.experiment != "mock_lifecycle":
         from .quality_eom import evaluate_eom
         return evaluate_eom(directory, recipe)
