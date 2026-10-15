@@ -295,14 +295,29 @@ def test_inline_report_failure_preserves_acquisition(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("name,comment", [("", ""), ("heavy base", "PAX displaced; same IN2")])
-def test_quick_run_details_are_optional_and_per_run(name, comment):
+def test_quick_run_details_accept_defaults_and_retain_previous_values(name, comment):
     run = Mock(return_value={"status": "completed"})
     menu, _ = menu_for(["2", "r", name, comment, "r", "", "", "b", "q"], run_test=run)
     menu.run()
     first, second = [call.args[2] for call in run.call_args_list]
     assert first["label"] == (name or "sweep")
     assert first["comment"] == comment
-    assert second["label"] == "sweep" and second["comment"] == ""
+    assert second == first
+
+
+def test_defaults_reset_persisted_run_name_and_comment(tmp_path):
+    path = tmp_path / "settings.json"
+    run = Mock(return_value={"status": "completed"})
+    answers = iter(["2", "r", "heavy base", "PAX displaced", "d", "b", "q"])
+    menu = DiagnosticsMenu(state_path=path, input_fn=lambda _: next(answers),
+                           output=lambda _: None, run_test=run)
+    menu.run()
+    answers = iter(["2", "r", "", "", "b", "q"])
+    restored = DiagnosticsMenu(state_path=path, input_fn=lambda _: next(answers),
+                               output=lambda _: None, run_test=run)
+    restored.run()
+    assert run.call_args.args[2]["label"] == "sweep"
+    assert run.call_args.args[2]["comment"] == ""
 
 
 def test_cancel_run_details_never_connects():
