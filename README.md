@@ -1,5 +1,8 @@
 # EPSCoR project tools
 
+- [Offline regression testing](docs/engineering/offline-testing.md): software-only
+  setup and the shared local/CI command, `bash scripts/test-offline.sh`.
+
 - [Jones-field simulations](python/field_propogation/README.md): ideal and
   parameterized hybrid-MZI models, measured configurations, and reference explorations.
 - [Polarization locking](python/polarization_locking/README.md): numbered bench diagnostics, reusable recipes, and
