@@ -2,13 +2,14 @@
 
 ## A. Campaign status and purpose
 
-**PRs 0–1 merged; PR 2 in progress — repository hygiene and onboarding.** This staged campaign makes an
+**PRs 0–2 merged; PR 3 in progress — characterization and regression fixtures.** This staged campaign makes an
 already functional experimental repository reproducible, maintainable, portable
 and shareable as a laboratory software platform. Preserving working experiments
-is the overriding constraint. The verified integrated starting point for PR 2 is `582709158e8ed19f76810cc4d3c4597a6a50fa20`,
+is the overriding constraint. The verified integrated starting point for PR 3 is `42e8d61c7d5d4b8198510cc34eb3df5fb33187b6`,
 following [baseline PR #1](https://github.com/tyndalestutz/epscor-project-tools/pull/1),
 [foundation PR #2](https://github.com/tyndalestutz/epscor-project-tools/pull/2),
-and [offline regression PR #3](https://github.com/tyndalestutz/epscor-project-tools/pull/3).
+[offline regression PR #3](https://github.com/tyndalestutz/epscor-project-tools/pull/3),
+and [hygiene PR #4](https://github.com/tyndalestutz/epscor-project-tools/pull/4).
 The sequence below is revisable as evidence arrives;
 it authorizes no implementation beyond the active PR.
 
@@ -320,8 +321,8 @@ Blank links mean no actual GitHub PR is recorded. Planned entries are unimplemen
 | --- | --- | --- | --- | --- |
 | PR 0 | Campaign foundation | Merged | [#2](https://github.com/tyndalestutz/epscor-project-tools/pull/2) | Integrated after baseline PR #1; merge `754c9e4` |
 | PR 1 | Offline regression infrastructure | Merged | [#3](https://github.com/tyndalestutz/epscor-project-tools/pull/3) | Merge `5827091`; [offline testing guide](offline-testing.md), 445 software checks and failure-propagation evidence |
-| PR 2 | Hygiene and onboarding | In progress | | Inventory/retention policy, onboarding and optional local-data convention; no historical migration. Review/merge pending |
-| PR 3 | Characterization/fixtures | Planned | | Select evidence and physical protocols |
+| PR 2 | Hygiene and onboarding | Merged | [#4](https://github.com/tyndalestutz/epscor-project-tools/pull/4) | Merge `42e8d61`; retention policy and optional local workspace; no historical migration |
+| PR 3 | Characterization/fixtures | In progress | | [Coverage/fixtures](scientific-regression.md) and [bench requirements](bench-regression-checklist.md); synthetic evidence only, review/merge pending |
 | PR 4 | Read-only run interfaces | Planned | | Requires qualified schemas/fixtures |
 | PR 5 | Portable configuration | Planned | | Preserve effective recipe behavior |
 | PR 6 | Lifecycle/ownership | Planned | | Bench access and approved protocol required |
