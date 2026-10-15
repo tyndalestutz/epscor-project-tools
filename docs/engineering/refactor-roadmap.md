@@ -2,10 +2,13 @@
 
 ## A. Campaign status and purpose
 
-**PR 0: In progress — documentation foundation.** This staged campaign makes an
+**PR 0 merged; PR 1 in progress — offline regression infrastructure.** This staged campaign makes an
 already functional experimental repository reproducible, maintainable, portable
 and shareable as a laboratory software platform. Preserving working experiments
-is the overriding constraint. The sequence below is revisable as evidence arrives;
+is the overriding constraint. The integrated baseline is `754c9e40c3ae799505a73a92aade0d15fd774799`,
+following [baseline PR #1](https://github.com/tyndalestutz/epscor-project-tools/pull/1)
+and [foundation PR #2](https://github.com/tyndalestutz/epscor-project-tools/pull/2).
+The sequence below is revisable as evidence arrives;
 it authorizes no implementation beyond the active PR.
 
 A technically competent colleague should be able to understand the architecture,
@@ -314,8 +317,8 @@ Blank links mean no actual GitHub PR is recorded. Planned entries are unimplemen
 
 | Planning ID | Objective | Status | GitHub PR | Notes / blockers |
 | --- | --- | --- | --- | --- |
-| PR 0 | Campaign foundation | In progress — documentation foundation | | Source baseline inspected; documentation validation recorded in delivery |
-| PR 1 | Offline regression infrastructure | Planned | | Inventory and execute existing commands |
+| PR 0 | Campaign foundation | Merged | [#2](https://github.com/tyndalestutz/epscor-project-tools/pull/2) | Integrated after baseline PR #1; merge `754c9e4` |
+| PR 1 | Offline regression infrastructure | In progress | | [Offline testing guide](offline-testing.md); verify clean-environment execution, Actions and failure propagation before completion |
 | PR 2 | Hygiene and onboarding | Planned | | Classify records; qualify environment |
 | PR 3 | Characterization/fixtures | Planned | | Select evidence and physical protocols |
 | PR 4 | Read-only run interfaces | Planned | | Requires qualified schemas/fixtures |
