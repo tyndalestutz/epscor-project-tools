@@ -25,6 +25,21 @@ invariance. Circular azimuth remains undefined and eta is -pi/4 radians for the
 positive-imaginary-y reference. The dark-boundary test uses exact binary amplitudes
 and an explicitly chosen .25 power threshold, without changing the default.
 
+These fixtures preserve the current convention as an explicit compatibility
+baseline, not a requirement that every future tool use it internally. Keep Stokes
+axes/signs, angle definitions, reference axes and units documented and consistent
+at shared interfaces. A tool using another convention must identify it and use an
+explicit, documented conversion at the boundary. A deliberate project convention
+change requires reviewed conversion/compatibility behavior and updated independent
+references; do not silently relabel coordinates or regenerate expectations merely
+to make a changed result pass. Configurable conventions are not implemented by
+this PR.
+
+The mathematical dark threshold above masks undefined polarization in modeled
+field units. It is not a photodetector dark measurement, electronic offset, noise
+floor or calibrated optical-power threshold. Zero recorded volts must not be
+assumed to establish any of those quantities.
+
 Float64 arithmetic on components of magnitude at most four allows absolute
 1e-13 for raw products/power, 1e-14 for normalized direction/angle, with rtol=0.
 These are roundoff allowances for analytic identities, not experimental error
@@ -39,6 +54,13 @@ synthetic signed PD period is in input volts; 2048 repeats form a complete 16384
 sample float64 buffer. Exact comparisons protect negative and zero samples,
 shape/dtype, byte references and absence of trailing/unreferenced buffers.
 No optical transfer model is encoded by this mock.
+
+Raw detector voltage, dark-subtracted voltage and calibrated optical power must
+remain distinguishable. Future dark correction must reference a measured baseline
+and its acquisition conditions; power conversion must identify the applicable
+instrument calibration and units. Preserve raw samples and make any subtraction
+or conversion traceable. These fixtures test raw signed-buffer retention only;
+they do not implement or validate dark subtraction or voltage-to-power calibration.
 
 Three cases represent completed acquisition, interruption during the first
 point's PAX read, and read failure at that position. Both failure cases also raise
