@@ -55,6 +55,10 @@ script entry point adds the repository's `python/` directory to its import path.
   Conflicting signatures remain unknown/ambiguous. These are structural labels,
   not validation of every experiment's schema. Each metadata file keeps its own
   schema/format/version fields; one file's version never substitutes for another.
+  Version values alone do not establish support. Only the recognized high-speed
+  and raw-calibration runner signatures interpret run.json schema_version (integer
+  1, excluding booleans). Other version fields are retained without a compatibility
+  verdict; reading their native JSON does not validate their semantic schema.
 - `outcomes` preserves native execution, cleanup, quality-evaluation execution,
   recorded scientific verdict and reporting independently. Missing values are
   `None` (unknown). A legacy execution value `cleanup_failed` cannot reconstruct
