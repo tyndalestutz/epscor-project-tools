@@ -228,6 +228,35 @@ are assigned. High-risk phases should split further; evidence can revise orderin
 | **PR 7 — Incremental experimental decomposition.** Extract characterized families/calculations in multiple small PRs | PRs 3–6 as relevant | Timing, numerics, dispatch and operator workflow drift | Each extraction independently passes relevant regression and necessary bench comparison; Tiers 1–2, Tier 3 where physically consequential |
 | **PR 8 — Usability and operational handoff.** Discovery, preflight, navigation, browsing and diagnostics | Stable interfaces and verified core behavior | Concealed warnings or changed working interfaces | New colleague completes documented software-only workflow and understands authorized bench workflow/physical checks; Tiers 1–2 and supervised Tier 3 as applicable |
 
+## F.1. Refined execution checkpoints (2026-10-16)
+
+This refinement preserves the phase sequence above. The checkpoint inspected
+main `72590f5`; it is a plan, not authorization for later implementation.
+Phases 0–3 and Phase 4 increment 1 are merged. CI/setup and root navigation now
+exist; corresponding entries in section E describe the original baseline.
+The latest reviewed PR #7 CI passed 508 software tests; physical qualification
+and archive provisioning remain outstanding.
+
+| Next checkpoint | Bounded work and simplification | Exit evidence |
+| --- | --- | --- |
+| **4B — Second reader consumer** | Adopt existing CSV ingestion in `reports/plot_continuous_cross_sweep.py`; keep its typed projection, numerical/report behavior and standalone CSV inputs. Remove replaced ingestion/import only; no reader API expansion. | Compare two saved schema variants and synthetic edge cases before/after; distinguish parsing rejection from existing missing-value handling; verify report failure propagation, source immutability and offline CI. |
+| **4C — Coverage and completion decision** | Reconcile the existing format inventory with actually tested support and remaining consumers. Two locking consumers do not establish cross-application semantic support. Prioritize any necessary metadata/status/partial-run cases before new decoders. | Each family has evidence, support level and an explicit retained/deferred decision. Agree the finite Phase 4 boundary; no silent exclusion or automatic promise to implement every decoder. |
+| **5A / 5B — Characterize, then separate configuration** | Map defaults and precedence across CLI, saved recipes, local settings and bench inputs; then migrate one bounded group using existing recipe machinery. Avoid a parallel configuration framework. | Old recipes resolve to the same effective values; units, calibration/reference ownership and overrides explicit. Physical changes need separate bench checks. |
+| **6A / 6B — Characterize, then harden ownership** | Trace shared RP/PAX startup, partial connection, passive/active modes, interruption, daemon ownership and cleanup; fix one demonstrated gap at a time. | Mock fault/repetition coverage plus an approved, executed bench protocol for physical claims. Preserve distinct runner statuses until a compatibility contract justifies change. |
+| **7 — Decompose characterized families** | Extract one cohesive family or calculation; migrate its callers and remove replaced private code when proven redundant. Preserve supported entry points and scientific algorithms. Review provenance coverage of shared source outside package roots. | Behavioral equivalence, relevant physical checks and demonstrably fewer responsibilities/duplicate paths; small helpers need a real consumer. |
+| **8 and later design work** | Validate colleague onboarding and operational workflow; then scope experiment, side-tool, processing and report templates around stabilized contracts. User-facing redesign, report content/LaTeX standards and pipeline reorganization require their own design decisions. | Demonstrated workflow and explicit user agreement; templates reuse established services rather than copy complete implementations. |
+
+Simplicity checks apply to every increment: name the existing consumer, identify
+what duplicated responsibility is removed, justify every new abstraction and
+report compatibility effects. Count reduced responsibilities and clearer failure
+paths, not lines alone. Prefer existing tests/docs over parallel scaffolding.
+Do not duplicate the format inventory or add another campaign tracking system.
+
+Keep hygiene separate from scientific migration: tracked bytecode and the legacy
+daemon log need a narrow ownership/reference review; historical run bundles are
+not disposable bloat. Archive removal requires retained copies and verified
+restoration. Deferred items stay visible in the existing inventory/ledger.
+
 ## G. Regression and validation strategy
 
 **Tier 1 — Software regression:** hardware-free configuration, CLI/dispatch,
