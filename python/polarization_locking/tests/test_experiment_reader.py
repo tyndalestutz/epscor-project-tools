@@ -40,7 +40,7 @@ def test_family_native_metadata_and_independent_outcomes(tmp_path, state, family
     assert run.outcomes == dict(execution=state.get('status'), cleanup='FAILED', quality_evaluation='COMPLETED', scientific_verdict='UNKNOWN', reporting='COMPLETED')
     assert run.versions['acquisition.json'] == {'format_version': 1}
     assert run.versions['recipe.json'] == {'schema_version': 8}
-    assert any(d.code == 'unsupported' and d.path.name == 'recipe.json' for d in run.diagnostics)
+    assert not any(d.code == 'unsupported' and d.path.name == 'recipe.json' for d in run.diagnostics)
     assert snapshot(tmp_path) == before
 
 
@@ -270,3 +270,25 @@ def test_relative_location_and_missing_summary_remain_explicit(tmp_path, monkeyp
     assert read_metadata(run, 'chosen.json') == {'native': '-0.00'}
     missing = inspect_run(tmp_path/'not-created')
     assert missing.outcomes == dict.fromkeys(('execution', 'cleanup', 'quality_evaluation', 'scientific_verdict', 'reporting'))
+
+
+@pytest.mark.parametrize('version', [2, 8, 'legacy', None, True])
+def test_uninterpreted_metadata_versions_are_retained_without_verdict(tmp_path, version):
+    write_json(tmp_path/'run.json', {'test': 'sweep', 'version': version})
+    for name in ('recipe.json', 'acquisition.json', 'quality.json'):
+        write_json(tmp_path/name, {'schema_version': version, 'format_version': version})
+    run = inspect_run(tmp_path)
+    assert run.family == 'polarization_locking'
+    assert run.versions['run.json'] == {'version': version}
+    assert run.versions['recipe.json']['schema_version'] == version
+    assert not any(d.code == 'unsupported' for d in run.diagnostics)
+
+
+@pytest.mark.parametrize('version', [2, True, '1', None])
+def test_runner_recognition_rejects_unsupported_schema_without_borrowing(tmp_path, version):
+    write_json(tmp_path/'run.json', {'experiment': 'mock_lifecycle', 'schema_version': version})
+    write_json(tmp_path/'recipe.json', {'schema_version': 1})
+    run = inspect_run(tmp_path)
+    assert run.family == 'unknown'
+    assert run.metadata['run.json']['schema_version'] == version
+    assert any(d.code == 'unsupported' and d.path.name == 'run.json' for d in run.diagnostics)
