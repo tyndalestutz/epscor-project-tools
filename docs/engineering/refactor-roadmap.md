@@ -2,14 +2,15 @@
 
 ## A. Campaign status and purpose
 
-**PRs 0–2 merged; PR 3 in progress — characterization and regression fixtures.** This staged campaign makes an
+**PRs 0–3 merged; PR 4 in progress — bounded read-only text reader increment.** This staged campaign makes an
 already functional experimental repository reproducible, maintainable, portable
 and shareable as a laboratory software platform. Preserving working experiments
-is the overriding constraint. The verified integrated starting point for PR 3 is `42e8d61c7d5d4b8198510cc34eb3df5fb33187b6`,
+is the overriding constraint. The verified integrated starting point for PR 4 is `0a6f70ac9924621698937ee367dc3788e9cd6088`,
 following [baseline PR #1](https://github.com/tyndalestutz/epscor-project-tools/pull/1),
 [foundation PR #2](https://github.com/tyndalestutz/epscor-project-tools/pull/2),
 [offline regression PR #3](https://github.com/tyndalestutz/epscor-project-tools/pull/3),
-and [hygiene PR #4](https://github.com/tyndalestutz/epscor-project-tools/pull/4).
+[hygiene PR #4](https://github.com/tyndalestutz/epscor-project-tools/pull/4),
+and [characterization PR #5](https://github.com/tyndalestutz/epscor-project-tools/pull/5).
 The sequence below is revisable as evidence arrives;
 it authorizes no implementation beyond the active PR.
 
@@ -322,8 +323,8 @@ Blank links mean no actual GitHub PR is recorded. Planned entries are unimplemen
 | PR 0 | Campaign foundation | Merged | [#2](https://github.com/tyndalestutz/epscor-project-tools/pull/2) | Integrated after baseline PR #1; merge `754c9e4` |
 | PR 1 | Offline regression infrastructure | Merged | [#3](https://github.com/tyndalestutz/epscor-project-tools/pull/3) | Merge `5827091`; [offline testing guide](offline-testing.md), 445 software checks and failure-propagation evidence |
 | PR 2 | Hygiene and onboarding | Merged | [#4](https://github.com/tyndalestutz/epscor-project-tools/pull/4) | Merge `42e8d61`; retention policy and optional local workspace; no historical migration |
-| PR 3 | Characterization/fixtures | In progress | [#5 (draft)](https://github.com/tyndalestutz/epscor-project-tools/pull/5) | [Coverage/fixtures](scientific-regression.md) and [bench requirements](bench-regression-checklist.md); synthetic evidence only, review/merge pending |
-| PR 4 | Read-only run interfaces | Planned | | Requires qualified schemas/fixtures |
+| PR 3 | Characterization/fixtures | Merged | [#5](https://github.com/tyndalestutz/epscor-project-tools/pull/5) | Merge `0a6f70a`; [coverage/fixtures](scientific-regression.md) and [bench requirements](bench-regression-checklist.md); synthetic software evidence, not bench validation |
+| PR 4 | Read-only run interfaces | In progress | | [Increment 1](experiment-reader.md): bounded metadata inspection, lazy native CSV/JSONL and timing-audit ingestion; review pending. Bulk decoding and full family semantics deferred; phase not complete |
 | PR 5 | Portable configuration | Planned | | Preserve effective recipe behavior |
 | PR 6 | Lifecycle/ownership | Planned | | Bench access and approved protocol required |
 | PR 7 | Routine decomposition | Planned | | Per-family regression gates |
