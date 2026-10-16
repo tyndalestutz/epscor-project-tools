@@ -239,12 +239,17 @@ and archive provisioning remain outstanding.
 
 | Next checkpoint | Bounded work and simplification | Exit evidence |
 | --- | --- | --- |
-| **4B — Second reader consumer** | Adopt existing CSV ingestion in `reports/plot_continuous_cross_sweep.py`; keep its typed projection, numerical/report behavior and standalone CSV inputs. Remove replaced ingestion/import only; no reader API expansion. | Compare two saved schema variants and synthetic edge cases before/after; distinguish parsing rejection from existing missing-value handling; verify report failure propagation, source immutability and offline CI. |
+| **4B — Second reader consumer (in progress)** | Adopt existing CSV ingestion in `reports/plot_continuous_cross_sweep.py`; keep its typed projection, numerical/report behavior and standalone CSV inputs. Remove replaced ingestion/import only; no reader API expansion. | Compare two saved schema variants and synthetic edge cases before/after; distinguish parsing rejection from existing missing-value handling; verify report failure propagation, source immutability and offline CI. |
 | **4C — Coverage and completion decision** | Reconcile the existing format inventory with actually tested support and remaining consumers. Two locking consumers do not establish cross-application semantic support. Prioritize any necessary metadata/status/partial-run cases before new decoders. | Each family has evidence, support level and an explicit retained/deferred decision. Agree the finite Phase 4 boundary; no silent exclusion or automatic promise to implement every decoder. |
 | **5A / 5B — Characterize, then separate configuration** | Map defaults and precedence across CLI, saved recipes, local settings and bench inputs; then migrate one bounded group using existing recipe machinery. Avoid a parallel configuration framework. | Old recipes resolve to the same effective values; units, calibration/reference ownership and overrides explicit. Physical changes need separate bench checks. |
 | **6A / 6B — Characterize, then harden ownership** | Trace shared RP/PAX startup, partial connection, passive/active modes, interruption, daemon ownership and cleanup; fix one demonstrated gap at a time. | Mock fault/repetition coverage plus an approved, executed bench protocol for physical claims. Preserve distinct runner statuses until a compatibility contract justifies change. |
 | **7 — Decompose characterized families** | Extract one cohesive family or calculation; migrate its callers and remove replaced private code when proven redundant. Preserve supported entry points and scientific algorithms. Review provenance coverage of shared source outside package roots. | Behavioral equivalence, relevant physical checks and demonstrably fewer responsibilities/duplicate paths; small helpers need a real consumer. |
 | **8 and later design work** | Validate colleague onboarding and operational workflow; then scope experiment, side-tool, processing and report templates around stabilized contracts. User-facing redesign, report content/LaTeX standards and pipeline reorganization require their own design decisions. | Demonstrated workflow and explicit user agreement; templates reuse established services rather than copy complete implementations. |
+
+Phase 4B adopts native CSV ingestion in the existing continuous report loader;
+its typed projection and report failure boundaries remain in place. Saved-record
+equivalence, parser-boundary and temporary-report checks accompany this change;
+review/merge remain pending. Phase 4C is not started.
 
 Simplicity checks apply to every increment: name the existing consumer, identify
 what duplicated responsibility is removed, justify every new abstraction and

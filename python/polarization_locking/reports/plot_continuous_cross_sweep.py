@@ -1,7 +1,6 @@
 """Report pages and descriptive metrics for continuous coupling trajectories."""
 from __future__ import annotations
 
-import csv
 import json
 import math
 from pathlib import Path
@@ -10,14 +9,15 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
+from experiment_reader import RunInfo, iter_records
+
 
 def _bool(value: Any) -> bool:
     return str(value).lower() in {"1", "true", "yes"}
 
 
 def load_rows(path: Path) -> list[dict[str, Any]]:
-    with path.open(newline="") as handle:
-        rows = list(csv.DictReader(handle))
+    rows = list(iter_records(RunInfo(path.parent), path.name))
     for row in rows:
         for key in (
             "elapsed_s", "segment_id", "bias_index", "fixed_command_v",
