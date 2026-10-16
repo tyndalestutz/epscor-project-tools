@@ -20,6 +20,25 @@ only acquisition metadata and CSV remain usable. Its calculations, required-fiel
 checks, NPZ access, reference fallback and CLI outputs are unchanged. The direct
 script entry point adds the repository's `python/` directory to its import path.
 
+## Phase 4B — continuous cross-sweep reports
+
+`polarization_locking/reports/plot_continuous_cross_sweep.load_rows` now reuses
+`RunInfo`/`iter_records` for native CSV ingestion. Its existing float/NaN and boolean
+projection stays in the consumer, including optional-column defaults and unknown
+text fields. Standalone CSVs require no runner metadata. Summary calculations,
+thresholds, optional `drive_trace.npz` access and report presentation are unchanged.
+
+Malformed CSV now raises shared `ReaderError` with source diagnostics instead of
+DictReader padding/overwriting fields. This is separate from accepted empty files,
+header-only files, missing optional columns and structurally valid interrupted
+prefixes; a syntactically valid shortened value cannot always be detected.
+Report orchestration is unchanged: errors while constructing the continuous
+summary in `add_overview` propagate; errors in specialized pages are caught by the
+existing handler and yield a partial report. Corruption is not empty success.
+Tests compare both retained September schema variants, projection edge cases,
+caller failures and temporary PDF output. Synthetic optional reference traces
+exercise software behavior only. Phase 4 remains in progress.
+
 ## Contract and bounds
 
 - Inspection enumerates at most 256 immediate entries, reads up to 1 MiB each of
@@ -87,7 +106,7 @@ otherwise stated. The inventory was inspected at merge `0a6f70ac9924621698937ee3
 | Visibility: `L/2026-09-21/215158_pd-visibility_pd-visibility/capture-000.npz`; `L/2026-10-05/225117_pd-visibility_phi2-vis-test_path-E1/visibility.json`; standalone `L/2026-09-21/205238_pd-visibility/measurements.csv` | `routines/visibility.acquire_visibility`, `acquire_pax_visibility`, `analyze_trace`; `run_report.add_specialized` | Metadata/CSV explicitly readable. PD-only, PAX-only, concurrent and older standalone variants stay distinct. NPZ decoding deferred. Signed raw volts, measured/provided dark baseline and derived contrast are separate. |
 | Live PAX: `L/2026-10-14/155939_pax-live_TEC-active_quick-test/` | `routines/pax_live`, runner; `run_report.add_pax_live` | Native metadata/CSV readable, including raw JSON text and host/device times. No DoP scaling or absolute-Stokes inference. |
 | Vibration: `L/2026-09-24/203850_pax-vibration_pax-vibration/{data.csv,vibration-setup.json,csv-conversion.json,csv-compaction.json}` | `pax_vibration.acquire`, `write_samples`; `run_report.vibration_report_rows`, `compact_report_rows` | Native CSV/selected JSON only. Original multi-file, wide converted and compact forms differ. Compact `capture=-1` is dark, numbered captures PD, blank capture PAX. Derived statistics/PSD reconstruction deferred. |
-| Continuous sweep: `L/2026-09-29/{185740_cross-sweep_quick-test,215311_cross-sweep_phi1-rerun}/` | `continuous_cross_sweep.acquire_continuous_cross_sweep`, `_write_csv`, `_save_trace`; `plot_continuous_cross_sweep.load_rows`, timing audit | Native metadata/CSV readable and timing consumer adopted. Same format version has evolving fields. No `drive_trace.npz` exists in this checkout; consumer retains its existing optional NPZ path. |
+| Continuous sweep: `L/2026-09-29/{185740_cross-sweep_quick-test,215311_cross-sweep_phi1-rerun}/` | `continuous_cross_sweep.acquire_continuous_cross_sweep`, `_write_csv`, `_save_trace`; `plot_continuous_cross_sweep.load_rows`, timing audit | Native metadata/CSV readable; timing and continuous-report consumers adopted. Same format version has evolving fields. No `drive_trace.npz` exists in this checkout; consumer retains its existing optional NPZ path. |
 | Independent raw calibration: `L/2026-09-18/195031_raw-phi1_repeatability-1s/{run.json,data.csv,scope.npz}`, interrupted `200242_raw-phi1_fine-brackets-3s` | `raw_calibration.acquire`, `consolidate_scope`; `reports/raw_calibration.create_report`, `analyze` | Runner structure recognized, text readable; consolidated NPZ snapshot/member decoding deferred. Commands, settings readback, internal digital scope and physical ADC evidence stay distinct. |
 | Standalone timing/diagnostics: `L/2026-09-18/225751_stokes-timing-test-phi1/{metadata.json,dynamic.csv,static.csv}`, `L/2026-09-29/diagnostic-development/` | Archived `stokes-timing-tools`, run-local analysis, `analysis/verify_rp_loopbacks` | Explicit native text reads only. Archived timing collector can label an interruption completed. Coverage and reconstructed voltage semantics require separate review. |
 | High-speed mock lifecycle | `high_speed_polarimeter/experiments/mock_lifecycle.acquire`, runner | Runner metadata recognized; synthetic JSONL readable. No saved bundle here. Events are not measurements. |
