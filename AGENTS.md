@@ -53,6 +53,35 @@ subject to the repository's scientific-integrity and safety policies.
 
 ---
 
+## Explicit handoff reporting
+
+When the user explicitly assigns work through a handoff, publish a concise
+review handoff in this repository's GitHub issue tracker, unless the user
+prohibits external posting for that task. This applies across cloud, CLI and
+VS Code sessions; it does not grant capabilities or credentials.
+
+- Verify available GitHub issue permissions. Search open and closed issues for
+  the exact title **Agent handoff log — modernization campaign**. Reuse one
+  unambiguous match; create one only if absent. If matches are ambiguous, ask
+  rather than create duplicates. Append entries; preserve prior reports.
+- Include task/scope, base and head revisions (or uncommitted state), work
+  completed, actual validation commands/results, limitations, and next decisions.
+  Clearly distinguish implementation, testing, publication and review status.
+- Keep implementation detail on the relevant PR; link its branch, commits and
+  CI evidence from the issue. For design-only tasks, summarize findings there.
+  Do not add handoff-log files to the source tree or copy large diffs/data.
+- Read back the issue/comment to verify delivery. Return its URL and the PR URL
+  when available. Never claim ChatGPT was automatically notified.
+- If posting is unavailable or denied, report the exact limitation and return
+  the complete handoff in the task response. A published PR is a useful review
+  fallback. Preserve/export unpublished changes when needed; do not repeatedly
+  retry forbidden routes, expose credentials or broaden permissions.
+- This reporting rule authorizes only task-related issue reporting. It does not
+  authorize implementation beyond the handoff, merging, hardware operation,
+  unrelated messages or changes to scientific records.
+
+---
+
 ## Root-agent responsibility
 
 The root agent should retain tasks involving:
