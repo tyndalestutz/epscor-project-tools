@@ -250,7 +250,7 @@ def inspect_run(location):
         candidates.append("polarization_locking")
     if isinstance(state.get("experiment"), str) and type(state.get("schema_version")) is int and state["schema_version"] == 1:
         candidates.append("high_speed_polarimeter")
-    if state.get("schema_version") == 1 and "measurement_definitions" in state and "purpose" in state:
+    if type(state.get("schema_version")) is int and state["schema_version"] == 1 and "measurement_definitions" in state and "purpose" in state:
         candidates.append("raw_calibration")
     if len(candidates) > 1:
         run.diagnostics.append(Diagnostic("ambiguous", run.directory / "run.json", f"Conflicting family evidence: {candidates}"))
