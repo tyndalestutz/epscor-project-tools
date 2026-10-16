@@ -216,9 +216,6 @@ def inspect_run(location):
             value = read_metadata(run, name)
             run.metadata[name] = value
             run.versions[name] = {key: value[key] for key in ("schema_version", "format_version", "version") if key in value}
-            for key, version in run.versions[name].items():
-                if type(version) is not int or version != 1:
-                    run.diagnostics.append(Diagnostic("unsupported", run.directory / name, f"Unrecognized {key}={version!r}; native metadata retained"))
         except ReaderError as exc:
             run.diagnostics.append(exc.diagnostic)
     for name in names:
@@ -238,9 +235,20 @@ def inspect_run(location):
             run.diagnostics.append(Diagnostic("malformed" if not isinstance(exc, OSError) else "unreadable", path, str(exc)))
     state = run.metadata.get("run.json", {})
     candidates = []
+    versioned_runner = (
+        isinstance(state.get("experiment"), str)
+        or ("measurement_definitions" in state and "purpose" in state)
+    )
+    if versioned_runner and (
+        type(state.get("schema_version")) is not int or state["schema_version"] != 1
+    ):
+        run.diagnostics.append(Diagnostic(
+            "unsupported", run.directory / "run.json",
+            "Unrecognized runner schema_version; native metadata retained",
+        ))
     if isinstance(state.get("test"), str):
         candidates.append("polarization_locking")
-    if isinstance(state.get("experiment"), str) and state.get("schema_version") == 1:
+    if isinstance(state.get("experiment"), str) and type(state.get("schema_version")) is int and state["schema_version"] == 1:
         candidates.append("high_speed_polarimeter")
     if state.get("schema_version") == 1 and "measurement_definitions" in state and "purpose" in state:
         candidates.append("raw_calibration")
