@@ -13,6 +13,7 @@ EXPERIMENTS = (
     Experiment("single_eom_characterization", "One EOM sweep: mandatory raw PD, PAX reference and host timing."),
     Experiment("dual_eom_characterization", "Ordered two-EOM grid/list: mandatory raw PD, PAX reference and host timing."),
     Experiment("eom_vpi_hysteresis", "PAX-only forward/reverse EOM sweep; rough trajectory-phase Vpi and direction difference."),
+    Experiment("eom_pd_qualification", "PD + synchronized voltage monitor: voltage transfer or frequency response; no PAX."),
 )
 BY_KEY = {experiment.key: experiment for experiment in EXPERIMENTS}
 PLANNED = (

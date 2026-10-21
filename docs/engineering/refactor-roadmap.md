@@ -371,3 +371,21 @@ Preserve superseded decisions with a short explanatory note when needed, without
 turning the roadmap into an exhaustive diary. Never mark a phase complete merely
 because its plan is documented. PR 0 ends with shared engineering context and
 controlled scope; PR 1 requires its own authorization.
+
+
+### Bounded scientific extension: EOM PD qualification
+
+`feat/eom-pd-qualification` adds one experiment to the high-speed suite, independently
+of the numbered modernization phases. It reuses the runner/menu/report/quality
+contracts and adds an experiment-specific dual-channel Scope adapter and appended
+paired signed-code stream (schema 2). Shared PAX/RP controllers and existing data
+formats remain unchanged. This does not complete a campaign phase or establish the
+future high-speed reconstruction interface.
+
+Both ADC channels must come from one frozen capture; host bounds do not establish
+sample epochs across buffers. Pyrpl startup-profile effects require explicit zero-
+profile confirmation and independent electrical protection. Monitor calibration,
+analog timing, repaired-electrode insulation, safe envelopes and intrinsic optical
+response remain bench-validation risks; software fixtures establish none of them.
+Review/publication and actual software validation are recorded in the feature PR
+and the repository's handoff issue; no hardware operation is included in this work.

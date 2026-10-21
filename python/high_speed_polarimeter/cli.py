@@ -85,7 +85,10 @@ class HighSpeedMenu(DiagnosticsMenu):
 
     def show(self, case, recipe, *, all_fields=False):
         self.print(f"\n{case.key}\n{case.description}")
-        self.print("PAX-only Vpi check; no PD acquisition. Verify EOM cabling, command limits, wavelength and reference plane. Both outputs zero on exit."
+        if case.key=='eom_pd_qualification':
+            self.print('One selected EOM, fixed 45° input/analyzer, PBS/PD installed. IN1/IN2 simultaneous PD/monitor capture. No PAX. Physical confirmation required before Run.')
+        else:
+            self.print("PAX-only Vpi check; no PD acquisition. Verify EOM cabling, command limits, wavelength and reference plane. Both outputs zero on exit."
                    if case.key == 'eom_vpi_hysteresis' else "RP command volts are not measured EOM terminal voltages. PD and PAX setup must be verified at the bench.")
         entries = [("option", "label", recipe.label), ("option", "comment", recipe.comment)]
         hidden = {'bidirectional', 'states_v', 'eom1_commands_v', 'eom2_commands_v', 'pd_input', 'rp_scope_port'}
@@ -117,7 +120,11 @@ class HighSpeedMenu(DiagnosticsMenu):
                 if key == "states_v":
                     value = json.loads(text)  # nullable ordered list of command pairs
                 else:
-                    defaults = VpiConfig() if case.key == "eom_vpi_hysteresis" else AcquisitionConfig()
+                    if case.key=='eom_pd_qualification':
+                        from .qualification.config import QualificationConfig
+                        defaults=QualificationConfig()
+                    else:
+                        defaults = VpiConfig() if case.key == "eom_vpi_hysteresis" else AcquisitionConfig()
                     kind = type(getattr(defaults, key)) if scope == "config" and case.key != "mock_lifecycle" else type(value)
                     value = parse_value(text, kind)
                 if scope == "option":

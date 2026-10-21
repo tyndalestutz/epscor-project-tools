@@ -173,7 +173,11 @@ class Recipe:
         return self
 
     def acquisition_config(self):
-        kind = VpiConfig if self.experiment == "eom_vpi_hysteresis" else AcquisitionConfig
+        if self.experiment == 'eom_pd_qualification':
+            from .qualification.config import QualificationConfig
+            kind = QualificationConfig
+        else:
+            kind = VpiConfig if self.experiment == "eom_vpi_hysteresis" else AcquisitionConfig
         unknown = self.config.keys() - {f.name for f in fields(kind)}
         if unknown:
             raise ValueError(f"Unknown acquisition config fields: {sorted(unknown)}")

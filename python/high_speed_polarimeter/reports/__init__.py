@@ -6,6 +6,9 @@ from ..io import read_json
 def create_report(directory):
     directory = Path(directory)
     run = read_json(directory / "run.json")
+    if run['experiment']=='eom_pd_qualification':
+        from ..qualification.report import create_report as create_qualification_report
+        return create_qualification_report(directory)
     if run['experiment'] == 'eom_vpi_hysteresis':
         from .vpi import create_report as create_vpi_report
         return create_vpi_report(directory)
