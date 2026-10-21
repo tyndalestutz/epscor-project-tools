@@ -381,6 +381,10 @@ RP/ASG settings are not voltage measurements. An absent/unconfirmed monitor perm
 settled command-domain observations, but no electrode Vπ; triangles need measured
 monitor direction. Clipping, invalid capture metadata or calibrated-monitor
 overrange/discrepancy abort acquisition after retaining returned raw evidence.
+`monitor_min_v`/`monitor_max_v` separately bound every measured monitor ADC sample
+even when electrode calibration is unconfirmed. These are nominal ADC volts, not
+electrode limits; choose them inside the physical ADC range. Existing recipes use
+a conservative ±1 V window until explicitly changed.
 
 `dual_raw.npy` contains appended signed-int16 paired arrays (PD, monitor); event byte
 ranges/hashes identify them. Do not treat this appended stream as a single `np.load`

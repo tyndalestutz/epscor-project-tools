@@ -50,6 +50,9 @@ def validate_capture(raw,meta,c):
 
 def monitor_guard(volts,state,meta,c,hardware):
     import numpy as np
+    if hardware and c.monitor_available:
+        if not np.isfinite(volts[1]).all() or volts[1].min()<c.monitor_min_v or volts[1].max()>c.monitor_max_v:
+            raise RuntimeError('Measured monitor ADC safety window exceeded; complete raw capture retained')
     if not (hardware and c.monitor_calibration_confirmed): return
     electrode=(volts[1]-c.monitor_zero_v)*c.monitor_scale_v_per_v*c.monitor_polarity
     # Expand measured extrema by declared monitor gain uncertainty before safety comparison.

@@ -262,3 +262,20 @@ def test_calibrated_synthetic_domains_direction_and_cycle_statistics(tmp_path):
     assert all(r['reverse_minus_forward_phase_rad']==pytest.approx(.12,abs=.01) for r in result['fitted_direction_differences'])
     assert result['repeatability']['inferred electrode V']['supported_groups']==4
     assert len(result['repeatability']['inferred electrode V']['parameter_trends'])==4
+
+
+@pytest.mark.parametrize('monitor',([-.26,0.],[0.,5.01],[float('nan'),0.]))
+def test_uncalibrated_hardware_monitor_window_is_still_enforced(monitor):
+    from high_speed_polarimeter.qualification.acquire import monitor_guard
+    c=QualificationConfig(monitor_full_scale_v=20.,monitor_min_v=-.25,monitor_max_v=5.)
+    assert not c.monitor_calibration_confirmed
+    with pytest.raises(RuntimeError,match='ADC safety window'):
+        monitor_guard(np.array([[0.,0.],monitor]),{}, {},c,True)
+    monitor_guard(np.array([[0.,0.],[0.,4.99]]),{}, {},c,True)
+
+
+def test_monitor_window_rejects_invalid_adc_bounds():
+    for values in ({'monitor_min_v':2.},{'monitor_min_v':-2.},{'monitor_max_v':2.}):
+        with pytest.raises(ValueError,match='Monitor ADC safety window'):
+            QualificationConfig(**values).validate()
+

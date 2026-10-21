@@ -40,6 +40,8 @@ class QualificationConfig:
     electrode_min_v: float = 0.0
     electrode_max_v: float = 0.0
     monitor_available: bool = True
+    monitor_min_v: float = -1.0
+    monitor_max_v: float = 1.0
     monitor_calibration_confirmed: bool = False
     monitor_scale_v_per_v: float = 0.0
     monitor_polarity: int = 1
@@ -109,6 +111,8 @@ class QualificationConfig:
             if getattr(self,name)<=0: raise ValueError(f'{name} must be positive')
         if self.pd_full_scale_v not in (1,20) or self.monitor_full_scale_v not in (1,20):
             raise ValueError('Confirm physical ADC jumper ranges: ±1 V or ±20 V')
+        if not (-self.monitor_full_scale_v<=self.monitor_min_v<self.monitor_max_v<=self.monitor_full_scale_v):
+            raise ValueError('Monitor ADC safety window must be ordered and within its declared input range')
         if self.scope_decimation not in {0,*[2**i for i in range(17)]} or self.monitor_polarity not in (-1,1):
             raise ValueError('Invalid decimation or monitor polarity')
         if not self.results_directory.strip() or not self.rp_hostname.strip() or not self.rp_config.strip():
