@@ -63,7 +63,7 @@ def analyze(directory):
         entry['pd_neighbor_step_diagnostic']={'maximum_v':float(steps.max()),'threshold_v':threshold,
             'rule':'max(25% full capture span, 20x median absolute neighbor step, 4 LSB); diagnostic only, no sample removal.'}
         if steps.max()>threshold: result['flags'].append('POSSIBLE_ABRUPT_PD_DISCONTINUITY')
-        entry.update(status='AVAILABLE',pd_mean_v=float(pd.mean()),pd_std_v=float(pd.std()),monitor_mean_v=float(monitor.mean()),
+        entry.update(status='AVAILABLE',pd_range_v=[float(pd.min()),float(pd.max())],pd_mean_v=float(pd.mean()),pd_std_v=float(pd.std()),monitor_mean_v=float(monitor.mean()),monitor_std_v=float(monitor.std()),
                      monitor_range_v=[float(monitor.min()),float(monitor.max())],
                      electrode_range_v=[float(electrode.min()),float(electrode.max())] if electrode is not None else None)
         if c.mode=='frequency_response':
@@ -88,6 +88,7 @@ def analyze(directory):
         elif c.strategy=='settled':
             key=(state['cycle'],state['direction'])
             settled.setdefault(key,[]).append(dict(command_v=state['offset'],signal=float(pd.mean()),
+                monitor_v=float(monitor.mean()) if c.monitor_available else None,
                 electrode_v=float(electrode.mean()) if electrode is not None else None,capture=number))
         else:
             if not c.monitor_available:
@@ -107,8 +108,10 @@ def analyze(directory):
         for row in records: by_voltage.setdefault(row['command_v'],[]).append(row)
         points=[dict(command_v=key,signal=float(np.mean([r['signal'] for r in group])),
                      electrode_v=float(np.mean([r['electrode_v'] for r in group])) if c.monitor_calibration_confirmed and all(r['electrode_v'] is not None for r in group) else None,
+                     monitor_v=float(np.mean([r['monitor_v'] for r in group])) if c.monitor_available else None,
                      captures=[r['capture'] for r in group]) for key,group in by_voltage.items()]
-        for domain,key in [('RP command V','command_v'),('inferred electrode V','electrode_v')]:
+        for domain,key in [('RP command V','command_v'),('monitor ADC V','monitor_v'),('inferred electrode V','electrode_v')]:
+            if key=='monitor_v' and not c.monitor_available: continue
             if key=='electrode_v' and (not c.monitor_calibration_confirmed or any(r['electrode_v'] is None for r in points)): continue
             x=[r[key] for r in points];y=[r['signal'] for r in points]
             fit=cosine_fit(x,y,c.fit_max_cycles,c.fit_max_residual_fraction,c.monitor_scale_rel_uncertainty if key=='electrode_v' else 0.)
@@ -134,6 +137,7 @@ def analyze(directory):
         result['frequency_reference']=dict(frequency_hz=c.reference_frequency_hz,bias_command_v=c.bias_v,
             electrical_bias='Measured DC monitor means recorded per capture; electrode bias only available with calibrated monitor.',
             phase='PD/monitor phase from simultaneous samples; reference-normalized principal phase, not unwrapped delay.')
+    diagnose_settled(result,directory,c)
     result['same_command_direction_differences']=[]
     for cycle in range(c.repeats):
         forward=settled.get((cycle,'forward'),[]);reverse=settled.get((cycle,'reverse'),[])
@@ -141,6 +145,9 @@ def analyze(directory):
             f=[r for r in forward if r['command_v']==command];b=[r for r in reverse if r['command_v']==command]
             result['same_command_direction_differences'].append(dict(cycle=cycle,command_v=command,
                 pd_reverse_minus_forward_v=float(np.mean([r['signal'] for r in b])-np.mean([r['signal'] for r in f])),
+                captures=[r['capture'] for r in f+b],
+                anomaly_associated=any(result['captures'][r['capture']].get('anomaly_flags') for r in f+b),
+                monitor_reverse_minus_forward_v=float(np.mean([r['monitor_v'] for r in b])-np.mean([r['monitor_v'] for r in f])) if c.monitor_available else None,
                 electrode_reverse_minus_forward_v=float(np.mean([r['electrode_v'] for r in b])-np.mean([r['electrode_v'] for r in f]))
                     if all(r['electrode_v'] is not None for r in f+b) else None,
                 scope='At matched RP command, not necessarily matched delivered voltage; includes drift and settling.'))
@@ -205,5 +212,108 @@ def analyze(directory):
     result['flags']=list(dict.fromkeys(result['flags']))
     result['calibration_status']=('UNAVAILABLE_INCOMPLETE_RUN' if run['status']!='COMPLETED' or run['cleanup_status']!='COMPLETED' else
         ('NOT_HARDWARE_VERIFIED' if run['mode']!='hardware' else 'DIAGNOSTIC_ONLY_NOT_INDEPENDENTLY_VALIDATED'))
+    result['qualification_summary']=qualification_summary(result,c)
     write_json(directory/'analysis.json',result)
     return result
+
+
+def diagnose_settled(result,directory,c):
+    """Measured-data screening only: flags never alter samples, branch means or fits."""
+    rows=[r for r in result['captures'] if r['status']=='AVAILABLE']
+    result['diagnostics']=dict(anomalous_captures=[],normal_capture=None,most_anomalous_capture=None,
+        rule='Settled-only screening: PD SD > max(8x median capture SD, median+8x scaled MAD, 4 ADC LSB); '
+             'same-command deviation > max(10% run PD-mean span, 8x peer scaled MAD, 8 LSB), >=2 peers. '
+             'Collapse: below peer median minus max(20% run PD-mean span, 8x peer scaled MAD, 8 LSB) '
+             'for >=5% of one buffer contiguously. No samples removed; thresholds are diagnostics, not fault probabilities. '
+             'Peers include all other captures at the identical command, across directions/cycles. '
+             'Host bounds do not establish continuity between captures.')
+    if not rows: return
+    result['diagnostics']['normal_capture']=rows[0]['capture']
+    if c.mode!='voltage_transfer' or c.strategy!='settled': return
+    stds=np.array([r['pd_std_v'] for r in rows]);median=float(np.median(stds));lsb=c.pd_full_scale_v/8192
+    variation=max(8*median,median+8*1.4826*float(np.median(abs(stds-median))),4*lsb)
+    span=float(np.ptp([r['pd_mean_v'] for r in rows]))
+    by_command={}
+    for r in rows: by_command.setdefault(r['state']['offset'],[]).append(r)
+    raw_by_id=dict(enumerate(captures(directory)))
+    for r in rows:
+        r['anomaly_flags']=[];score=r['pd_std_v']/variation
+        r['pd_variation_threshold_v']=variation
+        if r['pd_std_v']>variation: r['anomaly_flags'].append('LARGE_WITHIN_BUFFER_VARIATION')
+        peers=[p for p in by_command[r['state']['offset']] if p['capture']!=r['capture']]
+        if len(peers)>=2:
+            values=np.array([p['pd_mean_v'] for p in peers]);center=float(np.median(values))
+            mad=1.4826*float(np.median(abs(values-center)))
+            tolerance=max(.1*span,8*mad,8*lsb);delta=r['pd_mean_v']-center
+            r['peer_comparison']=dict(captures=[p['capture'] for p in peers],pd_median_v=center,
+                pd_difference_v=delta,threshold_v=tolerance,
+                monitor_difference_v=r['monitor_mean_v']-float(np.median([p['monitor_mean_v'] for p in peers])) if c.monitor_available else None)
+            score=max(score,abs(delta)/tolerance)
+            if abs(delta)>tolerance: r['anomaly_flags'].append('INTER_CAPTURE_INCONSISTENCY')
+            threshold=center-max(.2*span,8*mad,8*lsb)
+            raw=raw_by_id[r['capture']][1];pd=raw[0].astype(float)*lsb;below=pd<threshold
+            edges=np.diff(np.r_[False,below,False].astype(int));starts=np.flatnonzero(edges==1);ends=np.flatnonzero(edges==-1)
+            if len(starts):
+                index=int(np.argmax(ends-starts));a,b=int(starts[index]),int(ends[index]);fraction=(b-a)/len(pd)
+                r['collapse_diagnostic']=dict(threshold_v=threshold,longest_sample_range=[a,b],
+                    duration_s=(b-a)*r['sampling_time_s'],fraction=fraction,
+                    capture_relative_start_s=a*r['sampling_time_s'])
+                score=max(score,fraction/.05)
+                if fraction>=.05: r['anomaly_flags'].append('EXTENDED_PD_COLLAPSE_RELATIVE_TO_PEERS')
+        r['anomaly_score']=float(score)
+        if r['anomaly_flags']: result['diagnostics']['anomalous_captures'].append(r['capture'])
+    normal=[r for r in rows if not r['anomaly_flags']]
+    result['diagnostics']['normal_capture']=min(normal,key=lambda r:(abs(r['pd_std_v']-median),r['capture']))['capture'] if normal else None
+    if result['diagnostics']['anomalous_captures']:
+        result['diagnostics']['most_anomalous_capture']=max(rows,key=lambda r:(r['anomaly_score'],-r['capture']))['capture']
+        result['flags'].append('UNSTABLE_PD_CAPTURES_RETAINED')
+    # Preserve all primary fits, but label every affected branch, even an apparently good cosine fit.
+    for g in result['groups']:
+        ids=[i for p in g.get('points',[]) for i in p['captures']]
+        g['anomalous_captures']=[i for i in ids if i in result['diagnostics']['anomalous_captures']]
+        g['stability']='FLAGGED' if g['anomalous_captures'] else 'NO_SCREENING_FLAG'
+    result['cycle_comparisons']=[]
+    for direction in ('forward','reverse'):
+        for command,group in by_command.items():
+            cycles={}
+            for r in group:
+                if r['state']['direction']==direction: cycles.setdefault(r['state']['cycle'],[]).append(r)
+            if len(cycles)<2: continue
+            first=min(cycles);base=cycles[first]
+            for cycle,current in sorted(cycles.items()):
+                if cycle==first: continue
+                result['cycle_comparisons'].append(dict(direction=direction,command_v=command,reference_cycle=first,cycle=cycle,
+                    captures=[r['capture'] for r in base+current],
+                    pd_difference_v=float(np.mean([r['pd_mean_v'] for r in current])-np.mean([r['pd_mean_v'] for r in base])),
+                    monitor_difference_v=float(np.mean([r['monitor_mean_v'] for r in current])-np.mean([r['monitor_mean_v'] for r in base])) if c.monitor_available else None,
+                    anomaly_associated=any(r['anomaly_flags'] for r in base+current)))
+
+
+def qualification_summary(result,c):
+    """Answer only the physical questions this run can support; no automatic reference search."""
+    groups=result['groups'];fits=[g for g in groups if g['fit']['status']!='UNAVAILABLE']
+    observed=[g for g in fits if g['fit']['status']=='OBSERVED_FRINGE_MODEL']
+    unstable=result['diagnostics']['anomalous_captures']
+    complete=result['execution_status']==result['cleanup_status']=='COMPLETED'
+    def item(question,status,evidence):
+        return dict(question=question,status=status,evidence=evidence)
+    vpi_evidence=f'{c.wavelength_nm:g} nm; '+('; '.join(
+        f"{domain}: {s['supported_groups']}/{s['total_groups']} fits, range "+('–'.join(format(v,'.5g') for v in s['vpi_range']) if s['vpi_range'] else 'unavailable')
+        for domain,s in result['repeatability'].items() if s['total_groups']) or 'no voltage-transfer branch fits')
+    if not c.monitor_calibration_confirmed: vpi_evidence+='; electrode volts uncalibrated'
+    vpi_evidence+=f'; {len(observed)} fits resolve adjacent extrema; others extrapolate'
+    ratios=[r for r in result['normalized_response'] if 'normalized_magnitude' in r]
+    comparisons=result.get('cycle_comparisons',[])
+    return [
+        item('Vpi at operating wavelength','NOT MEASURED' if c.mode!='voltage_transfer' else 'UNAVAILABLE' if not fits else 'SUPPORTED' if complete and c.monitor_calibration_confirmed and observed and len(observed)==len(groups) and not unstable else 'INCONCLUSIVE',vpi_evidence),
+        item('Voltage-to-retardance linearity','INCONCLUSIVE' if fits else 'UNAVAILABLE',
+             f'{len(fits)}/{len(groups)} accepted constant-k cosine fits; residuals test PD-transfer consistency only. PD cosine phase is ambiguous; it is not independently measured retardance.'),
+        item('Cycle repeatability','SUPPORTED' if comparisons and not unstable and complete else 'INCONCLUSIVE' if comparisons else 'NOT MEASURED',
+             f'{len(comparisons)} same-direction, same-command cycle comparisons; '+
+             (f"median/maximum absolute PD change {np.median([abs(r['pd_difference_v']) for r in comparisons]):.5g}/{max(abs(r['pd_difference_v']) for r in comparisons):.5g} V (all pairs); " if comparisons else '')+
+             f'flagged capture IDs {unstable}. Same command does not guarantee same measured voltage.'),
+        item('Frequency response','SUPPORTED' if ratios and complete and c.operating_slope_confirmed and len(ratios)==len(result['normalized_response']) else 'INCONCLUSIVE' if c.mode=='frequency_response' else 'NOT MEASURED',
+             f'{len(ratios)}/{len(result["normalized_response"])} reference-normalized PD/monitor ratios; operating slope verified: {c.operating_slope_confirmed}. Includes detector/analyzer/monitor paths.' if c.mode=='frequency_response' else 'Settled/triangle voltage transfer acquires no frequency-response sweep.'),
+        item('Drift/hysteresis stability','INCONCLUSIVE' if groups else 'NOT MEASURED',
+             f'Forward/reverse differences include settling, drift and voltage mismatch; unstable captures {unstable} remain in the primary result. No isolated intrinsic hysteresis measurement.'),
+        item('Comparison with intact EOM','UNAVAILABLE','No explicit compatible intact-EOM reference data supplied; no unrelated runs searched.')]

@@ -133,6 +133,11 @@ def test_waveform_mock_lifecycle_and_complete_raw_evidence(tmp_path,mode,strateg
         assert len(result['normalized_response'])==3
         assert all(abs(x['normalized_magnitude']-1)<.01 for x in result['normalized_response'])
         assert all(abs(x['relative_phase_deg'])<.1 for x in result['normalized_response'])
+        summary={row['question']:row for row in result['qualification_summary']}
+        assert summary['Vpi at operating wavelength']['status']=='NOT MEASURED'
+        assert summary['Voltage-to-retardance linearity']['status']=='UNAVAILABLE'
+        assert summary['Frequency response']['status']=='INCONCLUSIVE'  # Operating slope unverified.
+        assert summary['Comparison with intact EOM']['status']=='UNAVAILABLE'
     else:
         assert result['groups'] and all('sample_range' in g and 'bins' in g for g in result['groups'])
 
@@ -253,7 +258,7 @@ def test_calibrated_synthetic_domains_direction_and_cycle_statistics(tmp_path):
     assert state['status']==state['report_status']=='COMPLETED'
     result=read_result(Path(state['directory']))
     assert result['calibration_status']=='NOT_HARDWARE_VERIFIED'
-    assert {g['domain'] for g in result['groups']}=={'RP command V','inferred electrode V'}
+    assert {g['domain'] for g in result['groups']}=={'RP command V','inferred electrode V','monitor ADC V'}
     for g in result['groups']:
         factor=100 if g['domain']=='inferred electrode V' else 1
         assert g['fit']['vpi']==pytest.approx(np.pi/60*factor,rel=.01)
@@ -279,3 +284,86 @@ def test_monitor_window_rejects_invalid_adc_bounds():
         with pytest.raises(ValueError,match='Monitor ADC safety window'):
             QualificationConfig(**values).validate()
 
+
+def test_half_wave_extrema_do_not_require_full_period():
+    x=np.linspace(-.3,1.3,161)
+    y=.2+.1*np.cos(np.pi*x)
+    fit=cosine_fit(x,y)
+    assert np.pi<fit['phase_span_rad']<2*np.pi
+    assert fit['status']=='OBSERVED_FRINGE_MODEL'
+    assert fit['vpi']==pytest.approx(1.,rel=1e-5)
+    assert fit['extrema_separations']==pytest.approx([1.],abs=.011)
+    for turn in fit['observed_neighbor_extrema']:
+        assert turn['voltage_bracket'][0]<turn['voltage']<turn['voltage_bracket'][1]
+
+
+@pytest.mark.parametrize('spike',[False,True])
+def test_noise_turns_do_not_resolve_a_partial_fringe(spike):
+    x=np.linspace(0,1,121)
+    y=.2+.1*np.cos(.3+.8*np.pi*x)+.0003*np.sin(np.arange(121)*2.)
+    if spike: y[40]+=.05
+    fit=cosine_fit(x,y)
+    assert fit['status']=='MODEL_BASED_EXTRAPOLATION'
+    assert not fit['extrema_separations']
+    assert fit['vpi_fit_standard_error']>0
+
+
+@pytest.mark.parametrize('collapse',[False,True])
+def test_slow_collapse_stable_monitor_and_normal_repeatability(tmp_path,collapse):
+    r=recipe(tmp_path,points=21,repeats=2,command_max_v=.45,stop_command_v=.45,
+             monitor_full_scale_v=20.,monitor_min_v=-.25,monitor_max_v=5.)
+    class Transient(QualificationMock):
+        def capture(self):
+            raw,meta=super().capture();number=self.count-1;n=raw.shape[1]
+            command=self.drive['offset_v'];value=.35+.12*np.cos(.2+6*command)
+            pd=np.full(n,value)
+            if collapse:
+                if number==47: pd[n//4:]=np.linspace(value,-.006,n-n//4)
+                if number==48: pd[:]=-.006
+                if number==49: pd[:n//2]=np.linspace(-.006,value,n//2)
+            pd+=.0001*np.sin(np.arange(n)*.79)
+            raw[0]=np.rint(pd*8192).astype(np.int16)
+            raw[1]=np.rint((9.6*command-.06)/20*8192).astype(np.int16)
+            return raw,meta
+    state=execute(r,session_factory=lambda:Transient(r.acquisition_config()));folder=Path(state['directory'])
+    result=read_result(folder);diagnostics=result['diagnostics']
+    assert state['status']==state['report_status']=='COMPLETED'
+    assert len(result['captures'])==84
+    assert {g['domain'] for g in result['groups']}=={'RP command V','monitor ADC V'}
+    assert all(r['electrode_range_v'] is None for r in result['captures'])
+    summary={row['question']:row for row in result['qualification_summary']}
+    assert summary['Frequency response']['status']=='NOT MEASURED'
+    assert summary['Comparison with intact EOM']['status']=='UNAVAILABLE'
+    assert summary['Vpi at operating wavelength']['status']=='INCONCLUSIVE'
+    assert summary['Voltage-to-retardance linearity']['status']=='INCONCLUSIVE'
+    assert len(result['cycle_comparisons'])==42
+    report=(folder/'report.md').read_text()
+    assert 'not EOM PASS criteria' in report
+    if collapse:
+        assert diagnostics['anomalous_captures']==[47,48,49]
+        assert summary['Cycle repeatability']['status']=='INCONCLUSIVE'
+        assert result['captures'][48]['collapse_diagnostic']['fraction']==1
+        assert result['captures'][47]['monitor_std_v']==0
+        worst=max(result['same_command_direction_differences'],key=lambda p:abs(p['pd_reverse_minus_forward_v']))
+        assert worst['anomaly_associated'] and 48 in worst['captures']
+        assert worst['monitor_reverse_minus_forward_v']==0
+        for i in (47,48,49): assert f'Capture {i}, cycle 1 forward' in report
+        assert any(g['anomalous_captures'] for g in result['groups'])
+        from high_speed_polarimeter.qualification.report import _raw_panel
+        from matplotlib.figure import Figure
+        fig=Figure();ax,monitor=fig.subplots(2);number=diagnostics['most_anomalous_capture']
+        _raw_panel(ax,folder,r.resolved().config,number,'Most anomalous',monitor)
+        values=ax.lines[0].get_ydata()
+        assert len(values)==16384 and values.min()<0 and values.max()>.3
+        assert f'capture {number}' in ax.get_title()
+    else:
+        assert diagnostics['anomalous_captures']==[]
+        assert diagnostics['most_anomalous_capture'] is None
+        assert summary['Cycle repeatability']['status']=='SUPPORTED'
+        assert all(row['pd_difference_v']==0 for row in result['cycle_comparisons'])
+        assert all(not row['anomaly_associated'] for row in result['same_command_direction_differences'])
+    names=('dual_raw.npy','events.jsonl','recipe.json','acquisition.json','run.json')
+    hashes={name:hashlib.sha256((folder/name).read_bytes()).hexdigest() for name in names}
+    reevaluate(folder)
+    assert all(hashlib.sha256((folder/name).read_bytes()).hexdigest()==digest for name,digest in hashes.items())
+    assert read_result(folder)['diagnostics']==diagnostics

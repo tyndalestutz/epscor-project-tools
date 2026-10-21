@@ -41,11 +41,12 @@ def cosine_fit(voltage,signal,max_cycles=6.,max_residual_fraction=.1,scale_uncer
     if kse/abs(k)>.25 or rms/max(amplitude,1e-30)>max_residual_fraction:
         return unavailable('Cosine residuals or phase-sensitivity uncertainty too large for a defensible Vpi')
     vpi=float(np.pi/abs(k));fit_se=float(np.pi*kse/k**2)
-    order=np.argsort(x);sorted_y=y[order]
-    # Extrema are raw neighboring observations, not smoothed/fitted extrema.
-    turns=np.flatnonzero(np.diff(np.sign(np.diff(sorted_y)))!=0)+1
-    extrema=[dict(voltage=float(x[order][i]+origin),signal=float(sorted_y[i])) for i in turns]
-    observed=phase_span>=2*np.pi and len(extrema)>=2
+    extrema=resolved_extrema(x+origin,y,rms)
+    # A peak and adjacent valley resolve a half-wave; a full 2pi period is unnecessary.
+    pairs=[dict(left=a,right=b,spacing_v=abs(b['voltage']-a['voltage']))
+           for a,b in zip(extrema,extrema[1:])
+           if a['kind']!=b['kind'] and abs(a['signal']-b['signal'])>=max(.75*float(np.ptp(y)),8*rms)]
+    observed=bool(pairs)
     return dict(status='OBSERVED_FRINGE_MODEL' if observed else 'MODEL_BASED_EXTRAPOLATION',
         vpi=vpi,vpi_fit_standard_error=fit_se,vpi_monitor_scale_standard_uncertainty=abs(vpi*scale_uncertainty),
         vpi_combined_standard_uncertainty=float(np.hypot(fit_se,vpi*scale_uncertainty)),
@@ -53,9 +54,36 @@ def cosine_fit(voltage,signal,max_cycles=6.,max_residual_fraction=.1,scale_uncer
         offset=offset,amplitude=amplitude,phase_at_center_rad=phase,voltage_center=origin,k_rad_per_v=float(k),
         phase_span_rad=phase_span,residual_rms=rms,visibility_voltage_proxy=amplitude/offset if offset>0 else None,
         visibility_limitation='PD-voltage modulation proxy, not calibrated optical visibility without independent dark/background and detector calibration.',
-        observed_neighbor_extrema=extrema,extrema_separations=[abs(extrema[i]['voltage']-extrema[i-1]['voltage']) for i in range(1,len(extrema))],
+        extrema_method='Unsmoothed observations; reversal excursion >= max(20% observed PD span, 4 residual RMS); opposite extrema must differ by >=max(75% observed PD span, 8 residual RMS). Endpoints excluded; neighbor brackets are sampling neighborhoods, not confidence bounds.',
+        observed_neighbor_extrema=extrema,resolved_peak_valley_pairs=pairs,extrema_separations=[p['spacing_v'] for p in pairs],
         residuals=residual.tolist(),search_cycles=[.125,float(upper)],
         scope='Cosine transfer model in the declared voltage domain. Vpi is pi/abs(k); not a voltage calibration or a claim of intrinsic crystal behavior.')
+
+
+def resolved_extrema(voltage,signal,noise):
+    """Prominent opposite turns in recorded observations; never smooth or fit their locations."""
+    order=np.argsort(voltage,kind='stable');x=np.asarray(voltage)[order];y=np.asarray(signal)[order]
+    threshold=max(.2*float(np.ptp(y)),4*noise)
+    if threshold<=0 or len(x)<3 or np.any(np.diff(x)<=0): return []
+    direction=0;low=high=0;turns=[]
+    for i in range(1,len(y)):
+        if direction==0:
+            if y[i]<y[low]: low=i
+            if y[i]>y[high]: high=i
+            if y[i]-y[low]>=threshold: direction=1;high=i
+            elif y[high]-y[i]>=threshold: direction=-1;low=i
+        elif direction==1:
+            if y[i]>=y[high]: high=i
+            elif y[high]-y[i]>=threshold:
+                if high>0: turns.append((high,'peak'))
+                direction=-1;low=i
+        else:
+            if y[i]<=y[low]: low=i
+            elif y[i]-y[low]>=threshold:
+                if low>0: turns.append((low,'valley'))
+                direction=1;high=i
+    return [dict(voltage=float(x[i]),signal=float(y[i]),kind=kind,
+                 voltage_bracket=[float(x[i-1]),float(x[i+1])]) for i,kind in turns]
 
 
 def demodulate(values,dt,frequency,min_cycles=5.):

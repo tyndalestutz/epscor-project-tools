@@ -399,13 +399,44 @@ all requested cycles/resolution into one 16384-sample buffer; unsupported recipe
 fail before connecting. Host bounds are not sample timestamps. Captures remain
 separate; physical analog-channel delay and clock accuracy require bench checks.
 
-Reports retain command-domain and monitor-derived electrode plots separately,
-raw paired traces, cosine fits/residuals, conditional Vπ uncertainty, extrema,
-directional differences and repeatability. Partial identifiable fringes are
-**model extrapolations**; inadequate/ambiguous fits are unavailable. Bounded fitting
-cannot exclude unobserved high-order aliases. Voltage-proxy visibility is not dark-
-corrected optical visibility. Correlated errors/model bias are outside the simple
-fit covariance. Abrupt-step diagnostics flag evidence without removing samples.
+Reports separate **measured monitor ADC volts**, RP-command volts and calibrated
+monitor-derived electrode volts. An unconfirmed electrode conversion does not hide
+the measured monitor transfer or produce an electrode Vπ. ADC volts use the
+declared input full scales; an independent ADC calibration is not established.
+
+Settled reports show every buffer's PD mean and raw min/max, plus paired raw
+examples selected deterministically: the unflagged buffer nearest the median PD
+SD and the largest diagnostic score (earliest ties). PD/monitor panels have common
+scales across examples and retain all samples. Zero-based capture IDs, branch,
+command, monitor mean/SD, PD range/SD and extended-collapse durations are printed.
+Screening covers unusually large within-buffer SD, same-command peer mismatch
+and sustained below-peer PD signal, including slow collapses missed by a neighbor-
+step detector. Explicit thresholds, peer IDs and buffer-relative sample ranges
+are retained in `analysis.json`. These are diagnostic rules, not fault probabilities;
+they cannot distinguish optical interruption from detector/electrical or acquisition
+causes. Settled rules are not applied to intentional triangle/sine modulation.
+Missing buffers/gaps remain unobserved; no filtering or sample exclusions occur.
+
+Partial identifiable fringes remain **model extrapolations**; ambiguous fits stay
+unavailable. A full period is unnecessary when adjacent interior peak/valley
+observations resolve a half-wave. Reversal excursion must exceed max(20% observed
+PD span, 4 residual RMS); opposite extrema must differ by at least max(75% span,
+8 RMS). Reported sampled spacings differ from fitted π/|k|; neighbor brackets are
+sampling neighborhoods, not confidence bounds. Bounded fitting cannot exclude
+unobserved high-order aliases. Conditional fit SE, branch/cycle spread and voltage-
+scale uncertainty remain separate; correlated errors/model bias are outside the
+simple covariance. PD-voltage visibility remains a diagnostic proxy in analysis,
+not dark-corrected optical visibility.
+
+All same-command forward/reverse and same-direction cycle comparisons retain
+anomalous captures and measured monitor mismatches. Median and maximum absolute
+differences summarize **all** pairs. Transient-associated differences are labeled;
+they cannot establish intrinsic hysteresis. No anomaly-excluded replacement is
+computed. The six-question qualification summary separates software completion
+from physical evidence: Vπ, retardance linearity, repeatability, frequency response,
+drift/hysteresis and intact-EOM comparison. Voltage transfer does not measure
+frequency response. No automatic reference-run search or comparison is performed;
+a compatible intact-EOM reference must be explicitly supplied for a future review.
 
 Frequency analysis uses coherent DC/trend/1f/2f least squares (2f only when resolved),
 peak amplitudes, fundamental-RMS/residual-RMS SNR, and PD/monitor complex ratios.

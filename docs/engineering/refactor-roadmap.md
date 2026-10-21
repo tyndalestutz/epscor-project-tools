@@ -389,3 +389,15 @@ analog timing, repaired-electrode insulation, safe envelopes and intrinsic optic
 response remain bench-validation risks; software fixtures establish none of them.
 Review/publication and actual software validation are recorded in the feature PR
 and the repository's handoff issue; no hardware operation is included in this work.
+
+The PR #10 diagnostic revision uses acquired PD/monitor evidence without changing
+the two acquisition modes or adapter: measured monitor ADC volts remain visible
+without electrode calibration; settled instability is flagged without exclusions;
+sampled peak/valley spacing is distinct from cosine extrapolation and conditional
+fit uncertainty. Same-command comparisons retain monitor mismatch and transient
+association rather than declaring intrinsic hysteresis. A six-question report
+summary separates software completion from physical support. Settled screening
+thresholds are heuristic diagnostics, not calibrated fault probabilities; electrode
+calibration, transient cause, intrinsic retardance linearity and compatible intact-
+EOM comparison remain unresolved bench/review questions. No reference-run search,
+new comparison infrastructure or hardware operation is authorized by this revision.
