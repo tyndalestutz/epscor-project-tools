@@ -41,10 +41,15 @@ def execute(recipe, *, session_factory=None, acquire=None, mode="mock",
         if recipe.experiment == "mock_lifecycle":
             raise ValueError("mock_lifecycle cannot initialize bench hardware")
         config = recipe.acquisition_config()
-        if not config.output_map_confirmed or not config.voltage_chain.strip() or not config.pax_reference_plane.strip():
+        if recipe.experiment=='eom_pd_qualification':
+            config.confirm_hardware()
+        elif not config.output_map_confirmed or not config.voltage_chain.strip() or not config.pax_reference_plane.strip():
             raise ValueError("Hardware run requires output_map_confirmed and recorded voltage_chain/pax_reference_plane")
     if session_factory is None:
-        if recipe.experiment == "mock_lifecycle":
+        if recipe.experiment=='eom_pd_qualification':
+            from .qualification.hardware import QualificationSession, QualificationMock
+            session_factory=lambda: (QualificationSession if mode=='hardware' else QualificationMock)(recipe.acquisition_config())
+        elif recipe.experiment == "mock_lifecycle":
             session_factory = MockSession
         elif mode == "mock":
             session_factory = lambda: MockAcquisitionSession(recipe.acquisition_config())
@@ -73,11 +78,14 @@ def execute(recipe, *, session_factory=None, acquire=None, mode="mock",
             if mode == "hardware":
                 from .config import LEGACY_ROOT
                 roots.append(LEGACY_ROOT)
-                daemon_config = Path(recipe.config["pax_daemon_config_path"]).expanduser().resolve()
-                for path in (daemon_config, daemon_config.with_name("pax1000_daemon.py"), Path(recipe.config["rp_config"]).expanduser()):
+                daemon_paths=[]
+                if recipe.experiment!='eom_pd_qualification':
+                    daemon_config = Path(recipe.config["pax_daemon_config_path"]).expanduser().resolve()
+                    daemon_paths=[daemon_config,daemon_config.with_name("pax1000_daemon.py")]
+                for path in (*daemon_paths, Path(recipe.config["rp_config"]).expanduser()):
                     if path.is_file():
                         roots.append(path)
-                packages.extend(("pyrpl", "yaqc", "yaqd-core", "yaqd-thorlabs", "pyvisa", "pyvisa-py", "pyusb"))
+                packages.extend(("pyrpl",) if recipe.experiment=='eom_pd_qualification' else ("pyrpl", "yaqc", "yaqd-core", "yaqd-thorlabs", "pyvisa", "pyvisa-py", "pyusb"))
             state["provenance"] = runtime_provenance(additional_source_roots=tuple(dict.fromkeys(roots)), dependencies=tuple(dict.fromkeys(packages)))
             write_json(directory / "run.json", state)
             session = session_factory()

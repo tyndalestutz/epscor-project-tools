@@ -371,3 +371,59 @@ Preserve superseded decisions with a short explanatory note when needed, without
 turning the roadmap into an exhaustive diary. Never mark a phase complete merely
 because its plan is documented. PR 0 ends with shared engineering context and
 controlled scope; PR 1 requires its own authorization.
+
+
+### Bounded scientific extension: EOM PD qualification
+
+`feat/eom-pd-qualification` adds one experiment to the high-speed suite, independently
+of the numbered modernization phases. It reuses the runner/menu/report/quality
+contracts and adds an experiment-specific dual-channel Scope adapter and appended
+paired signed-code stream (schema 2). Shared PAX/RP controllers and existing data
+formats remain unchanged. This does not complete a campaign phase or establish the
+future high-speed reconstruction interface.
+
+Both ADC channels must come from one frozen capture; host bounds do not establish
+sample epochs across buffers. Pyrpl startup-profile effects require explicit zero-
+profile confirmation and independent electrical protection. Monitor calibration,
+analog timing, repaired-electrode insulation, safe envelopes and intrinsic optical
+response remain bench-validation risks; software fixtures establish none of them.
+Review/publication and actual software validation are recorded in the feature PR
+and the repository's handoff issue; no hardware operation is included in this work.
+
+The PR #10 diagnostic revision uses acquired PD/monitor evidence without changing
+the two acquisition modes or adapter: measured monitor ADC volts remain visible
+without electrode calibration; settled instability is flagged without exclusions;
+sampled peak/valley spacing is distinct from cosine extrapolation and conditional
+fit uncertainty. Same-command comparisons retain monitor mismatch and transient
+association rather than declaring intrinsic hysteresis. A six-question report
+summary separates software completion from physical support. Settled screening
+thresholds are heuristic diagnostics, not calibrated fault probabilities; electrode
+calibration, transient cause, intrinsic retardance linearity and compatible intact-
+EOM comparison remain unresolved bench/review questions. No reference-run search,
+new comparison infrastructure or hardware operation is authorized by this revision.
+
+The waveform-diagnostic increment on the same draft PR extends frequency response
+to sine/symmetric triangle with fixed bias/peak amplitude, retained paired buffers
+and bounded deterministic time-domain examples. Requested triangle maps to the
+installed Pyrpl's native symmetric `ramp` (literal `triangle` was unsupported);
+generator readback records the native name. This is a bounded adapter correctness
+fix, not a driver rewrite. Electrical harmonic/shape response is evaluated before
+PD/monitor ratios; expected triangle harmonics and possible bandwidth rounding stay
+distinct from electrical distortion. Reconstructed command phase is presentation
+only. Missing/invalid/reference-ambiguous evidence remains visible. Software/mock
+checks do not establish physical triangle shape, monitor bandwidth, voltage scale
+or analog channel timing; those remain bench gates. No hardware sweep or merge is
+part of this implementation increment.
+
+The optional adaptive-Vpi increment stays inside the existing qualification
+experiment and append-only capture contract. It adds feedback-selected settled
+setpoints, immutable electrical limits, explicit calibrated-monitor/hardware
+qualification gates, and independent sampled-extrema validation across complete
+forward/reverse branches. A failed or exhausted search preserves evidence and
+its stop reason; cosine estimates never authorize voltage extension. Frequency
+mode remains separate; optional operator-confirmed compatible DC-Vpi fractions
+resolve to explicit command/electrode envelopes. The operator must independently
+establish calibration compatibility and stability thresholds. Synthetic replay
+and fault fixtures do not qualify the optical/electrical chain; autonomous bench
+use remains gated on calibration, protection and scientific review. This does not
+advance a numbered campaign phase or authorize merging draft PR #10.

@@ -4,7 +4,7 @@ Precision high-speed Stokes polarimetry: input polarization → EOM1 (nominal 0�
 → EOM2 (nominal 45°) → PBS/analyzer → photodiode. The **PD is the mandatory primary
 EOM response measurement**; the slower PAX is the polarization reference. Actual
 axes, voltage response, reference-plane relationship and timing require bench
-characterization. This package acquires data; it does not interpret the EOM yet.
+characterization. The PD qualification experiment below adds a diagnostic transfer model; it does not establish a calibrated Stokes reconstruction.
 
 ## Experiments and recipes
 
@@ -322,3 +322,245 @@ comparison described above. It does not establish calibrated terminal-voltage
 retardance, an independently verified physical eigenaxis, or intrinsic hysteresis.
 State optimization, Stokes reconstruction and calibration inversion remain pending.
 Basler/OAM workflows remain out of scope.
+
+
+## Single-EOM PD/monitor qualification
+
+Select **`eom_pd_qualification`** in the same numbered menu. It uses the existing
+run/edit/save/load/defaults commands and persistent local settings. No PAX or
+separate RAM measurement is required. Keep one selected EOM in the optical path,
+input and effective analyzer both at 45° to its eigenaxes, followed by PBS/PD.
+Select OUT1 or OUT2 explicitly; assign PD and amplifier monitor to distinct
+IN1/IN2 inputs. Record the device/serial, amplifier, wavelength and TEC conditions.
+
+Start with the deliberately **unconfirmed** example:
+
+```bash
+PYTHONPATH=python python -m high_speed_polarimeter --dry-run --profile python/high_speed_polarimeter/profiles/pd-qualification-example.json
+PYTHONPATH=python python -m high_speed_polarimeter --mock-run --profile python/high_speed_polarimeter/profiles/pd-qualification-example.json --results-directory /tmp/eom-pd-mock
+PYTHONPATH=python python -m high_speed_polarimeter --reevaluate RUN_DIRECTORY
+```
+
+Before `--run` or menu Run, use a local recipe to confirm the optics, output map,
+physical ADC jumpers (±1 or ±20 V), RP command bounds, preamp-output/HV-amplifier-input
+limits, and electrode limits. Record signed gains, offsets and conservative margins
+for **both** amplifier-input and complete electrode chains, including the zero
+startup/cleanup condition. Waveforms also require confirmed frequency bounds.
+Example amplitudes are software templates, **not safe limits for a repaired device**.
+No nominal New Focus rating is used as a safety envelope.
+
+The existing RP controller loads a Pyrpl profile before initializing ASGs. Hardware
+runs therefore require `startup_zero_profile_confirmed` (independently inspect that
+profile), independent electrical protection, and no competing RP clients. Software
+checks occur after configuration/capture, not as a real-time HV interlock. They
+cannot establish insulation safety. Cleanup disables both ASG routes and sets DC
+zero, records failures separately, and does not claim a measured zero electrode
+voltage. Independent protection remains necessary during startup, network loss,
+waveform changes and cleanup.
+
+* `mode=voltage_transfer`, `strategy=settled`: configure `start_command_v`,
+  `stop_command_v`, `points`, `repeats`, `captures_per_point`, `ramp_s`, `settle_s`.
+  Forward/reverse sequences include the turning point twice; DC ramps preserve the
+  return path without inserting zero between points. Full buffers are averaged
+  explicitly, then repeated buffers at each command receive equal weight.
+* `strategy=adaptive_vpi`: optional **static**, measurement-driven discovery within
+  fixed approved bounds. Set a conservative `start_command_v`/`stop_command_v`,
+  >=17 `points`, >=2 `repeats` (forward/reverse cycles), >=2 `captures_per_point`.
+  `adaptive_direction` is `positive`, `negative` or `both`; `adaptive_extension_v`
+  bounds each extension, preserving initial grid spacing; `adaptive_max_extensions`
+  bounds exploration work. `adaptive_full_wave=true` targets three alternating
+  extrema rather than only an adjacent maximum/minimum. A same-intensity return
+  never proves a complete cycle. Validation repeats the **entire discovered range**.
+
+  Adaptive mode additionally requires all existing hardware confirmations, a
+  verified monitor conversion with positive relative uncertainty, electrical
+  margins/discrepancy tolerance, and `adaptive_qualified=true` with explicit
+  `adaptive_qualification_evidence`. Record independently justified positive
+  thresholds `adaptive_min_prominence_v` (PD contrast), `adaptive_pd_std_max_v`
+  (within-buffer PD SD), `adaptive_pd_repeat_max_v` (repeat/cycle/direction PD span),
+  and `adaptive_monitor_std_max_v` (monitor ADC SD). These are operator-qualified
+  acceptance thresholds, not automatically learned safety limits. Nominal gains
+  and a successful mock run are insufficient. Existing uncalibrated recipes
+  remain valid for their previous strategies and cannot enable autonomous mode.
+
+  Every path, including startup/return zero, is checked against command, preamp/
+  amplifier-input, electrode and monitor bounds before generation. Predicted
+  electrode margins include chain margin, allowed disagreement and 3x declared
+  monitor scale uncertainty; measured buffers are checked for clipping, monitor
+  disagreement, instability and expanded electrode uncertainty. No guard runs
+  during unobserved transport/settling gaps: independent hardware protection is
+  mandatory. Bounds never expand. `INSUFFICIENT_SAFE_VOLTAGE_RANGE` means permitted
+  directions hit the approved envelope; `DISCOVERY_BUDGET_EXHAUSTED` means the
+  configured count ended first. Faults retain buffers and trigger normal cleanup.
+
+  Direct evidence requires prominent unsmoothed interior turns, >=8 grid intervals
+  per half-wave, >=3 samples on both sides, contrast above declared prominence,
+  6x measured variability and 4 LSB. Sampling brackets expand over near-equal
+  neighboring values. Every validation branch must resolve the target and agree
+  in extrema order/location and PD repeatability; no convenient branch is removed.
+  Resolution/scale bounds, branch variation and cosine fit uncertainty remain
+  separate. High-order aliasing, unknown drift and imperfect voltage calibration
+  cannot be ruled out by this screening. Classification is `OBSERVED`,
+  `FITTED_EXTRAPOLATED`, `AMBIGUOUS` or `UNAVAILABLE`; source events and signed raw
+  buffers support offline replay. Software completion does not mean EOM PASSED.
+* `strategy=triangle`: configure offset, amplitude, frequency and `triangle_cycles`
+  (minimum complete cycles captured per repeat). The generator continues during
+  settling/network gaps, so this is not an exact burst count. All identified complete
+  cycles inside each buffer are analyzed independently; partial cycles remain raw.
+  Noisy/flat monitors fail association. Explicit voltage-bin means retain counts;
+  no averaging across cycles or ideal-waveform voltage substitution occurs.
+* `mode=frequency_response`: configure safe `bias_v`, `sine_amplitude_v`, a preferably
+  logarithmic `frequencies_hz`, `reference_frequency_hz`, repetitions and settling.
+  Record `operating_slope_confirmed` and `slope_validation_run` only with independent
+  transfer-curve evidence. Otherwise the report labels the operating slope unverified.
+
+An optional frequency `vpi_fraction_peak>0` uses an operator-supplied compatible
+DC calibration: `calibrated_vpi_v`, positive `calibrated_vpi_uncertainty_v`,
+`vpi_calibration_confirmed=true` and `vpi_calibration_evidence` identifying the
+reference run/calibration, device, wavelength and unchanged electrical conversion.
+No run is searched automatically. The operator must establish compatibility;
+setting a confirmation is not itself a physical calibration. Peak command becomes
+`fraction * calibrated_vpi_v / abs(chain_gain_v_per_command_v)`; this overrides the
+legacy numeric peak only when explicitly enabled. The resolved configuration and
+report retain both calibration evidence and explicit command/electrode envelopes.
+The existing electrode margin must cover fraction times Vpi uncertainty, and all
+normal envelope/frequency/monitor checks still apply. This is a **DC-referenced
+amplitude setting**, never an assumption of frequency-independent delivered phase.
+
+Frequency drive selects `frequency_waveform="sin"` (default) or `"triangle"`.
+The existing `sine_amplitude_v` name is retained for recipe compatibility and means
+**peak command amplitude for either shape**. Bias/amplitude stay fixed throughout
+the frequency list. Pyrpl's native `ramp` is a symmetric triangle; the adapter maps
+the suite's triangle option to it and records both requested and native names.
+`halframp`/sawtooth is not supported. This mapping also corrects the voltage-triangle
+routine's previously unsupported literal `triangle` generator selector.
+
+Use the explicit frequency list, including 5000 Hz when wanted. For example, print
+a logarithmic list and paste the JSON into the existing menu editor:
+
+```bash
+python -c 'import json,numpy as np; print(json.dumps(sorted(set(np.geomspace(10,10000,7).tolist()+[5000.]))))'
+```
+
+Include `reference_frequency_hz` explicitly. `diagnostic_frequency_hz` defaults to
+5000 Hz (0 disables its example); it selects acquired evidence and **never inserts
+a frequency into acquisition or expands electrical limits**. All actual frequencies
+must fit the operator-confirmed physical band, fixed waveform envelope, scope
+timeout, at least two captured cycles (default five), and samples/cycle constraints.
+Automatic decimation is retained; fixed decimation can make a broad sweep invalid.
+The existing calibrated-monitor discrepancy guard can stop a sweep when electrical
+gain changes exceed its confirmed tolerance; it is not bypassed for diagnostics.
+
+Frequency reports put time-domain evidence first: reconstructed ideal command,
+measured monitor and measured PD, on separate voltage axes. The measured pair
+shares buffer-relative time; command phase is presentation-aligned to the usable
+monitor fundamental, otherwise arbitrary. No command-to-monitor phase, delay or
+polarity calibration is inferred. `waveform_plot_cycles` (default 3) bounds each
+display window near the largest fitted residual. Every sample within that window
+is plotted, full buffers remain offline, and gaps are never interpolated. Up to
+four deterministic examples cover reference, acquired diagnostic, largest score
+and highest acquired frequency, deduplicating identical capture IDs. Voltage scales
+are common across example pages; no measured amplitude is normalized away.
+
+The summary covers every requested frequency, including invalid/missing points:
+electrical fundamental gain, monitor harmonic/shape response, measured DC, normalized
+PD/monitor magnitude, simultaneous principal PD-to-monitor phase and quality flags.
+Harmonic fits include orders 1–7 only below 0.4 sample rate. Triangle fundamental
+peak is `8/pi²` times command peak; inherent odd harmonics are not amplifier distortion.
+Complex harmonic shape error and raw waveform residual compare against the ideal
+shape after fitting gain/phase/DC/trend. Triangle rounding can reflect finite
+bandwidth; it is not automatically an abnormal amplifier or crystal response.
+Optical 2f with a clean monitor is labeled separately from electrical distortion.
+All frequency captures, harmonic estimates, SNR, readbacks and raw byte ranges remain
+accessible through `analysis.json`, `events.jsonl` and `qualification.analyze.captures()`.
+
+Electrical changes are compared against **all** same-cycle reference captures,
+independently of PD validity where possible. Missing/failed references are not
+silently dropped; strong complex-reference cancellation makes normalization
+unavailable. Diagnostic thresholds and selection scores are explicit in analysis;
+they are not device acceptance criteria. No static cosine model is imported for
+prediction: `slope_validation_run` records operator evidence, not an independently
+validated waveform model. Such prediction is omitted rather than fabricated.
+No intrinsic crystal bandwidth/resonance claim follows from this system response.
+
+For electrode results, separately confirm the monitor calibration:
+`V_electrode = (V_monitor_ADC - monitor_zero_v) * monitor_scale_v_per_v * monitor_polarity`.
+Record its relative standard gain uncertainty and allowed `monitor_discrepancy_v`.
+RP/ASG settings are not voltage measurements. An absent/unconfirmed monitor permits
+settled command-domain observations, but no electrode Vπ; triangles need measured
+monitor direction. Clipping, invalid capture metadata or calibrated-monitor
+overrange/discrepancy abort acquisition after retaining returned raw evidence.
+`monitor_min_v`/`monitor_max_v` separately bound every measured monitor ADC sample
+even when electrode calibration is unconfirmed. These are nominal ADC volts, not
+electrode limits; choose them inside the physical ADC range. Existing recipes use
+a conservative ±1 V window until explicitly changed.
+
+`dual_raw.npy` contains appended signed-int16 paired arrays (PD, monitor); event byte
+ranges/hashes identify them. Do not treat this appended stream as a single `np.load`
+array. `qualification.analyze.captures()` iterates it. Effective settings, host
+request/receive bounds, pointers, command settings and calibration are retained in
+the native run artifacts. The adapter was checked against local Pyrpl `Scope`:
+one `single()` freezes both channels on the same ADC clock, followed by sequential
+network reads of signed codes, with the same trigger-pointer rotation as the public
+trace. Unsupported APIs, averaging, rolling capture, changed settings or mismatch
+with the public trace fail explicitly. Automatic power-of-two decimation must fit
+all requested cycles/resolution into one 16384-sample buffer; unsupported recipes
+fail before connecting. Host bounds are not sample timestamps. Captures remain
+separate; physical analog-channel delay and clock accuracy require bench checks.
+
+Reports separate **measured monitor ADC volts**, RP-command volts and calibrated
+monitor-derived electrode volts. An unconfirmed electrode conversion does not hide
+the measured monitor transfer or produce an electrode Vπ. ADC volts use the
+declared input full scales; an independent ADC calibration is not established.
+
+Settled reports show every buffer's PD mean and raw min/max, plus paired raw
+examples selected deterministically: the unflagged buffer nearest the median PD
+SD and the largest diagnostic score (earliest ties). PD/monitor panels have common
+scales across examples and retain all samples. Zero-based capture IDs, branch,
+command, monitor mean/SD, PD range/SD and extended-collapse durations are printed.
+Screening covers unusually large within-buffer SD, same-command peer mismatch
+and sustained below-peer PD signal, including slow collapses missed by a neighbor-
+step detector. Explicit thresholds, peer IDs and buffer-relative sample ranges
+are retained in `analysis.json`. These are diagnostic rules, not fault probabilities;
+they cannot distinguish optical interruption from detector/electrical or acquisition
+causes. Settled rules are not applied to intentional triangle/sine modulation.
+Missing buffers/gaps remain unobserved; no filtering or sample exclusions occur.
+
+Partial identifiable fringes remain **model extrapolations**; ambiguous fits stay
+unavailable. A full period is unnecessary when adjacent interior peak/valley
+observations resolve a half-wave. Reversal excursion must exceed max(20% observed
+PD span, 4 residual RMS); opposite extrema must differ by at least max(75% span,
+8 RMS). Reported sampled spacings differ from fitted π/|k|; neighbor brackets are
+sampling neighborhoods, not confidence bounds. Bounded fitting cannot exclude
+unobserved high-order aliases. Conditional fit SE, branch/cycle spread and voltage-
+scale uncertainty remain separate; correlated errors/model bias are outside the
+simple covariance. PD-voltage visibility remains a diagnostic proxy in analysis,
+not dark-corrected optical visibility.
+
+All same-command forward/reverse and same-direction cycle comparisons retain
+anomalous captures and measured monitor mismatches. Median and maximum absolute
+differences summarize **all** pairs. Transient-associated differences are labeled;
+they cannot establish intrinsic hysteresis. No anomaly-excluded replacement is
+computed. The six-question qualification summary separates software completion
+from physical evidence: Vπ, retardance linearity, repeatability, frequency response,
+drift/hysteresis and intact-EOM comparison. Voltage transfer does not measure
+frequency response. No automatic reference-run search or comparison is performed;
+a compatible intact-EOM reference must be explicitly supplied for a future review.
+
+Frequency analysis uses coherent DC/trend/1f/2f least squares (2f only when resolved),
+peak amplitudes, fundamental-RMS/residual-RMS SNR, and PD/monitor complex ratios.
+Normalization divides by the explicit same-cycle reference response; failed reference
+captures are not silently dropped. Phase is reference-normalized principal phase,
+not an unwrapped time delay. Command-to-monitor **amplitude** is recorded; its
+absolute phase is unavailable without a third acquired ASG reference. PD/monitor
+phase is available from simultaneous channels. Detector bandwidth, analyzer slope,
+monitor dynamics and amplifier behavior remain in the system response; peaks/dips
+are not automatically crystal resonances or intrinsic crystal bandwidth.
+
+`analysis.json`, `quality.json`, Markdown and PDF are reproducible offline; source
+buffers/config/events are unchanged. Mock reports always state **not hardware
+verified**. Before first bench use independently verify startup/cleanup, output and
+ADC mapping/ranges, monitor scale/polarity/offset, simultaneous injected-channel
+phase/amplitude, actual timing, protection and safe low-amplitude envelopes. Then
+validate settling, reversible fringes, operating slope and frequency coverage on
+the actual repaired device. Software tests do not complete these bench checks.
