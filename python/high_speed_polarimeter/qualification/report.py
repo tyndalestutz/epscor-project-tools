@@ -11,6 +11,9 @@ def create_report(directory):
     if result['mode']=='frequency_response':
         _frequency_report(directory,result,QualificationConfig(**c))
         return
+    if c['strategy']=='adaptive_vpi':
+        _adaptive_report(directory,result,QualificationConfig(**c))
+        return
     lines=['# EOM PD/monitor qualification',
            f"Mode: {result['mode']}; acquisition: {result['acquisition_mode']}; wavelength {c['wavelength_nm']:g} nm.",
            f"Software execution: {result['execution_status']}; cleanup: {result['cleanup_status']}. These are not EOM PASS criteria.",
@@ -161,7 +164,8 @@ def _frequency_report(directory,result,c):
         f"{directory.name}; {result['acquisition_mode']}; {c.wavelength_nm:g} nm; {c.frequency_waveform} drive.",
         f"Execution {result['execution_status']}; cleanup {result['cleanup_status']}. Software completion is not EOM qualification.",
         '## What was commanded and measured?',
-        f"{c.rp_output}: bias {c.bias_v:g} V, peak amplitude {c.sine_amplitude_v:g} V (legacy sine_amplitude_v applies to both shapes). Actual generator readbacks remain associated with every paired capture.",
+        f"{c.rp_output}: bias {c.bias_v:g} V, peak amplitude {c.frequency_peak():g} V (legacy sine_amplitude_v applies to both shapes). Actual generator readbacks remain associated with every paired capture.",
+        f"Amplitude source: {'operator-confirmed compatible DC Vpi calibration' if c.vpi_fraction_peak else 'explicit RP command peak'}. Vpi fraction {c.vpi_fraction_peak:g}; calibration evidence: {c.vpi_calibration_evidence or 'not used'}. DC calibration does not establish dynamic response. Explicit command envelope {c.envelope()} V; predicted electrode envelope {[c.chain_gain_v_per_command_v*v+c.chain_offset_v for v in c.envelope()]} V, plus/minus margin {c.chain_margin_v:g} V.",
         f"PD {c.pd_input} +/-{c.pd_full_scale_v:g} V; monitor {c.monitor_input} +/-{c.monitor_full_scale_v:g} V. ADC volts use declared full scales. Electrode conversion confirmed: {c.monitor_calibration_confirmed}.",
         f"Reference {c.reference_frequency_hz:g} Hz; diagnostic {c.diagnostic_frequency_hz:g} Hz shown only if acquired. Raw example capture IDs: {[e['capture'] for e in result['waveform_examples']]}.",
         'Command A is reconstructed from readbacks, never measured. Phase alignment to monitor B is presentation only (arbitrary at low SNR), not a command phase/delay/polarity calibration.',
@@ -305,3 +309,104 @@ def _frequency_waveforms(pdf,directory,result,c):
                 for ax in row: ax.set_ylim(lo-margin,hi+margin)
         fig.suptitle('Waveform evidence: reconstructed command A; simultaneous measured B/C\nCommand phase alignment is presentation only, not physical timing. Bounded periods shown; full raw buffers retained.',color=NAVY,fontsize=12)
         pdf.savefig(fig);plt.close(fig)
+
+
+def _adaptive_report(directory,result,c):
+    from polarization_locking.reports.run_report import plt,PdfPages,ReportPages,text_page
+    a=result['adaptive']
+    fmt=lambda values: 'unavailable' if values is None else '['+', '.join(f'{v:.6g}' for v in values)+']'
+    verified=a['verified_ranges']
+    yes=lambda value:'YES' if value else 'NOT ESTABLISHED'
+    sections=[('Qualification summary',
+        f"Half-wave directly observed? {yes(a['half_wave_observed'])}. Full-wave cycle observed? {yes(a['full_wave_observed'])}.\n"
+        f"Vpi classification: {a['classification']}; wavelength {c.wavelength_nm:g} nm.\n"
+        +(f"Measured adjacent-extremum Vpi: {a['vpi_v']:.6g} electrode V; resolution/scale bound {a['vpi_uncertainty_bound_v']:.3g} V.\n" if a['vpi_v'] is not None else 'No reproducible directly observed Vpi established.\n')
+        +f"Verified voltage range reached: command {fmt(verified['command_v'] if verified else None)} V; monitor {fmt(verified['monitor_adc_v'] if verified else None)} ADC V; electrode {fmt(verified['electrode_v'] if verified else None)} V (scale uncertainty separate).\n"
+        +f"Repeatability: {len(a['branches'])}/{2*c.repeats} validation branches; {len(a['failed_checks'])} failed acceptance checks; Vpi branch span {format(a['vpi_between_branch_span_v'],'.4g') if a['vpi_between_branch_span_v'] is not None else 'unavailable'} V.\n"
+        +f"Why stopped? {a['outcome']}: {a['stop_reason']}\n"
+        +f"Software execution {result['execution_status']}; cleanup {result['cleanup_status']}. Neither means EOM PASSED. "
+        +('SYNTHETIC SOFTWARE FIXTURE: no hardware qualification.' if result['acquisition_mode']!='hardware' else '')),
+        ('Interpretation and limits',
+         'Observed means prominent adjacent interior extrema reproduced on every requested forward/reverse branch, with >=8 voltage intervals per half-wave and >=3 samples beyond each turn. A same-intensity return alone cannot establish a full wave. No samples are smoothed or excluded.\n'
+         'Voltage-to-retardance linearity: INCONCLUSIVE; isolated extrema constrain integrated phase change, not the phase-versus-voltage law. Frequency response and intact-EOM comparison: NOT MEASURED by this static run. RAM is outside this experiment.\n'
+         'Forward/reverse comparisons use matching command coordinates and retain monitor differences; they combine settling, drift and hysteresis. Branch extrema displacements are measured-voltage comparisons.\n'+a['uncertainty']),
+        ('Next measurements',
+         'Review failed checks and raw buffers before physical qualification. If voltage range is insufficient, independently qualify a larger envelope or change the optical setup; model extrapolation never grants voltage permission. Verify calibrated electrode/monitor scales and reproducible extrema on the bench. Measure dynamic response separately at a verified slope.\n'
+         'Qualification evidence: '+c.adaptive_qualification_evidence)]
+    with PdfPages(directory/'report.pdf') as rawpdf:
+        pdf=ReportPages(rawpdf);text_page(pdf,'Adaptive EOM Vpi discovery',sections)
+        fig,axes=plt.subplots(2,2,figsize=(11.7,8.3),layout='constrained')
+        pts=a['points']
+        groups={}
+        for p in pts: groups.setdefault((p['phase'],p['cycle'],p['direction']),[]).append(p)
+        for (phase,cycle,direction),rows in groups.items():
+            label='discovery' if phase=='discovery' else f'cycle {cycle+1} {direction}'
+            alpha=.55 if phase=='discovery' else .85
+            for ax,key in [(axes[0,0],'command_v'),(axes[0,1],'monitor_v'),(axes[1,0],'electrode_v')]:
+                # Scatter preserves acquisition gaps; no interpolation between captures.
+                ax.plot([p[key] for p in rows],[p['signal'] for p in rows],'.',ms=3,alpha=alpha,label=label)
+        if pts:
+            low,high=min(p['electrode_v'] for p in pts),max(p['electrode_v'] for p in pts)
+            pad=max(.1*(high-low),.01)
+            axes[1,0].set_xlim(low-pad,high+pad)
+            axes[1,0].set_title(f'Measured range; hard electrode bounds [{c.electrode_min_v:g}, {c.electrode_max_v:g}] V',fontsize=9)
+        for b in a['branches']:
+            for t in b['extrema']:
+                axes[1,0].plot(t['voltage'],t['signal'],'x',ms=5,color='black')
+        for bound in (c.command_min_v,c.command_max_v): axes[0,0].axvline(bound,color='firebrick',ls='--',lw=.8)
+        for bound in (c.start_command_v,c.stop_command_v): axes[0,0].axvline(bound,color='gray',ls=':',lw=.7)
+        for bound in (c.monitor_min_v,c.monitor_max_v): axes[0,1].axvline(bound,color='firebrick',ls='--',lw=.8)
+        for bound in (c.electrode_min_v,c.electrode_max_v): axes[1,0].axvline(bound,color='firebrick',ls='--',lw=.8)
+        for ax,label in [(axes[0,0],'RP command (V)'),(axes[0,1],'Measured monitor ADC (V)'),(axes[1,0],'Calibrated monitor-inferred electrode (V)')]:
+            ax.set(xlabel=label,ylabel='PD buffer mean (V)');ax.grid(alpha=.12)
+        axes[0,0].legend(fontsize=6,ncol=2,loc='best')
+        valid=[r for r in result['captures'] if 'monitor_mean_v' in r]
+        axes[1,1].errorbar([r['capture'] for r in valid],[r['monitor_mean_v'] for r in valid],
+            yerr=[r['monitor_std_v'] for r in valid],fmt='.',ms=2,lw=.5)
+        axes[1,1].set(xlabel='Capture ID (gaps not sampled)',ylabel='Monitor mean +/- buffer SD (ADC V)')
+        fig.suptitle('Entire acquired transfer | red dashed: fixed hard bounds; gray: initial interval',fontsize=12)
+        pdf.savefig(fig);plt.close(fig)
+        details=[]
+        for b in a['branches']:
+            text=f"Cycle {b['cycle']+1} {b['direction']}: "
+            text+=('; '.join(f"{t['kind']} {t['voltage']:.5g} V" for t in b['extrema']) or 'no accepted extrema')
+            text+='; monitor ADC V: '+', '.join(f"{t['monitor_v']:.5g}" for t in b['extrema'])
+            text+='; capture pairs: '+', '.join('/'.join(map(str,t['captures'])) for t in b['extrema'])
+            text+='; sampled Vpi +/- resolution/scale bound (V): '+(', '.join(f"{p['vpi_v']:.5g} +/- {p['uncertainty_bound_v']:.2g}" for p in b['pairs']) or 'unavailable')
+            details.append(text)
+        delta=a['extrema_displacements']
+        if delta: details.append(f"Largest absolute extremum displacement from first branch: {max(abs(d['delta_v']) for d in delta):.5g} V. All cycle/direction displacements and tolerance checks retained in analysis.json.")
+        comparisons=a['direction_comparisons']
+        if comparisons:
+            worst=max(comparisons,key=lambda r:abs(r['pd_delta_v']))
+            details.append(f"Largest matched-command reverse-minus-forward PD difference {worst['pd_delta_v']:.5g} V at command {worst['command_v']:.5g} V, cycle {worst['cycle']+1}; monitor difference {worst['monitor_delta_v']:.5g} ADC V; captures {worst['captures']}.")
+        fit=a['model_guidance']['fit']
+        guidance=(f"Cosine-only command-domain Vpi {fit['vpi']:.6g} RP V; conditional fit SE {fit['vpi_fit_standard_error']:.3g} V; total full-cycle model span {2*fit['vpi']:.6g} RP V. This is not independently observed or authorization to extend limits." if fit['status']!='UNAVAILABLE' else 'No identifiable command-domain cosine extrapolation available.')
+        failures=list(a['failed_checks'])
+        validated={(e['point'],e['repeat']) for e in _validated_events(directory)}
+        for r in result['captures']:
+            if (r['point'],r['repeat']) not in validated:
+                failures.append(f"Unvalidated capture {r['capture']}, command {r['state']['offset']:.6g} V: {r.get('reason','safety/instability guard failed; raw retained')}; monitor mean {r.get('monitor_mean_v')}, PD SD {r.get('pd_std_v')} V.")
+        text_page(pdf,'Extrema, repeatability and acceptance', [('Measured extrema', '\n'.join(details) or 'No validation extrema acquired.'),('Failed checks', '\n'.join(failures) or 'No failed acceptance checks recorded; software checks do not establish physical protection.'),('Fixed electrical envelope',f'Command {fmt([c.command_min_v,c.command_max_v])} V; amplifier input {fmt([c.amplifier_input_min_v,c.amplifier_input_max_v])} V, margin {c.amplifier_input_margin_v:g} V; electrode {fmt([c.electrode_min_v,c.electrode_max_v])} V, chain margin {c.chain_margin_v:g} V; monitor {fmt([c.monitor_min_v,c.monitor_max_v])} ADC V. No limit changed during discovery.'),('Separate model guidance',guidance),('Provenance',f'Run {directory.name}. EOM {c.eom_identity}; amplifier {c.amplifier_identity}; wavelength {c.wavelength_nm:g} nm; TEC {c.tec_conditions or "not recorded"}. Chain: {c.voltage_chain}. Monitor electrode V = (ADC V - {c.monitor_zero_v:g}) x {c.monitor_scale_v_per_v:g} x {c.monitor_polarity}; relative scale uncertainty {c.monitor_scale_rel_uncertainty:g}. One appended signed ADC stream; complete events carry byte ranges and hashes. Means/SDs are derived; raw samples, gaps and failed buffers remain unchanged. Source/evaluator hashes in analysis.json.')])
+        # Show actual normal and worst-variation raw data, including a failed capture.
+        available=list(captures(directory))
+        if available:
+            scores=[float(np.std(raw[0].astype(float))) for event,raw in available]
+            chosen=[int(np.argmin(scores)),int(np.argmax(scores))]
+            fig,axes=plt.subplots(2,2,figsize=(11.7,6.5),sharey='row',layout='constrained')
+            for col,index in enumerate(chosen):
+                event,raw=available[index];dt=event['metadata']['settings']['sampling_time_s']
+                t=np.arange(raw.shape[1])*dt
+                for channel in range(2):
+                    scale=c.pd_full_scale_v if channel==0 else c.monitor_full_scale_v
+                    axes[channel,col].plot(t,raw[channel].astype(float)*scale/8192,lw=.5)
+                    axes[channel,col].set(xlabel='Buffer-relative time (s)',ylabel='PD (V)' if channel==0 else 'Monitor ADC (V)')
+                axes[0,col].set_title(f"{'Lowest' if col==0 else 'Highest'} PD SD: capture {index}; command {event['state']['offset']:.5g} V",fontsize=10)
+            fig.suptitle('Complete raw buffers, no smoothing or exclusion; no continuous time across captures',fontsize=11)
+            pdf.savefig(fig);plt.close(fig)
+    (directory/'report.md').write_text('\n\n'.join('## '+title+'\n'+content for title,content in sections)+'\n')
+
+
+def _validated_events(directory):
+    import json
+    return [e for e in map(json.loads,(directory/'events.jsonl').read_text().splitlines()) if e['kind']=='capture_validated']

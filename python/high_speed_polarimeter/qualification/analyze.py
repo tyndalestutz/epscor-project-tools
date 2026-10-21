@@ -66,6 +66,7 @@ def analyze(directory):
             previous=result['captures'][-2]
             entry['host_bound_separation_s']=entry['requested_s']-previous['received_s']
         safety_validated=(event['point'],event['repeat']) in validated
+        entry['safety_validated']=safety_validated
         if not safety_validated: result['flags'].append('UNVALIDATED_CAPTURE_NO_ELECTRODE_INFERENCE')
         electrode=(monitor-c.monitor_zero_v)*c.monitor_scale_v_per_v*c.monitor_polarity if c.monitor_calibration_confirmed and safety_validated else None
         steps=np.abs(np.diff(pd));typical=float(np.median(steps));lsb=c.pd_full_scale_v/8192
@@ -104,6 +105,8 @@ def analyze(directory):
                 item['flags'].append('PD_2F_CONTENT_NOT_ELECTRICAL_DISTORTION')
             if p['status']=='AVAILABLE' and m['status']=='AVAILABLE':
                 item['waveform_focus_sample']=m.get('largest_shape_residual_sample',0) if m.get('shape_residual_fraction',0)>=1/max(p['snr_rms'],1e-12) else p['largest_residual_sample']
+        elif c.strategy=='adaptive_vpi':
+            pass  # Dedicated measured-extrema analysis below retains discovery and validation separately.
         elif c.strategy=='settled':
             key=(state['cycle'],state['direction'])
             settled.setdefault(key,[]).append(dict(command_v=state['offset'],signal=float(pd.mean()),
@@ -219,6 +222,13 @@ def analyze(directory):
     result['flags']=list(dict.fromkeys(result['flags']))
     result['calibration_status']=('UNAVAILABLE_INCOMPLETE_RUN' if run['status']!='COMPLETED' or run['cleanup_status']!='COMPLETED' else
         ('NOT_HARDWARE_VERIFIED' if run['mode']!='hardware' else 'DIAGNOSTIC_ONLY_NOT_INDEPENDENTLY_VALIDATED'))
+    if c.strategy=='adaptive_vpi' and c.mode=='voltage_transfer':
+        from .adaptive import summarize
+        events=[json.loads(line) for line in (directory/'events.jsonl').read_text().splitlines()]
+        result['adaptive']=summarize(result['captures'],events,c,run['status']=='COMPLETED' and run['cleanup_status']=='COMPLETED')
+        if result['adaptive']['half_wave_observed']: result['flags']=[f for f in result['flags'] if f!='VPI_UNAVAILABLE']
+        if not result['adaptive']['half_wave_observed']: result['flags'].append('ADAPTIVE_TARGET_NOT_VALIDATED')
+        if result['adaptive']['failed_checks']: result['flags'].append('ADAPTIVE_ACCEPTANCE_FAILED')
     result['qualification_summary']=qualification_summary(result,c)
     write_json(directory/'analysis.json',result)
     return result
@@ -298,6 +308,17 @@ def diagnose_settled(result,directory,c):
 
 def qualification_summary(result,c):
     """Answer only the physical questions this run can support; no automatic reference search."""
+    if 'adaptive' in result:
+        a=result['adaptive'];supported=a['half_wave_observed']
+        return [dict(question=q,status=status,evidence=evidence) for q,status,evidence in [
+            ('Vpi at operating wavelength','SUPPORTED' if supported else 'INCONCLUSIVE',
+             f"{c.wavelength_nm:g} nm; {a['classification']}; observed Vpi {a['vpi_v']} electrode V; resolution/scale bound {a['vpi_uncertainty_bound_v']} V; see adaptive.branches."),
+            ('Voltage-to-retardance linearity','INCONCLUSIVE','Extrema spacing constrains integrated phase only; no independent phase-versus-voltage reference.'),
+            ('Cycle repeatability','SUPPORTED' if supported else 'INCONCLUSIVE',
+             f"{len(a['branches'])}/{2*c.repeats} branches; Vpi span {a['vpi_between_branch_span_v']} V; {len(a['failed_checks'])} failed checks; see adaptive.extrema_displacements and direction_comparisons."),
+            ('Frequency response','NOT MEASURED','Adaptive discovery is static; no frequency sweep acquired.'),
+            ('Drift/hysteresis stability','INCONCLUSIVE','Matching-command comparisons retain monitor mismatch and all anomalies; settling/drift and intrinsic hysteresis are not separated.'),
+            ('Comparison with intact EOM','UNAVAILABLE','No explicit compatible reference supplied; no unrelated run search.')]]
     groups=result['groups'];fits=[g for g in groups if g['fit']['status']!='UNAVAILABLE']
     observed=[g for g in fits if g['fit']['status']=='OBSERVED_FRINGE_MODEL']
     unstable=result['diagnostics']['anomalous_captures']

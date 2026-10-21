@@ -363,6 +363,46 @@ waveform changes and cleanup.
   Forward/reverse sequences include the turning point twice; DC ramps preserve the
   return path without inserting zero between points. Full buffers are averaged
   explicitly, then repeated buffers at each command receive equal weight.
+* `strategy=adaptive_vpi`: optional **static**, measurement-driven discovery within
+  fixed approved bounds. Set a conservative `start_command_v`/`stop_command_v`,
+  >=17 `points`, >=2 `repeats` (forward/reverse cycles), >=2 `captures_per_point`.
+  `adaptive_direction` is `positive`, `negative` or `both`; `adaptive_extension_v`
+  bounds each extension, preserving initial grid spacing; `adaptive_max_extensions`
+  bounds exploration work. `adaptive_full_wave=true` targets three alternating
+  extrema rather than only an adjacent maximum/minimum. A same-intensity return
+  never proves a complete cycle. Validation repeats the **entire discovered range**.
+
+  Adaptive mode additionally requires all existing hardware confirmations, a
+  verified monitor conversion with positive relative uncertainty, electrical
+  margins/discrepancy tolerance, and `adaptive_qualified=true` with explicit
+  `adaptive_qualification_evidence`. Record independently justified positive
+  thresholds `adaptive_min_prominence_v` (PD contrast), `adaptive_pd_std_max_v`
+  (within-buffer PD SD), `adaptive_pd_repeat_max_v` (repeat/cycle/direction PD span),
+  and `adaptive_monitor_std_max_v` (monitor ADC SD). These are operator-qualified
+  acceptance thresholds, not automatically learned safety limits. Nominal gains
+  and a successful mock run are insufficient. Existing uncalibrated recipes
+  remain valid for their previous strategies and cannot enable autonomous mode.
+
+  Every path, including startup/return zero, is checked against command, preamp/
+  amplifier-input, electrode and monitor bounds before generation. Predicted
+  electrode margins include chain margin, allowed disagreement and 3x declared
+  monitor scale uncertainty; measured buffers are checked for clipping, monitor
+  disagreement, instability and expanded electrode uncertainty. No guard runs
+  during unobserved transport/settling gaps: independent hardware protection is
+  mandatory. Bounds never expand. `INSUFFICIENT_SAFE_VOLTAGE_RANGE` means permitted
+  directions hit the approved envelope; `DISCOVERY_BUDGET_EXHAUSTED` means the
+  configured count ended first. Faults retain buffers and trigger normal cleanup.
+
+  Direct evidence requires prominent unsmoothed interior turns, >=8 grid intervals
+  per half-wave, >=3 samples on both sides, contrast above declared prominence,
+  6x measured variability and 4 LSB. Sampling brackets expand over near-equal
+  neighboring values. Every validation branch must resolve the target and agree
+  in extrema order/location and PD repeatability; no convenient branch is removed.
+  Resolution/scale bounds, branch variation and cosine fit uncertainty remain
+  separate. High-order aliasing, unknown drift and imperfect voltage calibration
+  cannot be ruled out by this screening. Classification is `OBSERVED`,
+  `FITTED_EXTRAPOLATED`, `AMBIGUOUS` or `UNAVAILABLE`; source events and signed raw
+  buffers support offline replay. Software completion does not mean EOM PASSED.
 * `strategy=triangle`: configure offset, amplitude, frequency and `triangle_cycles`
   (minimum complete cycles captured per repeat). The generator continues during
   settling/network gaps, so this is not an exact burst count. All identified complete
@@ -373,6 +413,19 @@ waveform changes and cleanup.
   logarithmic `frequencies_hz`, `reference_frequency_hz`, repetitions and settling.
   Record `operating_slope_confirmed` and `slope_validation_run` only with independent
   transfer-curve evidence. Otherwise the report labels the operating slope unverified.
+
+An optional frequency `vpi_fraction_peak>0` uses an operator-supplied compatible
+DC calibration: `calibrated_vpi_v`, positive `calibrated_vpi_uncertainty_v`,
+`vpi_calibration_confirmed=true` and `vpi_calibration_evidence` identifying the
+reference run/calibration, device, wavelength and unchanged electrical conversion.
+No run is searched automatically. The operator must establish compatibility;
+setting a confirmation is not itself a physical calibration. Peak command becomes
+`fraction * calibrated_vpi_v / abs(chain_gain_v_per_command_v)`; this overrides the
+legacy numeric peak only when explicitly enabled. The resolved configuration and
+report retain both calibration evidence and explicit command/electrode envelopes.
+The existing electrode margin must cover fraction times Vpi uncertainty, and all
+normal envelope/frequency/monitor checks still apply. This is a **DC-referenced
+amplitude setting**, never an assumption of frequency-independent delivered phase.
 
 Frequency drive selects `frequency_waveform="sin"` (default) or `"triangle"`.
 The existing `sine_amplitude_v` name is retained for recipe compatibility and means

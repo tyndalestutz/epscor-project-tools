@@ -9,6 +9,21 @@ class QualificationConfig:
     results_directory: str = DEFAULT_RESULTS
     mode: str = 'voltage_transfer'
     strategy: str = 'settled'
+    adaptive_direction: str = 'both'
+    adaptive_extension_v: float = 0.05
+    adaptive_max_extensions: int = 10
+    adaptive_full_wave: bool = False
+    adaptive_qualified: bool = False
+    adaptive_qualification_evidence: str = ''
+    adaptive_min_prominence_v: float = 0.0
+    adaptive_pd_std_max_v: float = 0.0
+    adaptive_pd_repeat_max_v: float = 0.0
+    adaptive_monitor_std_max_v: float = 0.0
+    vpi_fraction_peak: float = 0.0
+    calibrated_vpi_v: float = 0.0
+    calibrated_vpi_uncertainty_v: float = 0.0
+    vpi_calibration_confirmed: bool = False
+    vpi_calibration_evidence: str = ''
     eom_identity: str = ''
     amplifier_identity: str = ''
     wavelength_nm: float = 830.0
@@ -79,9 +94,14 @@ class QualificationConfig:
     fit_max_residual_fraction: float = 0.1
     minimum_snr: float = 5.0
 
+    def frequency_peak(self):
+        # Explicit DC calibration is operator-supplied; it is not a bandwidth claim.
+        return (self.vpi_fraction_peak*self.calibrated_vpi_v/abs(self.chain_gain_v_per_command_v)
+                if self.vpi_fraction_peak>0 and self.chain_gain_v_per_command_v else self.sine_amplitude_v)
+
     def envelope(self):
         if self.mode == 'frequency_response':
-            return self.bias_v-self.sine_amplitude_v, self.bias_v+self.sine_amplitude_v
+            return self.bias_v-self.frequency_peak(), self.bias_v+self.frequency_peak()
         if self.strategy == 'triangle':
             return self.triangle_offset_v-self.triangle_amplitude_v, self.triangle_offset_v+self.triangle_amplitude_v
         return min(self.start_command_v,self.stop_command_v), max(self.start_command_v,self.stop_command_v)
@@ -95,8 +115,31 @@ class QualificationConfig:
                     raise ValueError(f'{f.name} must be finite')
             elif type(value) is not type(default):
                 raise ValueError(f'Invalid type for {f.name}')
-        if self.mode not in {'voltage_transfer','frequency_response'} or self.strategy not in {'settled','triangle'}:
+        if self.mode not in {'voltage_transfer','frequency_response'} or self.strategy not in {'settled','triangle','adaptive_vpi'}:
             raise ValueError('Unknown qualification mode/strategy')
+        if self.vpi_fraction_peak<0 or self.calibrated_vpi_uncertainty_v<0:
+            raise ValueError('Vpi fraction/uncertainty must be nonnegative')
+        if self.vpi_fraction_peak>0:
+            if (self.mode!='frequency_response' or not self.vpi_calibration_confirmed
+                or self.calibrated_vpi_v<=0 or self.calibrated_vpi_uncertainty_v<=0 or not self.vpi_calibration_evidence.strip()
+                or not self.monitor_calibration_confirmed or self.chain_gain_v_per_command_v==0):
+                raise ValueError('Vpi fractions require confirmed compatible DC calibration, evidence, monitor and chain conversion')
+            if self.chain_margin_v<self.vpi_fraction_peak*self.calibrated_vpi_uncertainty_v:
+                raise ValueError('Electrode margin must cover Vpi-amplitude calibration uncertainty')
+        if self.strategy=='adaptive_vpi':
+            if self.mode!='voltage_transfer' or self.adaptive_direction not in {'positive','negative','both'}:
+                raise ValueError('Adaptive Vpi is a static transfer strategy with an explicit extension direction')
+            if self.adaptive_extension_v<(abs(self.stop_command_v-self.start_command_v)/(self.points-1) if self.points>1 else float('inf')):
+                raise ValueError('Adaptive increment must accommodate at least one initial grid step')
+            if self.points<17 or self.repeats<2 or self.captures_per_point<2 or self.adaptive_max_extensions<1:
+                raise ValueError('Adaptive Vpi requires >=17 points, >=2 cycles and >=2 buffers per point')
+            if any(getattr(self,k)<=0 for k in ('adaptive_extension_v','adaptive_min_prominence_v',
+                    'adaptive_pd_std_max_v','adaptive_pd_repeat_max_v','adaptive_monitor_std_max_v')):
+                raise ValueError('Adaptive extension and measured stability/prominence thresholds must be positive')
+            if (not self.adaptive_qualified or not self.adaptive_qualification_evidence.strip()
+                or not self.monitor_calibration_confirmed or self.monitor_scale_rel_uncertainty<=0
+                or self.chain_margin_v<=0 or self.amplifier_input_margin_v<=0 or self.monitor_discrepancy_v<=0):
+                raise ValueError('Autonomous discovery requires qualified hardware, verified monitor conversion, uncertainty and electrical margins')
         if self.frequency_waveform not in {'sin','triangle'}:
             raise ValueError('Frequency waveform must be sin or triangle (symmetric Pyrpl ramp)')
         if self.mode=='frequency_response' and self.min_capture_cycles<2:
@@ -136,11 +179,31 @@ class QualificationConfig:
             raise ValueError('Continuous triangle requires a measured monitor to identify direction/cycles')
         if self.operating_slope_confirmed and not self.slope_validation_run.strip():
             raise ValueError('Record the transfer-curve evidence for a confirmed operating slope')
-        self.decimation(None if self.mode=='voltage_transfer' and self.strategy=='settled' else
+        self.decimation(None if self.mode=='voltage_transfer' and self.strategy in {'settled','adaptive_vpi'} else
                         (self.triangle_frequency_hz if self.mode=='voltage_transfer' else min(self.frequencies_hz)))
         if self.mode=='frequency_response':
             for f in self.frequencies_hz: self.decimation(f)
+        if self.strategy=='adaptive_vpi': self.validate_dc_path(0.,self.start_command_v,self.stop_command_v)
         return self
+
+    def validate_dc_path(self,*commands):
+        from dataclasses import replace
+        lo,hi=float(min(commands)),float(max(commands))
+        if lo<self.command_min_v or hi>self.command_max_v:
+            raise ValueError('Proposed path exceeds hard RP command bounds')
+        # Reuse all existing physical confirmations and affine electrical guards.
+        checked=(replace(self,strategy='settled',start_command_v=lo,stop_command_v=hi)
+                 if hi>lo else replace(self,strategy='settled'))
+        checked.confirm_hardware()
+        for command in commands:
+            electrode=self.chain_gain_v_per_command_v*command+self.chain_offset_v
+            margin=self.chain_margin_v+3*abs(electrode)*self.monitor_scale_rel_uncertainty+self.monitor_discrepancy_v
+            if electrode-margin<self.electrode_min_v or electrode+margin>self.electrode_max_v:
+                raise ValueError('Predicted electrode uncertainty/discrepancy envelope exceeds hard bounds')
+            center=electrode/(self.monitor_scale_v_per_v*self.monitor_polarity)+self.monitor_zero_v
+            radius=margin/self.monitor_scale_v_per_v+2*self.monitor_full_scale_v/8192
+            if center-radius<self.monitor_min_v or center+radius>self.monitor_max_v:
+                raise ValueError('Predicted monitor envelope exceeds hard ADC stop window')
 
     def decimation(self, frequency):
         candidates=[self.scope_decimation] if self.scope_decimation else [2**i for i in range(17)]

@@ -12,7 +12,7 @@ def states(c):
         if c.mode=='frequency_response':
             for f in c.frequencies_hz:
                 yield dict(cycle=cycle,direction='frequency',waveform=c.frequency_waveform,offset=c.bias_v,
-                           amplitude=c.sine_amplitude_v,frequency=f,captures=c.captures_per_point)
+                           amplitude=c.frequency_peak(),frequency=f,captures=c.captures_per_point)
         elif c.strategy=='triangle':
             yield dict(cycle=cycle,direction='continuous',waveform='triangle',offset=c.triangle_offset_v,
                        amplitude=c.triangle_amplitude_v,frequency=c.triangle_frequency_hz,captures=1)
@@ -90,8 +90,17 @@ def acquire(session,recipe,directory):
         def emit(kind,**values):
             events.write(json.dumps(json_evidence(dict(kind=kind,elapsed_s=session.clock(),**values)),allow_nan=False)+'\n');events.flush()
         emit('acquisition_started')
+        adaptive=False
         try:
-            for point,state in enumerate(states(c)):
+            adaptive=c.mode=='voltage_transfer' and c.strategy=='adaptive_vpi'
+            if adaptive:
+                from .adaptive import discovery,point_summary,stability
+                schedule=discovery(c,emit)
+            else: schedule=iter(states(c))
+            point=0
+            state=next(schedule,None)
+            while state is not None:
+                rows=[]
                 emit('command_requested',point=point,**state)
                 ack=session.configure(state['waveform'],state['offset'],state['amplitude'],state['frequency'])
                 emit('command_completed',point=point,settings=ack)
@@ -112,12 +121,28 @@ def acquire(session,recipe,directory):
                             raise RuntimeError('Effective waveform/capture cannot resolve required cycles')
                         if c.mode=='voltage_transfer' and duration*f<c.triangle_cycles+1:
                             raise RuntimeError('Cannot associate requested complete triangle cycles inside one buffer')
-                    monitor_guard(volts,state,meta,c,hardware)
+                    monitor_guard(volts,state,meta,c,hardware or adaptive)
+                    if adaptive:
+                        row=dict(capture=captures,state=state,status='AVAILABLE',pd_mean_v=float(volts[0].mean()),
+                            pd_std_v=float(volts[0].std()),monitor_mean_v=float(volts[1].mean()),monitor_std_v=float(volts[1].std()))
+                        rows.append(row)
+                        failures=stability(rows,c)
+                        if failures: raise RuntimeError('; '.join(failures))
+                        electrode=(volts[1]-c.monitor_zero_v)*c.monitor_scale_v_per_v*c.monitor_polarity
+                        uncertainty=3*abs(electrode)*c.monitor_scale_rel_uncertainty+2*c.monitor_full_scale_v/8192*c.monitor_scale_v_per_v
+                        if (electrode-uncertainty).min()<c.electrode_min_v or (electrode+uncertainty).max()>c.electrode_max_v:
+                            raise RuntimeError('Adaptive measured electrode uncertainty envelope exceeds hard bounds')
                     captures+=1
                     emit('capture_validated',point=point,repeat=repeat)
                 print(f'Qualification point {point+1}: {state["direction"]}, {state["frequency"] or state["offset"]:g}',flush=True)
+                if adaptive:
+                    try: state=schedule.send(point_summary(rows,c))
+                    except StopIteration: state=None
+                else: state=next(schedule,None)
+                point+=1
             emit('acquisition_completed',captures=captures)
         except BaseException as exc:
+            if adaptive: emit('adaptive_stop',outcome='FAULT_SHUTDOWN',reason=f'{type(exc).__name__}: {exc}')
             emit('acquisition_failed',error=f'{type(exc).__name__}: {exc}',completed_captures=captures)
             raise
     return {'captures':captures,'raw_channels':['pd','monitor'],'pax_required':False}

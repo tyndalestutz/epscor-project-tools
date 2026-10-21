@@ -414,3 +414,16 @@ only. Missing/invalid/reference-ambiguous evidence remains visible. Software/moc
 checks do not establish physical triangle shape, monitor bandwidth, voltage scale
 or analog channel timing; those remain bench gates. No hardware sweep or merge is
 part of this implementation increment.
+
+The optional adaptive-Vpi increment stays inside the existing qualification
+experiment and append-only capture contract. It adds feedback-selected settled
+setpoints, immutable electrical limits, explicit calibrated-monitor/hardware
+qualification gates, and independent sampled-extrema validation across complete
+forward/reverse branches. A failed or exhausted search preserves evidence and
+its stop reason; cosine estimates never authorize voltage extension. Frequency
+mode remains separate; optional operator-confirmed compatible DC-Vpi fractions
+resolve to explicit command/electrode envelopes. The operator must independently
+establish calibration compatibility and stability thresholds. Synthetic replay
+and fault fixtures do not qualify the optical/electrical chain; autonomous bench
+use remains gated on calibration, protection and scientific review. This does not
+advance a numbered campaign phase or authorize merging draft PR #10.
