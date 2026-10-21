@@ -34,6 +34,7 @@ def confirmed(**changes):
     {'bias_v':.09,'sine_amplitude_v':.02,'mode':'frequency_response'}, {'pd_input':'in2'},
     {'monitor_polarity':0},{'monitor_calibration_confirmed':True},{'frequencies_hz':[10,float('nan')]},
     {'scope_decimation':3},{'mode':'frequency_response','frequencies_hz':[1e9],'reference_frequency_hz':1e9},
+    {'mode':'frequency_response','min_capture_cycles':1.},{'frequency_waveform':'sawtooth'},{'waveform_plot_cycles':0},{'diagnostic_frequency_hz':-1.},
     {'scope_timeout_s':1e-8},{'points':True},{'chain_margin_v':-1}])
 def test_invalid_recipe_before_resources(tmp_path,changes):
     calls=[]
@@ -211,7 +212,10 @@ def test_scope_adapter_simultaneous_capture_and_terminal_route_off(monkeypatch,o
     raw,meta=session.capture()
     assert scope.calls==1 and raw.dtype==np.int16 and raw.min()<0
     assert meta['public_trace_agrees'] and meta['frozen_verified']
-    selected=session.asg;session.disconnect()
+    selected=session.asg
+    ack=session.configure('triangle',.05,.005,10.)
+    assert selected.waveform==ack['waveform']=='ramp' and ack['requested_waveform']=='triangle'
+    session.disconnect()
     assert selected.offset==0 and selected.output_direct=='off'
     assert session.cleanup_evidence['output_routes_disabled']
 
@@ -367,3 +371,139 @@ def test_slow_collapse_stable_monitor_and_normal_repeatability(tmp_path,collapse
     reevaluate(folder)
     assert all(hashlib.sha256((folder/name).read_bytes()).hexdigest()==digest for name,digest in hashes.items())
     assert read_result(folder)['diagnostics']==diagnostics
+
+
+def test_clean_and_distorted_electrical_and_optical_harmonics():
+    from high_speed_polarimeter.qualification.math import waveform_diagnostics
+    dt=1/100000;f=137.;t=np.arange(16384)*dt;phase=2*np.pi*f*t+.37
+    monitor=.04+.01*np.cos(phase)
+    m=waveform_diagnostics(monitor,dt,f,'sin')
+    p=demodulate(.12+.003*np.cos(phase-.4)+.001*np.cos(2*phase+.2),dt,f,max_harmonic=7)
+    assert m['amplitude']==pytest.approx(.01,rel=1e-9)
+    assert m['mean']==pytest.approx(.04,abs=1e-10)
+    assert m['resolved_thd']<1e-9 and m['harmonic_shape_error']<1e-9
+    assert abs(complex(*p['fundamental'])/complex(*m['fundamental']))==pytest.approx(.3,rel=1e-9)
+    assert np.angle(complex(*p['fundamental'])/complex(*m['fundamental']))==pytest.approx(-.4,abs=1e-9)
+    assert p['harmonic_ratio']==pytest.approx(1/3,rel=1e-9)
+    distorted=waveform_diagnostics(monitor+.003*np.cos(2*phase),dt,f,'sin')
+    assert distorted['resolved_thd']==pytest.approx(.3,rel=1e-9)
+    assert distorted['shape_residual_fraction']==pytest.approx(.3,rel=.01)
+
+
+def test_triangle_harmonics_and_bandwidth_rounding_are_not_sine_distortion():
+    from high_speed_polarimeter.qualification.math import waveform_diagnostics,command_shape
+    f=1000.;dt=1/200000;t=np.arange(16384)*dt;phase=2*np.pi*f*t+.2
+    clean=waveform_diagnostics(.04+.01*command_shape(phase,'triangle'),dt,f,'triangle')
+    assert clean['amplitude']==pytest.approx(.01*8/np.pi**2,rel=.002)
+    assert clean['resolved_thd']==pytest.approx(clean['expected_resolved_thd'],rel=.02)
+    assert clean['harmonic_shape_error']<.003 and clean['shape_residual_fraction']<.003
+    # Known first-order low-pass response applied independently to each ideal odd harmonic.
+    cutoff=500.;rounded=.04+sum(.01*8/np.pi**2/h**2/np.sqrt(1+(h*f/cutoff)**2)*np.cos(h*phase-np.arctan(h*f/cutoff)) for h in range(1,40,2))
+    m=waveform_diagnostics(rounded,dt,f,'triangle')
+    assert m['amplitude']==pytest.approx(.01*8/np.pi**2/np.sqrt(5),rel=.002)
+    assert m['resolved_thd']<m['expected_resolved_thd']
+    assert m['harmonic_shape_error']>.05
+    assert 'rounding' in m['shape_model']
+
+
+class FrequencyFixture(QualificationMock):
+    """Known paired waveforms; distort one electrical frequency or only the optical channel."""
+    effect='clean'
+    def capture(self):
+        if self.effect=='missing' and self.count==2: raise RuntimeError('Synthetic missing final capture')
+        raw,meta=super().capture();d=self.drive;dt=meta['settings']['sampling_time_s'];t=np.arange(raw.shape[1])*dt
+        phase=2*np.pi*d['frequency_hz']*t+.37
+        if self.config.frequency_waveform=='triangle':
+            # First-order bandwidth limit, with known complex harmonic attenuation.
+            monitor=.04+sum(.01*8/np.pi**2/h**2/np.sqrt(1+(h*d['frequency_hz']/2000)**2)*np.cos(h*phase-np.arctan(h*d['frequency_hz']/2000)) for h in range(1,30,2))
+        else: monitor=.04+.01*np.cos(phase)
+        pd=.12+.003*np.cos(phase-.4)
+        if self.effect=='electrical' and d['frequency_hz']==5000.: monitor+=.004*np.cos(2*phase)
+        if self.effect=='optical': pd+=.001*np.cos(2*phase+.1)
+        if self.effect=='low_snr': pd=.12+.001*np.sin(np.arange(len(t))*1.237)
+        if self.effect=='ambiguous': pd=.12+.003*np.cos(phase+(0 if self.count%2 else np.pi))
+        raw[:]=np.rint(np.stack([pd/self.config.pd_full_scale_v,monitor/self.config.monitor_full_scale_v])*8192).astype(np.int16)
+        if self.effect=='clip' and self.count==2: raw[1,100]=8191
+        return raw,meta
+
+
+def frequency_recipe(tmp_path,**changes):
+    return recipe(tmp_path,**(dict(mode='frequency_response',frequencies_hz=[10.,5000.,10000.],reference_frequency_hz=10.,repeats=1)|changes))
+
+
+@pytest.mark.parametrize('effect',['clean','electrical','optical','triangle'])
+def test_frequency_waveforms_selection_units_and_immutable_reports(tmp_path,effect):
+    from high_speed_polarimeter.qualification.report import _frequency_waveforms,_waveform_samples
+    from high_speed_polarimeter.qualification.math import command_shape
+    from matplotlib import pyplot as plt
+    r=frequency_recipe(tmp_path,frequency_waveform='triangle' if effect=='triangle' else 'sin',monitor_full_scale_v=20. if effect=='electrical' else 1.)
+    session=FrequencyFixture(r.acquisition_config());session.effect=effect
+    state=execute(r,session_factory=lambda:session);folder=Path(state['directory']);result=read_result(folder)
+    assert state['status']==state['cleanup_status']==state['report_status']=='COMPLETED'
+    records=result['normalized_response'];assert len(records)==3
+    assert all('pd_to_monitor_phase_deg' in row for row in records)
+    assert all('UNAVAILABLE' in row['command_to_monitor_phase'] for row in records)
+    flags=[f for row in records for f in row['flags']]
+    assert any('ELECTRICAL_SINE_DISTORTION'==f for f in flags)==(effect=='electrical')
+    assert any('PD_2F_CONTENT' in f for f in flags)==(effect=='optical')
+    if effect=='clean':
+        for row in records:
+            assert row['electrical_fundamental_gain_v_per_v']==pytest.approx(2.,rel=.004)
+            assert abs(complex(*row['ratio']))==pytest.approx(.3,rel=.02)
+            assert row['pd_to_monitor_phase_deg']==pytest.approx(np.degrees(-.4),abs=.3)
+    if effect=='electrical':
+        worst=max(records,key=lambda row:row['diagnostic_score'])
+        assert worst['requested_frequency_hz']==5000.
+        assert next(x for x in result['waveform_examples'] if 'requested diagnostic' in x['roles'])['capture']==worst['capture']
+    if effect=='triangle':
+        assert 'TRIANGLE_SHAPE_CHANGE_ROUNDING_OR_DISTORTION' in flags
+        assert 'MONITOR_FUNDAMENTAL_LOSS_VS_REFERENCE' in flags
+        assert all(row['generator_readback']['waveform']=='ramp' for row in records)
+    pairs=dict(enumerate(captures(folder)));shown=[]
+    class Pages:
+        def savefig(self,fig):
+            shown.extend(ax for ax in fig.axes if ax.lines)
+    _frequency_waveforms(Pages(),folder,result,r.acquisition_config())
+    # Every plotted B/C value must be an actual retained ADC sample in its declared voltage domain.
+    for example in result['waveform_examples']:
+        number=example['capture'];event,raw=pairs[number];row=records[number]
+        index,dt,periods=_waveform_samples(raw,event,row,r.acquisition_config())
+        assert 1<=periods<=r.acquisition_config().waveform_plot_cycles
+        command_ax=next(ax for ax in shown if ax.get_title().startswith(f'Capture {number};'))
+        axes=command_ax.figure.axes;column=axes.index(command_ax);columns=len(axes)//3
+        mon_ax=axes[columns+column];pd_ax=axes[2*columns+column]
+        np.testing.assert_array_equal(mon_ax.lines[0].get_ydata(),raw[1,index]/8192*r.acquisition_config().monitor_full_scale_v)
+        np.testing.assert_array_equal(pd_ax.lines[0].get_ydata(),raw[0,index]/8192*r.acquisition_config().pd_full_scale_v)
+        np.testing.assert_allclose(mon_ax.lines[0].get_xdata(),index*dt*(1000 if row['frequency_hz']>=100 else 1))
+        np.testing.assert_array_equal(pd_ax.lines[0].get_xdata(),mon_ax.lines[0].get_xdata())
+        expected=row['generator_readback']['offset_v']+row['generator_readback']['amplitude_v']*command_shape(2*np.pi*row['frequency_hz']*index*dt+row['monitor']['phase_rad'],row['waveform'])
+        np.testing.assert_allclose(command_ax.lines[0].get_ydata(),expected)
+    assert len(result['waveform_examples'])<=4
+    assert any('highest acquired frequency' in e['roles'] for e in result['waveform_examples'])
+    assert 'presentation only' in (folder/'report.md').read_text()
+    hashes={name:hashlib.sha256((folder/name).read_bytes()).hexdigest() for name in ('dual_raw.npy','events.jsonl','recipe.json','acquisition.json','run.json')}
+    reevaluate(folder)
+    assert read_result(folder)['waveform_examples']==result['waveform_examples']
+    assert all(hashlib.sha256((folder/n).read_bytes()).hexdigest()==v for n,v in hashes.items())
+    plt.close('all')
+
+
+@pytest.mark.parametrize('effect',['missing','clip','low_snr','ambiguous'])
+def test_frequency_missing_invalid_and_ambiguous_evidence_remains_visible(tmp_path,effect):
+    r=frequency_recipe(tmp_path,captures_per_point=2 if effect=='ambiguous' else 1)
+    session=FrequencyFixture(r.acquisition_config());session.effect=effect
+    state=execute(r,session_factory=lambda:session);folder=Path(state['directory']);result=read_result(folder)
+    assert state['cleanup_status']==state['report_status']=='COMPLETED'
+    rows=result['frequency_coverage'];records=result['normalized_response']
+    if effect in ('missing','clip'):
+        assert state['status']=='FAILED' and rows[-1]['returned_captures']==0
+        assert 'MISSING_OR_EXTRA_CAPTURES' in rows[-1]['flags']
+    if effect=='clip':
+        clipped=next(r for r in records if r['status']=='INVALID')
+        assert 'ADC_CLIPPING' in clipped['flags']
+        assert any(e['capture']==clipped['capture'] for e in result['waveform_examples'])
+        assert list(captures(folder))[clipped['capture']][1][1,100]==8191
+    if effect in ('low_snr','ambiguous'):
+        assert all('normalized_magnitude' not in row for row in records)
+    if effect=='ambiguous': assert any('REFERENCE_PHASE_AMBIGUITY' in row['flags'] for row in records)
+    if effect=='low_snr': assert all('pd_to_monitor_phase_deg' not in row for row in records)

@@ -374,6 +374,62 @@ waveform changes and cleanup.
   Record `operating_slope_confirmed` and `slope_validation_run` only with independent
   transfer-curve evidence. Otherwise the report labels the operating slope unverified.
 
+Frequency drive selects `frequency_waveform="sin"` (default) or `"triangle"`.
+The existing `sine_amplitude_v` name is retained for recipe compatibility and means
+**peak command amplitude for either shape**. Bias/amplitude stay fixed throughout
+the frequency list. Pyrpl's native `ramp` is a symmetric triangle; the adapter maps
+the suite's triangle option to it and records both requested and native names.
+`halframp`/sawtooth is not supported. This mapping also corrects the voltage-triangle
+routine's previously unsupported literal `triangle` generator selector.
+
+Use the explicit frequency list, including 5000 Hz when wanted. For example, print
+a logarithmic list and paste the JSON into the existing menu editor:
+
+```bash
+python -c 'import json,numpy as np; print(json.dumps(sorted(set(np.geomspace(10,10000,7).tolist()+[5000.]))))'
+```
+
+Include `reference_frequency_hz` explicitly. `diagnostic_frequency_hz` defaults to
+5000 Hz (0 disables its example); it selects acquired evidence and **never inserts
+a frequency into acquisition or expands electrical limits**. All actual frequencies
+must fit the operator-confirmed physical band, fixed waveform envelope, scope
+timeout, at least two captured cycles (default five), and samples/cycle constraints.
+Automatic decimation is retained; fixed decimation can make a broad sweep invalid.
+The existing calibrated-monitor discrepancy guard can stop a sweep when electrical
+gain changes exceed its confirmed tolerance; it is not bypassed for diagnostics.
+
+Frequency reports put time-domain evidence first: reconstructed ideal command,
+measured monitor and measured PD, on separate voltage axes. The measured pair
+shares buffer-relative time; command phase is presentation-aligned to the usable
+monitor fundamental, otherwise arbitrary. No command-to-monitor phase, delay or
+polarity calibration is inferred. `waveform_plot_cycles` (default 3) bounds each
+display window near the largest fitted residual. Every sample within that window
+is plotted, full buffers remain offline, and gaps are never interpolated. Up to
+four deterministic examples cover reference, acquired diagnostic, largest score
+and highest acquired frequency, deduplicating identical capture IDs. Voltage scales
+are common across example pages; no measured amplitude is normalized away.
+
+The summary covers every requested frequency, including invalid/missing points:
+electrical fundamental gain, monitor harmonic/shape response, measured DC, normalized
+PD/monitor magnitude, simultaneous principal PD-to-monitor phase and quality flags.
+Harmonic fits include orders 1–7 only below 0.4 sample rate. Triangle fundamental
+peak is `8/pi²` times command peak; inherent odd harmonics are not amplifier distortion.
+Complex harmonic shape error and raw waveform residual compare against the ideal
+shape after fitting gain/phase/DC/trend. Triangle rounding can reflect finite
+bandwidth; it is not automatically an abnormal amplifier or crystal response.
+Optical 2f with a clean monitor is labeled separately from electrical distortion.
+All frequency captures, harmonic estimates, SNR, readbacks and raw byte ranges remain
+accessible through `analysis.json`, `events.jsonl` and `qualification.analyze.captures()`.
+
+Electrical changes are compared against **all** same-cycle reference captures,
+independently of PD validity where possible. Missing/failed references are not
+silently dropped; strong complex-reference cancellation makes normalization
+unavailable. Diagnostic thresholds and selection scores are explicit in analysis;
+they are not device acceptance criteria. No static cosine model is imported for
+prediction: `slope_validation_run` records operator evidence, not an independently
+validated waveform model. Such prediction is omitted rather than fabricated.
+No intrinsic crystal bandwidth/resonance claim follows from this system response.
+
 For electrode results, separately confirm the monitor calibration:
 `V_electrode = (V_monitor_ADC - monitor_zero_v) * monitor_scale_v_per_v * monitor_polarity`.
 Record its relative standard gain uncertainty and allowed `monitor_discrepancy_v`.

@@ -6,7 +6,7 @@ import numpy as np
 from ..config import load_recipe
 from ..io import read_json,write_json
 from .acquire import validate_capture
-from .math import cosine_fit,demodulate,triangle_branches,bins
+from .math import cosine_fit,demodulate,waveform_diagnostics,triangle_branches,bins
 
 
 def captures(directory):
@@ -47,9 +47,19 @@ def analyze(directory):
             requested_s=meta.get('requested_s'),received_s=meta.get('received_s'),duration_s=meta.get('settings',{}).get('duration_s'),
             sampling_time_s=meta.get('settings',{}).get('sampling_time_s'),byte_offset=event['byte_offset'])
         result['captures'].append(entry)
+        if c.mode=='frequency_response':
+            item=dict(capture=number,cycle=state['cycle'],repeat=event['repeat'],frequency_hz=event['asg_settings'].get('frequency_hz'),
+                requested_frequency_hz=state['frequency'],waveform=state['waveform'],generator_readback=event['asg_settings'],
+                voltage_domain='monitor ADC V',status='INVALID',pd={'status':'UNAVAILABLE'},monitor={'status':'UNAVAILABLE'},
+                ratio=None,command_to_monitor_amplitude=None,flags=[],
+                command_to_monitor_phase='UNAVAILABLE: no acquired ASG phase reference')
+            frequency_records.append(item);entry['frequency_response']=item
         try: volts=validate_capture(raw,meta,c)
         except (RuntimeError,KeyError,ValueError,TypeError) as exc:
-            entry.update(status='INVALID',reason=str(exc));result['flags'].append('INVALID_CAPTURE_RETAINED');continue
+            entry.update(status='INVALID',reason=str(exc));result['flags'].append('INVALID_CAPTURE_RETAINED')
+            if c.mode=='frequency_response':
+                item.update(reason=str(exc));item['flags'].append('ADC_CLIPPING' if 'clipping' in str(exc).lower() else 'INVALID_CAPTURE')
+            continue
         dt=meta['settings']['sampling_time_s'];pd,monitor=volts
         if result['captures'][:-1] and result['captures'][-2]['received_s'] is not None:
             # This is a separation of host bounds, not an invented sample-clock gap estimate.
@@ -67,24 +77,33 @@ def analyze(directory):
                      monitor_range_v=[float(monitor.min()),float(monitor.max())],
                      electrode_range_v=[float(electrode.min()),float(electrode.max())] if electrode is not None else None)
         if c.mode=='frequency_response':
-            f=event['asg_settings']['frequency_hz']
-            p,m=demodulate(pd,dt,f,c.min_capture_cycles),demodulate(monitor,dt,f,c.min_capture_cycles)
+            f=item['frequency_hz'];ack=item['generator_readback'];item['status']='VALID_CAPTURE'
+            p=demodulate(pd,dt,f,c.min_capture_cycles,max_harmonic=7)
+            m=waveform_diagnostics(monitor,dt,f,state['waveform'],c.min_capture_cycles)
             if not c.monitor_available: m={'status':'UNAVAILABLE','reason':'Monitor declared unavailable; raw input retained without interpreting as voltage evidence'}
-            item=dict(capture=number,cycle=state['cycle'],frequency_hz=f,requested_frequency_hz=state['frequency'],pd=p,monitor=m,
-                      voltage_domain='monitor ADC V',ratio=None,command_to_monitor_amplitude=None,
-                      command_to_monitor_phase='UNAVAILABLE: no acquired ASG phase reference',flags=[])
-            if c.monitor_available and m['status']=='AVAILABLE' and state['amplitude']>0:
-                item['command_to_monitor_amplitude']=m['amplitude']/state['amplitude']
-            if not c.monitor_available or p['status']!='AVAILABLE' or m['status']!='AVAILABLE' or min(p.get('snr_rms',0),m.get('snr_rms',0))<c.minimum_snr:
+            item.update(pd=p,monitor=m)
+            amplitude=ack['amplitude_v'];factor=1. if state['waveform']=='sin' else 8/np.pi**2
+            item['command_fundamental_peak_v']=amplitude*factor
+            if amplitude<=0: item['flags'].append('COMMAND_FUNDAMENTAL_UNAVAILABLE')
+            if m['status']=='AVAILABLE' and amplitude>0:
+                item['command_to_monitor_amplitude']=m['amplitude']/amplitude  # Legacy: per command peak, not triangle fundamental.
+                item['electrical_fundamental_gain_v_per_v']=m['amplitude']/(amplitude*factor)
+                if m['snr_rms']>=c.minimum_snr:
+                    if m.get('harmonic_shape_error',0)>.05 or m.get('shape_residual_fraction',0)>.1:
+                        item['flags'].append('ELECTRICAL_SINE_DISTORTION' if state['waveform']=='sin' else 'TRIANGLE_SHAPE_CHANGE_ROUNDING_OR_DISTORTION')
+            if p['status']!='AVAILABLE' or m['status']!='AVAILABLE' or min(p.get('snr_rms',0),m.get('snr_rms',0))<c.minimum_snr:
                 item['flags'].append('RATIO_UNAVAILABLE_MONITOR_OR_PD_SNR')
             else:
                 ratio=complex(*p['fundamental'])/complex(*m['fundamental'])
-                item['ratio']=[ratio.real,ratio.imag]
+                item.update(ratio=[ratio.real,ratio.imag],pd_to_monitor_phase_deg=float(np.degrees(np.angle(ratio))))
                 if electrode is not None:
                     ratio/=c.monitor_scale_v_per_v*c.monitor_polarity
                     item['electrode_ratio']=[ratio.real,ratio.imag]
-            item['command_to_pd_amplitude']=p['amplitude']/state['amplitude'] if p['status']=='AVAILABLE' and state['amplitude']>0 else None
-            frequency_records.append(item);entry['frequency_response']=item
+            item['command_to_pd_amplitude']=p['amplitude']/amplitude if p['status']=='AVAILABLE' and amplitude>0 else None
+            if p['status']=='AVAILABLE' and p['snr_rms']>=c.minimum_snr and (p['harmonic_ratio'] or 0)>.05:
+                item['flags'].append('PD_2F_CONTENT_NOT_ELECTRICAL_DISTORTION')
+            if p['status']=='AVAILABLE' and m['status']=='AVAILABLE':
+                item['waveform_focus_sample']=m.get('largest_shape_residual_sample',0) if m.get('shape_residual_fraction',0)>=1/max(p['snr_rms'],1e-12) else p['largest_residual_sample']
         elif c.strategy=='settled':
             key=(state['cycle'],state['direction'])
             settled.setdefault(key,[]).append(dict(command_v=state['offset'],signal=float(pd.mean()),
@@ -124,19 +143,7 @@ def analyze(directory):
         result['groups'].append(dict(cycle=cycle,capture=number,local_cycle=local,direction=direction,domain=domain,
             voltage=x,signal=y,bins=records,sample_range=[start,end],fit=fit,
             processing='Explicit equal-width measured-voltage bins within one identified monitor half-cycle; arithmetic bin means, counts retained. No binning across cycles/captures. Turning-point derivative deadband =1e-5 monitor span; noisy switching fails association.'))
-    if frequency_records:
-        for item in frequency_records:
-            references=[r for r in frequency_records if r['cycle']==item['cycle'] and r['requested_frequency_hz']==c.reference_frequency_hz]
-            if len(references)==c.captures_per_point and all(r['ratio'] is not None for r in references) and item['ratio'] is not None:
-                reference=np.mean([complex(*r['ratio']) for r in references])
-                if abs(reference)>0:
-                    ratio=complex(*item['ratio'])/reference
-                    item['normalized_magnitude']=float(abs(ratio));item['relative_phase_deg']=float(np.degrees(np.angle(ratio)))
-                    item['normalization']='Complex ratio divided by equal-weight mean of ALL reference-frequency capture ratios in this cycle; no failed reference removed.'
-            result['normalized_response'].append(item)
-        result['frequency_reference']=dict(frequency_hz=c.reference_frequency_hz,bias_command_v=c.bias_v,
-            electrical_bias='Measured DC monitor means recorded per capture; electrode bias only available with calibrated monitor.',
-            phase='PD/monitor phase from simultaneous samples; reference-normalized principal phase, not unwrapped delay.')
+    if c.mode=='frequency_response': summarize_frequency(result,frequency_records,c)
     diagnose_settled(result,directory,c)
     result['same_command_direction_differences']=[]
     for cycle in range(c.repeats):
@@ -208,7 +215,7 @@ def analyze(directory):
     if any(g['fit']['status']=='MODEL_BASED_EXTRAPOLATION' for g in result['groups']): result['flags'].append('MODEL_EXTRAPOLATION_NOT_OBSERVED_VPI')
     if any(g['fit']['status']=='UNAVAILABLE' for g in result['groups']): result['flags'].append('UNSUPPORTED_BRANCH_FIT')
     if not any(g['fit']['status']!='UNAVAILABLE' for g in result['groups']) and c.mode=='voltage_transfer': result['flags'].append('VPI_UNAVAILABLE')
-    if c.mode=='frequency_response' and any(item['flags'] for item in frequency_records): result['flags'].append('FREQUENCY_RATIO_UNAVAILABLE')
+    if c.mode=='frequency_response' and any('normalized_magnitude' not in item for item in frequency_records): result['flags'].append('FREQUENCY_RATIO_UNAVAILABLE')
     result['flags']=list(dict.fromkeys(result['flags']))
     result['calibration_status']=('UNAVAILABLE_INCOMPLETE_RUN' if run['status']!='COMPLETED' or run['cleanup_status']!='COMPLETED' else
         ('NOT_HARDWARE_VERIFIED' if run['mode']!='hardware' else 'DIAGNOSTIC_ONLY_NOT_INDEPENDENTLY_VALIDATED'))
@@ -297,23 +304,95 @@ def qualification_summary(result,c):
     complete=result['execution_status']==result['cleanup_status']=='COMPLETED'
     def item(question,status,evidence):
         return dict(question=question,status=status,evidence=evidence)
+    if c.mode=='frequency_response':
+        ratios=[r for r in result['normalized_response'] if 'normalized_magnitude' in r]
+        coverage=result.get('frequency_coverage',[])
+        usable=complete and bool(ratios) and all(r.get('command_fundamental_peak_v',0)>0 for r in result['normalized_response']) and all(r['usable_captures']==r['expected_captures'] for r in coverage)
+        repeats=result['frequency_repeatability'];spreads=[r['normalized_magnitude_sample_std'] for r in repeats if r.get('normalized_magnitude_sample_std') is not None]
+        return [item('Vpi at operating wavelength','NOT MEASURED',f'{c.wavelength_nm:g} nm; frequency-only acquisition, no static voltage sweep.'),
+            item('Voltage-to-retardance linearity','UNAVAILABLE','No independent retardance reference or validated static prediction model.'),
+            item('Cycle repeatability','NOT MEASURED' if c.repeats*c.captures_per_point<2 else 'SUPPORTED' if usable else 'INCONCLUSIVE',
+                 f'{len(spreads)}/{len(repeats)} frequencies with normalized-magnitude sample SD; '+(f'range {min(spreads):.3g}–{max(spreads):.3g} (all captures).' if spreads else 'no usable repeated ratios.')),
+            item('Frequency response','SUPPORTED' if usable and c.operating_slope_confirmed else 'INCONCLUSIVE',
+                 f'{len(ratios)}/{sum(r["expected_captures"] for r in coverage)} reference-normalized PD/monitor captures; slope verified: {c.operating_slope_confirmed}. System response only.'),
+            item('Drift/hysteresis stability','NOT MEASURED','No fixed-command time hold or forward/reverse voltage sweep.'),
+            item('Comparison with intact EOM','UNAVAILABLE','No explicit compatible reference supplied; no automatic run search.')]
     vpi_evidence=f'{c.wavelength_nm:g} nm; '+('; '.join(
         f"{domain}: {s['supported_groups']}/{s['total_groups']} fits, range "+('–'.join(format(v,'.5g') for v in s['vpi_range']) if s['vpi_range'] else 'unavailable')
         for domain,s in result['repeatability'].items() if s['total_groups']) or 'no voltage-transfer branch fits')
     if not c.monitor_calibration_confirmed: vpi_evidence+='; electrode volts uncalibrated'
     vpi_evidence+=f'; {len(observed)} fits resolve adjacent extrema; others extrapolate'
-    ratios=[r for r in result['normalized_response'] if 'normalized_magnitude' in r]
     comparisons=result.get('cycle_comparisons',[])
     return [
-        item('Vpi at operating wavelength','NOT MEASURED' if c.mode!='voltage_transfer' else 'UNAVAILABLE' if not fits else 'SUPPORTED' if complete and c.monitor_calibration_confirmed and observed and len(observed)==len(groups) and not unstable else 'INCONCLUSIVE',vpi_evidence),
+        item('Vpi at operating wavelength','UNAVAILABLE' if not fits else 'SUPPORTED' if complete and c.monitor_calibration_confirmed and observed and len(observed)==len(groups) and not unstable else 'INCONCLUSIVE',vpi_evidence),
         item('Voltage-to-retardance linearity','INCONCLUSIVE' if fits else 'UNAVAILABLE',
              f'{len(fits)}/{len(groups)} accepted constant-k cosine fits; residuals test PD-transfer consistency only. PD cosine phase is ambiguous; it is not independently measured retardance.'),
         item('Cycle repeatability','SUPPORTED' if comparisons and not unstable and complete else 'INCONCLUSIVE' if comparisons else 'NOT MEASURED',
              f'{len(comparisons)} same-direction, same-command cycle comparisons; '+
              (f"median/maximum absolute PD change {np.median([abs(r['pd_difference_v']) for r in comparisons]):.5g}/{max(abs(r['pd_difference_v']) for r in comparisons):.5g} V (all pairs); " if comparisons else '')+
              f'flagged capture IDs {unstable}. Same command does not guarantee same measured voltage.'),
-        item('Frequency response','SUPPORTED' if ratios and complete and c.operating_slope_confirmed and len(ratios)==len(result['normalized_response']) else 'INCONCLUSIVE' if c.mode=='frequency_response' else 'NOT MEASURED',
-             f'{len(ratios)}/{len(result["normalized_response"])} reference-normalized PD/monitor ratios; operating slope verified: {c.operating_slope_confirmed}. Includes detector/analyzer/monitor paths.' if c.mode=='frequency_response' else 'Settled/triangle voltage transfer acquires no frequency-response sweep.'),
+        item('Frequency response','NOT MEASURED','Settled/triangle voltage transfer acquires no frequency-response sweep.'),
         item('Drift/hysteresis stability','INCONCLUSIVE' if groups else 'NOT MEASURED',
              f'Forward/reverse differences include settling, drift and voltage mismatch; unstable captures {unstable} remain in the primary result. No isolated intrinsic hysteresis measurement.'),
         item('Comparison with intact EOM','UNAVAILABLE','No explicit compatible intact-EOM reference data supplied; no unrelated runs searched.')]
+
+
+def summarize_frequency(result,records,c):
+    """Same-cycle references, explicit coverage and at most four raw examples; no data exclusion."""
+    for item in records:
+        references=[r for r in records if r['cycle']==item['cycle'] and r['requested_frequency_hz']==c.reference_frequency_hz]
+        monitor=item['monitor'];pd=item['pd'];score=0.
+        if item['status']=='INVALID': score=1000.
+        elif monitor['status']=='AVAILABLE':
+            score=max(monitor.get('harmonic_shape_error',0)/.05,monitor.get('shape_residual_fraction',0)/.1,
+                      min(100.,c.minimum_snr/max(monitor['snr_rms'],1e-12)))
+            if pd['status']=='AVAILABLE': score=max(score,min(100.,c.minimum_snr/max(pd['snr_rms'],1e-12)),(pd['harmonic_ratio'] or 0)/.1)
+        if len(references)==c.captures_per_point:
+            if all(r['ratio'] is not None for r in references) and item['ratio'] is not None:
+                ratios=np.array([complex(*r['ratio']) for r in references]);reference=complex(ratios.mean())
+                if abs(reference)>0 and abs(reference)>=.5*float(np.mean(abs(ratios))):
+                    ratio=complex(*item['ratio'])/reference
+                    item.update(normalized_magnitude=float(abs(ratio)),relative_phase_deg=float(np.degrees(np.angle(ratio))),
+                        normalization='Complex ratio / equal-weight mean of ALL same-cycle reference ratios. No failed capture removed; principal phase only.')
+                else: item['flags'].append('REFERENCE_PHASE_AMBIGUITY')
+            electrical=[r for r in references if r['monitor']['status']=='AVAILABLE' and r['monitor']['snr_rms']>=c.minimum_snr and r.get('electrical_fundamental_gain_v_per_v',0)>0]
+            if len(electrical)==len(references) and 'electrical_fundamental_gain_v_per_v' in item and monitor['status']=='AVAILABLE' and monitor['snr_rms']>=c.minimum_snr:
+                gain=float(np.mean([r['electrical_fundamental_gain_v_per_v'] for r in electrical]))
+                relative=item['electrical_fundamental_gain_v_per_v']/gain
+                item['electrical_gain_relative_to_reference']=relative;score=max(score,abs(relative-1)/.2)
+                if relative<.8: item['flags'].append('MONITOR_FUNDAMENTAL_LOSS_VS_REFERENCE')
+                if relative>1.2: item['flags'].append('MONITOR_FUNDAMENTAL_RISE_VS_REFERENCE')
+                delta=monitor['mean']-float(np.mean([r['monitor']['mean'] for r in electrical]))
+                tolerance=max(.1*float(np.mean([r['monitor']['amplitude'] for r in electrical])),8*c.monitor_full_scale_v/8192)
+                item.update(monitor_dc_shift_vs_reference_v=delta,monitor_dc_shift_threshold_v=tolerance)
+                score=max(score,abs(delta)/tolerance)
+                if abs(delta)>tolerance: item['flags'].append('MONITOR_DC_SHIFT_VS_REFERENCE')
+        if 'normalized_magnitude' not in item: item['flags'].append('REFERENCE_NORMALIZATION_UNAVAILABLE')
+        item['diagnostic_score']=float(score);item['flags']=list(dict.fromkeys(item['flags']))
+    result['normalized_response']=records
+    result['frequency_reference']=dict(frequency_hz=c.reference_frequency_hz,bias_command_v=c.bias_v,
+        waveform=c.frequency_waveform,phase='PD/monitor phase uses simultaneous samples, principal phase only; no command timing or delay. Reference phase normalization rejects vector cancellation below half mean ratio magnitude.',
+        electrical_bias='Measured sample means and fitted DC per capture; electrode conversion only with calibrated monitor.')
+    result['frequency_coverage']=[]
+    for frequency in c.frequencies_hz:
+        selected=[r for r in records if r['requested_frequency_hz']==frequency];expected=c.repeats*c.captures_per_point
+        flags=list(dict.fromkeys(flag for r in selected for flag in r['flags']))
+        if len(selected)!=expected: flags.append('MISSING_OR_EXTRA_CAPTURES')
+        result['frequency_coverage'].append(dict(requested_frequency_hz=frequency,captures=[r['capture'] for r in selected],
+            expected_captures=expected,returned_captures=len(selected),usable_captures=sum('normalized_magnitude' in r for r in selected),flags=flags))
+    if any(r['returned_captures']!=r['expected_captures'] for r in result['frequency_coverage']): result['flags'].append('FREQUENCY_CAPTURE_COVERAGE_INCOMPLETE')
+    if any(r['flags'] for r in records): result['flags'].append('FREQUENCY_WAVEFORM_FLAGS')
+    examples=[]
+    def add(item,role):
+        if item is None: return
+        existing=next((e for e in examples if e['capture']==item['capture']),None)
+        if existing: existing['roles'].append(role)
+        else: examples.append(dict(capture=item['capture'],roles=[role]))
+    for frequency,role in ((c.reference_frequency_hz,'reference'),(c.diagnostic_frequency_hz,'requested diagnostic')):
+        matches=[r for r in records if r['requested_frequency_hz']==frequency]
+        if matches: add(min(matches,key=lambda r:(r['status']=='INVALID',r['capture'])),role)
+    if records: add(max(records,key=lambda r:(r['diagnostic_score'],-r['capture'])),'largest diagnostic score; not a fault attribution')
+    measured=[r for r in records if r['frequency_hz'] is not None]
+    if measured: add(max(measured,key=lambda r:(r['frequency_hz'],-r['capture'])),'highest acquired frequency')
+    result['waveform_examples']=examples
+    result['frequency_diagnostic_rules']='Resolved harmonics through 7 only below 0.4 sample rate. Sine shape error >5% or shape residual >10% flags electrical distortion; triangle flags shape change consistent with rounding OR distortion. Reference gain changes >20%, DC shifts >max(10% reference fundamental,8 LSB) are diagnostics, not device acceptance limits. Optical 2f does not imply electrical distortion. Selection score is max of dimensionless diagnostic ratios, including PD 2f/f; invalid raw capture score 1000. No samples removed.'

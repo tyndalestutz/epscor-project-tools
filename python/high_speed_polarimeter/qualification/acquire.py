@@ -11,7 +11,7 @@ def states(c):
     for cycle in range(c.repeats):
         if c.mode=='frequency_response':
             for f in c.frequencies_hz:
-                yield dict(cycle=cycle,direction='frequency',waveform='sin',offset=c.bias_v,
+                yield dict(cycle=cycle,direction='frequency',waveform=c.frequency_waveform,offset=c.bias_v,
                            amplitude=c.sine_amplitude_v,frequency=f,captures=c.captures_per_point)
         elif c.strategy=='triangle':
             yield dict(cycle=cycle,direction='continuous',waveform='triangle',offset=c.triangle_offset_v,
@@ -83,6 +83,7 @@ def acquire(session,recipe,directory):
         raw_format='dual_raw.npy: appended np.save signed int16 arrays, shape (PD,monitor)xN; event byte ranges and hashes identify complete returned buffers.',
         sample_time='Within each frozen buffer only: sample index * effective sampling_time_s, relative to immediate capture trigger. Host request/receive times bound acquisition and transport, not individual sample epochs. No seamless time axis across buffers.',
         monitor_conversion='(monitor_ADC_volts - monitor_zero_v) * monitor_scale_v_per_v * monitor_polarity; requires explicit valid calibration.',
+        command_waveform='Generator settings/readbacks only, not independently sampled. Any ideal command phase alignment to the monitor is presentation only; no command-to-monitor phase/delay measurement.',
         waveform_limits='Generator runs during settling and network gaps; triangle_cycles is a minimum recorded-cycle target, not a precise burst count. Only monitor-identified complete cycles inside each buffer are analyzed.'))
     captures=0
     with (directory/'events.jsonl').open('w') as events,(directory/'dual_raw.npy').open('wb') as stream:

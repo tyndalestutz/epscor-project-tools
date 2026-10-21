@@ -60,7 +60,10 @@ class QualificationConfig:
     triangle_frequency_hz: float = 1.0
     triangle_cycles: int = 2
     bias_v: float = 0.05
-    sine_amplitude_v: float = 0.005
+    sine_amplitude_v: float = 0.005  # Legacy name: peak command amplitude for either frequency waveform.
+    frequency_waveform: str = 'sin'
+    waveform_plot_cycles: int = 3
+    diagnostic_frequency_hz: float = 5000.0
     frequencies_hz: list = field(default_factory=lambda: [10.0, 30.0, 100.0])
     reference_frequency_hz: float = 10.0
     allowed_frequency_min_hz: float = 0.0
@@ -94,6 +97,12 @@ class QualificationConfig:
                 raise ValueError(f'Invalid type for {f.name}')
         if self.mode not in {'voltage_transfer','frequency_response'} or self.strategy not in {'settled','triangle'}:
             raise ValueError('Unknown qualification mode/strategy')
+        if self.frequency_waveform not in {'sin','triangle'}:
+            raise ValueError('Frequency waveform must be sin or triangle (symmetric Pyrpl ramp)')
+        if self.mode=='frequency_response' and self.min_capture_cycles<2:
+            raise ValueError('Frequency response requires at least two complete captured cycles')
+        if self.waveform_plot_cycles<1 or self.diagnostic_frequency_hz<0:
+            raise ValueError('Waveform display needs positive cycles and a nonnegative diagnostic frequency (0 disables)')
         if self.rp_output not in {'out1','out2'} or {self.pd_input,self.monitor_input}!={'in1','in2'}:
             raise ValueError('Select one RP output and distinct physical IN1/IN2 PD/monitor inputs')
         if not (-1<=self.command_min_v<=0<=self.command_max_v<=1) or self.command_min_v==self.command_max_v:

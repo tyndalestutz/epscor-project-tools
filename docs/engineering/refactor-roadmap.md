@@ -401,3 +401,16 @@ thresholds are heuristic diagnostics, not calibrated fault probabilities; electr
 calibration, transient cause, intrinsic retardance linearity and compatible intact-
 EOM comparison remain unresolved bench/review questions. No reference-run search,
 new comparison infrastructure or hardware operation is authorized by this revision.
+
+The waveform-diagnostic increment on the same draft PR extends frequency response
+to sine/symmetric triangle with fixed bias/peak amplitude, retained paired buffers
+and bounded deterministic time-domain examples. Requested triangle maps to the
+installed Pyrpl's native symmetric `ramp` (literal `triangle` was unsupported);
+generator readback records the native name. This is a bounded adapter correctness
+fix, not a driver rewrite. Electrical harmonic/shape response is evaluated before
+PD/monitor ratios; expected triangle harmonics and possible bandwidth rounding stay
+distinct from electrical distortion. Reconstructed command phase is presentation
+only. Missing/invalid/reference-ambiguous evidence remains visible. Software/mock
+checks do not establish physical triangle shape, monitor bandwidth, voltage scale
+or analog channel timing; those remain bench gates. No hardware sweep or merge is
+part of this implementation increment.

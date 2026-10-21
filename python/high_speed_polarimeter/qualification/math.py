@@ -86,23 +86,50 @@ def resolved_extrema(voltage,signal,noise):
                  voltage_bracket=[float(x[i-1]),float(x[i+1])]) for i,kind in turns]
 
 
-def demodulate(values,dt,frequency,min_cycles=5.):
+def demodulate(values,dt,frequency,min_cycles=5.,max_harmonic=2):
     y=np.asarray(values,float);n=len(y)
-    if n<16 or not np.isfinite(y).all() or dt<=0 or frequency<=0 or n*dt*frequency<min_cycles or frequency*dt>=.5:
-        return {'status':'UNAVAILABLE','reason':'Insufficient finite samples, cycles or Nyquist coverage'}
+    if n<16 or not np.isfinite(y).all() or not np.isfinite([dt,frequency]).all() or dt<=0 or frequency<=0 or n*dt*frequency<min_cycles or frequency*dt>=.4:
+        return {'status':'UNAVAILABLE','reason':'Insufficient finite samples, cycles or conservative Nyquist coverage'}
     t=np.arange(n)*dt;phase=2*np.pi*frequency*t
-    second=2*frequency*dt<.4
-    design=np.column_stack([np.ones(n),(t-t.mean())/(n*dt),np.cos(phase),np.sin(phase)]+([np.cos(2*phase),np.sin(2*phase)] if second else []))
+    orders=[h for h in range(1,max_harmonic+1) if h*frequency*dt<.4]
+    design=np.column_stack([np.ones(n),(t-t.mean())/(n*dt)]+[v for h in orders for v in (np.cos(h*phase),np.sin(h*phase))])
     if np.linalg.cond(design)>1e6: return {'status':'UNAVAILABLE','reason':'Ill-conditioned coherent demodulation'}
     co=np.linalg.lstsq(design,y,rcond=None)[0];residual=y-design@co
-    fundamental=complex(co[2],-co[3]);harmonic=complex(co[4],-co[5]) if second else None
-    noise=float(np.sqrt(np.mean(residual**2)))
-    return dict(status='AVAILABLE',mean=float(co[0]),fundamental=[fundamental.real,fundamental.imag],
-                amplitude=float(abs(fundamental)),phase_rad=float(np.angle(fundamental)),
-                second_harmonic_amplitude=float(abs(harmonic)) if second else None,
-                harmonic_ratio=float(abs(harmonic)/abs(fundamental)) if second and abs(fundamental)>0 else None,
-                residual_rms=noise,snr_rms=float(abs(fundamental)/(np.sqrt(2)*max(noise,1e-30))),
-                convention='y=mean+linear trend+Re(H exp(+i 2pi f t))+optional 2f; peak amplitudes. SNR=fundamental RMS/residual RMS, not a white-noise statistical significance.')
+    components={h:complex(co[2+2*i],-co[3+2*i]) for i,h in enumerate(orders)}
+    fundamental=components[1];harmonic=components.get(2);noise=float(np.sqrt(np.mean(residual**2)))
+    return dict(status='AVAILABLE',mean=float(co[0]),sample_mean_v=float(y.mean()),linear_trend_v_over_capture=float(co[1]),
+                fundamental=[fundamental.real,fundamental.imag],amplitude=float(abs(fundamental)),phase_rad=float(np.angle(fundamental)),
+                second_harmonic_amplitude=float(abs(harmonic)) if harmonic is not None else None,
+                harmonic_ratio=float(abs(harmonic)/abs(fundamental)) if harmonic is not None and abs(fundamental)>0 else None,
+                harmonics={str(h):dict(complex=[v.real,v.imag],amplitude_v=float(abs(v)),ratio=float(abs(v)/abs(fundamental)) if abs(fundamental)>0 else None) for h,v in components.items()},
+                resolved_harmonics=orders,largest_residual_sample=int(np.argmax(abs(residual))),residual_rms=noise,snr_rms=float(abs(fundamental)/(np.sqrt(2)*max(noise,1e-30))),
+                convention='Coherent DC+linear trend+resolved harmonic least squares; Re(H exp(+i h 2pi f t)), peak amplitudes; harmonics only below 0.4 sample rate. SNR=fundamental RMS/full-model residual RMS, not a noise significance or intrinsic bandwidth.')
+
+
+def command_shape(phase,waveform):
+    """Ideal shape in a fundamental-cosine phase convention; absolute ASG phase is unknown."""
+    return np.cos(phase) if waveform=='sin' else 2/np.pi*np.arcsin(np.clip(np.cos(phase),-1,1))
+
+
+def waveform_diagnostics(values,dt,frequency,waveform,min_cycles=5.):
+    result=demodulate(values,dt,frequency,min_cycles,max_harmonic=7)
+    if result['status']!='AVAILABLE' or result['amplitude']<=0: return result
+    amplitude=result['amplitude'];phase=result['phase_rad'];t=np.arange(len(values))*dt
+    factor=1. if waveform=='sin' else 8/np.pi**2
+    expected=result['mean']+result['linear_trend_v_over_capture']*(t-t.mean())/(len(t)*dt)+amplitude/factor*command_shape(2*np.pi*frequency*t+phase,waveform)
+    harmonics=result['harmonics'];errors=[]
+    for order in result['resolved_harmonics'][1:]:
+        ratio=1/order**2 if waveform=='triangle' and order%2 else 0.
+        expected_h=amplitude*ratio*np.exp(1j*order*phase)
+        errors.append(abs(complex(*harmonics[str(order)]['complex'])-expected_h)**2)
+    result.update(resolved_thd=float(np.sqrt(sum(h['amplitude_v']**2 for k,h in harmonics.items() if k!='1'))/amplitude),
+        expected_resolved_thd=float(np.sqrt(sum(1/h**4 for h in result['resolved_harmonics'][1:] if h%2))) if waveform=='triangle' else 0.,
+        harmonic_shape_error=float(np.sqrt(sum(errors))/amplitude),
+        largest_shape_residual_sample=int(np.argmax(abs(np.asarray(values)-expected))),
+        shape_residual_rms_v=float(np.sqrt(np.mean((np.asarray(values)-expected)**2))),
+        shape_residual_fraction=float(np.sqrt(np.mean((np.asarray(values)-expected)**2))/(amplitude/np.sqrt(2))),
+        shape_model='Ideal '+waveform+' with measured fitted fundamental phase/amplitude, DC and trend. Derived comparison only; phase matching is not command timing. Triangle odd harmonics are inherent; rounding/phase dispersion, noise, aliasing and faults can all contribute to shape residual.')
+    return result
 
 
 def triangle_branches(voltage,cycles,expected_cycles=None):

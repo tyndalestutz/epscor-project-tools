@@ -52,6 +52,8 @@ class QualificationSession:
 
     def configure(self, waveform, offset, amplitude, frequency):
         c=self.config
+        # Pyrpl ramp is a symmetric triangle; halframp is the unsupported sawtooth option.
+        native_waveform='ramp' if waveform=='triangle' else waveform
         lo,hi=offset-amplitude,offset+amplitude
         if lo<c.command_min_v or hi>c.command_max_v:
             raise RuntimeError('Command envelope exceeds bounds')
@@ -67,13 +69,13 @@ class QualificationSession:
         else:
             self.asg.output_direct='off'
             self.asg.setup(waveform='dc',offset=0.,amplitude=0.,trigger_source='immediately')
-            self.asg.setup(waveform=waveform,offset=offset,amplitude=amplitude,
+            self.asg.setup(waveform=native_waveform,offset=offset,amplitude=amplitude,
                            frequency=frequency or 1.,trigger_source='immediately')
         self._waveform=waveform
         # Settings are inspected before a newly configured waveform is routed.
-        readback={'waveform':str(self.asg.waveform),'offset_v':float(self.asg.offset),
+        readback={'requested_waveform':waveform,'waveform':str(self.asg.waveform),'offset_v':float(self.asg.offset),
                   'amplitude_v':float(self.asg.amplitude),'frequency_hz':float(self.asg.frequency)}
-        if readback['waveform']!=waveform or abs(readback['offset_v']-offset)>2/8192 or abs(readback['amplitude_v']-amplitude)>2/8192:
+        if readback['waveform']!=native_waveform or abs(readback['offset_v']-offset)>2/8192 or abs(readback['amplitude_v']-amplitude)>2/8192:
             raise RuntimeError(f'Unexpected ASG settings: {readback}')
         if not c.command_min_v<=readback['offset_v']-readback['amplitude_v']<=readback['offset_v']+readback['amplitude_v']<=c.command_max_v:
             raise RuntimeError('Effective ASG envelope outside declared bounds')
@@ -145,7 +147,7 @@ class QualificationMock:
     def describe(self): return {'mode':'mock','synchronization':'synthetic shared sample clock','raw_format':'synthetic signed codes'}
     def configure(self,waveform,offset,amplitude,frequency):
         if waveform=='dc': self.elapsed+=self.config.ramp_s
-        self.drive=dict(waveform=waveform,offset_v=offset,amplitude_v=amplitude,frequency_hz=frequency or 0.)
+        self.drive=dict(requested_waveform=waveform,waveform='ramp' if waveform=='triangle' else waveform,offset_v=offset,amplitude_v=amplitude,frequency_hz=frequency or 0.)
         self.dec=self.config.decimation(frequency);return dict(self.drive)
     def capture(self):
         c=self.config;d=self.drive;dt=8e-9*self.dec;t=np.arange(16384)*dt
@@ -153,7 +155,7 @@ class QualificationMock:
         if d['waveform']=='sin':
             monitor=d['offset_v']+d['amplitude_v']*np.sin(phase)
             pd=.05+2*d['amplitude_v']*np.sin(phase-.2)
-        elif d['waveform']=='triangle':
+        elif d['waveform']=='ramp':
             monitor=d['offset_v']+d['amplitude_v']*(2/np.pi*np.arcsin(np.sin(phase)))
             pd=.05+.03*np.cos(60*monitor+.3)
         else:
