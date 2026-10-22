@@ -172,9 +172,13 @@ class Bench:
         self.scope.average = False
         import pyrpl
         import re
-        marker=rp.ssh.ask('cat /tmp/loaded_fpga.inf')
-        if 'pyrpl' not in marker.lower(): raise RuntimeError('RP is not marked as running Pyrpl FPGA')
-        identity=rp.ssh.ask('cat /sys/class/net/eth0/address')
+        ssh=paramiko.SSHClient();ssh.get_host_keys().add(self.c['rp_hostname'],key.get_name(),key)
+        try:
+            ssh.connect(self.c['rp_hostname'],port=connection.get('sshport',22),username=connection.get('user','root'),password=connection.get('password'),timeout=5)
+            _,out,_=ssh.exec_command('cat /tmp/loaded_fpga.inf',timeout=5);marker=out.read().decode()
+            if marker.strip()!='pyrpl': raise RuntimeError('RP is not marked as running Pyrpl FPGA')
+            _,out,_=ssh.exec_command('cat /sys/class/net/eth0/address',timeout=5);identity=out.read().decode()
+        finally: ssh.close()
         mac=re.search(r'(?:[0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}',identity)
         return dict(pyrpl_version=pyrpl.__version__,pyrpl_source=inspect.getfile(Pyrpl),
                     frequency_correction=rp.frequency_correction,fpga_marker='pyrpl',
