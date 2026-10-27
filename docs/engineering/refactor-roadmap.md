@@ -2,6 +2,26 @@
 
 ## A. Campaign status and purpose
 
+**Owned PAX notebook sessions (2026-10-27):** following notebook connection tests,
+the user requested that PAX startup and shutdown happen entirely within the
+notebook and not leave a daemon/motor running between operations. The bounded
+follow-up adds `PAX.local_session()` as a context manager around an owned,
+supervised child using the existing project daemon and config. It retains the
+five-second spin-up settling wait, verifies endpoint ownership, preserves raw
+acquisition behavior, and requests motor/USB/process cleanup on block exit and
+parent-pipe EOF. Existing attach-only and legacy suite behavior remain available.
+Tests must cover startup/body/cleanup failures, interruption and repeated sessions;
+the offline guard must block the new launcher. Physical motor stop, USB release,
+kernel-exit recovery and timing require bench qualification. Notebook cells and
+source experiment data are excluded from implementation changes. This extends
+the earlier increment's attach-only scope by explicit user request; it is not a
+general lifecycle or suite migration.
+Software validation: 579 checks passed in a clean exported checkout with this
+increment overlaid (52 instrument, 362 locking, 100 high-speed, 57 field-model and
+8 boundary checks). The instrument suite adds 21 fake-process/USB lifecycle cases.
+No hardware was contacted; physical shutdown and kernel-exit behavior remain bench
+checks, not software-test conclusions.
+
 **Notebook-first increment (2026-10-26):** the user authorized an additive shared
 `python/instruments` entry point on `feat/notebook-instrument-wrappers`, based on
 `06d26f81a24fd2cfd29e932c2611103209b6669c`. This is a bounded exception to the phase

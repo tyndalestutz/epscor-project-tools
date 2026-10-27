@@ -23,7 +23,7 @@ def offline_audit(event, args):
         command = args[1]
         command = [command] if isinstance(command, (str, bytes)) else command
         names = {os.path.basename(os.fsdecode(part)) for part in command}
-        if names & {'pax1000_daemon.py', 'yaqd-thorlabs-pax1000'}:
+        if names & {'pax1000_daemon.py', '_pax_daemon.py', 'yaqd-thorlabs-pax1000'}:
             raise RuntimeError('PAX daemon launch blocked by offline test guard')
 
 

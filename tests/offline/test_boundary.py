@@ -46,6 +46,12 @@ for event, args in [('socket.connect', (None, ('127.0.0.1', 9))),
         assert 'offline test guard' in str(exc)
     else:
         raise AssertionError('Process guard absent')
+try:
+    sys.audit('subprocess.Popen', sys.executable, [sys.executable, '_pax_daemon.py'], None, None)
+except RuntimeError as exc:
+    assert 'offline test guard' in str(exc)
+else:
+    raise AssertionError('Owned PAX daemon launch guard absent')
 """)
 
 

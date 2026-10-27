@@ -26,7 +26,9 @@ available Python 3.10 installation; the workflow obtains it through setup-python
 The environment path is an example and must not overwrite an existing environment.
 
 [requirements-offline.txt](../../requirements-offline.txt) pins pytest, NumPy,
-Matplotlib, QtPy and PyQt5 plus their resolved Python dependencies. These are test
+Matplotlib, QtPy and PyQt5 plus their resolved Python dependencies. TOML-W 1.2.0,
+already present in the bench environment, exercises temporary owned PAX daemon
+config serialization without installing instrument drivers. These are test
 environment pins, not changes to bench/application requirements. SciPy, SymPy,
 PyVista, Pyrpl, YAQC/YAQD, VISA and USB driver packages are not needed by the current
 offline suites. Other optional research tools can require additional packages;

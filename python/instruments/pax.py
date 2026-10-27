@@ -1,7 +1,8 @@
-"""Explicit attachment/acquisition through an existing PAX YAQD daemon.
+"""Explicit PAX acquisition through borrowed or notebook-owned YAQD sessions.
 
 No process discovery, daemon startup/shutdown, motor command or implicit
-wavelength change. Driver imports and network activity begin only at connect().
+wavelength change in connect(). local_session() explicitly owns startup/shutdown.
+Driver imports and device/process activity begin only when those methods execute.
 """
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -84,6 +85,24 @@ class PAX:
         self.last_raw_record = None
         self.last_read_timing = None
         self.last_attempts = []
+
+    @classmethod
+    def local_session(cls, *, config_path=None, startup_timeout_s=15.0,
+                      shutdown_timeout_s=10.0, rpc_timeout_s=2.0,
+                      measurement_wait_s=0.06):
+        """Start an owned local daemon for a ``with`` block, then stop it.
+
+        Startup opens USB, applies the selected daemon config and starts the
+        motor, including its five-second settling wait. Exit requests motor
+        stop, closes USB and waits for the owned child to exit. No unrelated
+        daemon is adopted or terminated. Ordinary connect() remains attach-only.
+        """
+        from ._pax_session import local_session
+        return local_session(cls, config_path=config_path,
+                             startup_timeout_s=startup_timeout_s,
+                             shutdown_timeout_s=shutdown_timeout_s,
+                             rpc_timeout_s=rpc_timeout_s,
+                             measurement_wait_s=measurement_wait_s)
 
     def connect(self):
         """Open a client and perform YAQC's handshake/identity exchange only."""

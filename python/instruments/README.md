@@ -71,7 +71,67 @@ methods yet. Existing suite controllers retain those functions and their voltage
 bounds and cleanup. A notebook drive API needs a separately bounded change with
 explicit command limits, routing, initialization and safe-output behavior.
 
+## PAX: notebook-managed session
+
+For notebook operations, put the work in a `with` block. This starts and stops
+an owned local daemon within the cell; no separate terminal is needed:
+
+```python
+from instruments import PAX
+
+with PAX.local_session() as pax:
+    display(pax.read_status())
+    pax_raw = pax.read_fresh()
+
+pax_raw
+```
+
+Entering opens the configured USB PAX, applies the existing daemon's autorange,
+rotation velocity and measurement mode, starts its motor and waits the existing
+five seconds for settling. Startup progress is printed. The default config is
+`polarization_locking/hardware/pax1000.toml` (currently serial `M01303584`, port
+38400, 60 Hz rotation, mode 5, autorange enabled). Select another existing config
+with `config_path=...`; its original contents and the effective temporary config
+remain in `pax.session_configuration`. Wavelength is read from the instrument,
+not implicitly changed. Inspect status or explicitly set the actual wavelength
+inside the block before acquiring.
+
+The daemon runs under the notebook's Python interpreter with the existing bench
+dependencies. A unique temporary config restricts it to IPv4 loopback, and the
+client verifies that config path and serial before yielding. An occupied port is
+rejected before launch. The session never searches for, adopts, or terminates an
+unrelated daemon. If an older terminal-launched daemon is still running, close
+that owning session once before using this interface. This does not establish
+exclusive ownership against other software accessing the same USB instrument.
+
+Leaving the block, including on an exception or Ctrl-C, closes the client, requests
+owned-child shutdown by closing its parent-lifetime pipe, and waits for the child
+to exit. Its supervised close attempts motor stop and USB close independently,
+including after partial initialization. The same pipe's EOF requests shutdown if
+the kernel exits. `pax.shutdown_evidence` records stop-command success, USB-close
+success and child cleanup errors; this is not a measured motor-standstill signal.
+The child log remains in `pax.daemon_log`. Temporary files are removed after exit.
+
+Startup's polling budget defaults to 15 s and graceful shutdown's wait to 10 s;
+both are configurable. In-progress RPC/USB calls can extend startup. A child that
+fails to exit is killed/reaped and a cleanup error is raised; forced termination
+does **not** establish that the motor stopped. Body and cleanup failures are both
+preserved. Startup failures show daemon-log context and expose the captured log
+as `exception.daemon_log`, even if the context never yielded. A hung USB driver,
+unplugged device, OS failure or forced kill cannot be made physically safe by a
+Python `finally`; actual shutdown and repeated sessions still require bench
+verification. This initial supervised mode requires POSIX signal handling.
+
+Keep repeated reads inside one block when they belong to one acquisition, so the
+motor stays settled through that acquisition. A later block starts a new session
+and incurs the settling wait again. Raw records and timing remain in Python after
+the block, while the PAX connection is closed. Do not call `pax.connect()` after
+the block to resume it; start a new `local_session()` instead.
+
 ## PAX: attach to an existing daemon
+
+The original attach-only API remains available for tools with an independently
+managed daemon. Its `close()` affects only its client socket:
 
 ```python
 from instruments import PAX
@@ -157,8 +217,14 @@ bash scripts/test-offline.sh instruments
 bash scripts/test-offline.sh
 ```
 
-These tests use fake drivers and the existing network/process guard. Bench checks
+These tests use fake drivers/processes and the existing network/process guard.
+The owned-daemon launcher is also blocked by that guard. `tomli-w==1.2.0` is added
+to the isolated software test requirements to exercise real temporary TOML config
+serialization; it is already a dependency of the established bench environment.
+Bench checks
 remain necessary for repeated RP attachment/monitor-port release, saved-register
 restoration and unchanged physical outputs; PAX fresh raw records, units and
 actual device configuration; client-only close while the daemon/motor remain
-running; and acquisition timing. No hardware was operated to validate this change.
+running; supervised motor/USB/child shutdown on success, startup failure, Ctrl-C
+and kernel exit; repeated owned-session/port reuse; and acquisition timing. No
+hardware was operated to validate this change.
