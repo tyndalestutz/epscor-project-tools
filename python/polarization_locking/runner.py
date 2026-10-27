@@ -12,14 +12,18 @@ import sys
 
 from .settings import recipe, validate, write_json
 
+SOURCE_ROOTS = (Path(__file__).resolve().parent,
+                Path(__file__).resolve().parent.parent / "instruments")
+
 
 def source_fingerprint():
-    root = Path(__file__).resolve().parent
+    """Fingerprint the suite and shared instrument implementation it uses."""
     digest = hashlib.sha256()
-    for path in sorted(root.rglob("*")):
-        if path.suffix in {".py", ".toml"}:
-            digest.update(str(path.relative_to(root)).encode())
-            digest.update(path.read_bytes())
+    for root in SOURCE_ROOTS:
+        for path in sorted(root.rglob("*")):
+            if path.suffix in {".py", ".toml"}:
+                digest.update(str(Path(root.name) / path.relative_to(root)).encode())
+                digest.update(path.read_bytes())
     return digest.hexdigest()
 
 
@@ -32,12 +36,13 @@ def runtime_provenance():
             packages[name] = version(name)
         except PackageNotFoundError:
             packages[name] = None
-    provenance = {"packages": packages, "platform": platform.platform(), "git_commit": None, "suite_dirty": None}
+    provenance = {"packages": packages, "platform": platform.platform(), "git_commit": None,
+                  "suite_dirty": None, "source_roots": [str(path) for path in SOURCE_ROOTS]}
     try:
         provenance["git_commit"] = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], cwd=root, text=True, stderr=subprocess.DEVNULL, timeout=5).strip()
         provenance["suite_dirty"] = bool(subprocess.check_output(
-            ["git", "status", "--porcelain", "--untracked-files=all", "--", "."],
+            ["git", "status", "--porcelain", "--untracked-files=all", "--", ".", "../instruments"],
             cwd=root, text=True, stderr=subprocess.DEVNULL, timeout=5).strip())
     except (OSError, subprocess.SubprocessError):
         pass  # exported source trees are also usable; the source hash remains

@@ -2,6 +2,30 @@
 
 ## A. Campaign status and purpose
 
+**Notebook-first increment (2026-10-26):** the user authorized an additive shared
+`python/instruments` entry point on `feat/notebook-instrument-wrappers`, based on
+`06d26f81a24fd2cfd29e932c2611103209b6669c`. This is a bounded exception to the phase
+sequence, motivated by interactive device programming; it does not authorize a
+suite-wide migration or the rest of phases 5–8. The experimentalist authors and
+executes notebook steps; existing suites remain supported. Scope: monitor-only RP
+attachment/readback/close and PAX attachment to an existing daemon, raw/fresh reads,
+explicit wavelength and client-only close. Shared RP transport and PAX
+parsing/validity are extracted behind existing controller imports; active suite
+initialization, recipes, acquisition timing defaults and reports remain in place.
+Run provenance includes the new shared source. See the
+[instrument contracts and bench checks](../../python/instruments/README.md).
+Acceptance: driver-free construction/imports; explicit side effects and ownership;
+raw anomaly retention; fault/repetition checks; existing offline suites pass.
+Physical equivalence, remote monitor-process release and timing remain unverified
+until authorized bench checks. No notebook edits, active notebook RP drive API,
+driver upgrades, generalized instrument framework or automatic reports are in scope.
+Software validation: 558 checks passed using `scripts/test-offline.sh` in a clean
+exported baseline plus this increment (31 instrument, 362 locking, 100 high-speed,
+57 field-model and 8 boundary checks). The direct workspace run encounters an
+existing high-speed menu failure from ignored local settings; the same failure
+was reproduced on unmodified base source with those settings. User settings were
+left intact. Bench checks remain outstanding.
+
 **PRs 0–3 merged; PR 4 in progress — bounded read-only text reader increment.** This staged campaign makes an
 already functional experimental repository reproducible, maintainable, portable
 and shareable as a laboratory software platform. Preserving working experiments

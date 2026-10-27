@@ -44,6 +44,7 @@ Other missing TeX packages cause a visible report-test failure.
 
 | Suite | Existing coverage | Integrated baseline count |
 | --- | --- | ---: |
+| `instruments` | Driver-free imports, fake RP monitor/readback/restoration/failures, PAX client ownership/raw records/freshness and shared-source provenance | New increment; see actual run results |
 | `polarization_locking` | Catalog/recipes, menu persistence, numerical/control helpers, mocked controller/lifecycle behavior, interruption, logging, real offscreen Qt, analysis and PDFs | 302 |
 | `high_speed_polarimeter` | Mock lifecycle/EOM acquisition, retained buffers/events, mappings, quality/reporting, rough Vπ guards, shared tools and CLI subprocesses | 97 |
 | `field_propogation` | Jones/Stokes propagation, physical conventions, measured-input/freeze/held-out workflows, spatial models, selected archived comparisons and TeX/PDF regeneration | 38 |
@@ -60,6 +61,7 @@ To run an individual suite with the same isolation and boundary checks:
 
 ```bash
 bash scripts/test-offline.sh polarization_locking
+bash scripts/test-offline.sh instruments
 bash scripts/test-offline.sh high_speed_polarimeter
 bash scripts/test-offline.sh field_propogation
 # Select an interpreter without activating it:

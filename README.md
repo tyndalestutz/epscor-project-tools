@@ -8,6 +8,7 @@ physical measurement validity requires a recorded, verified bench setup.
 
 | Subsystem | Responsibility and starting points |
 | --- | --- |
+| [Shared instruments](python/instruments/README.md) | Explicit notebook device access: monitor-only RP attachment/readback and PAX attachment/raw/fresh reads; existing suites remain supported |
 | [Polarization locking](python/polarization_locking/README.md) | Bench diagnostics, feedback, PAX monitoring and reusable recipes; [operating procedure](python/polarization_locking/docs/operating-procedure.md), [profiles](python/polarization_locking/profiles), [offline analysis](python/polarization_locking/analysis/README.md) |
 | [High-speed polarimeter](python/high_speed_polarimeter/README.md) | Mock and hardware EOM acquisition, retained raw buffers/events and rough PAX-only Vπ characterization; [profiles](python/high_speed_polarimeter/profiles). Full instrument calibration and Stokes reconstruction remain future work. |
 | [Jones-field models](python/field_propogation/README.md) | Independent propagation/detector models and measured-input workflows; [measurement protocol](python/field_propogation/docs/measurement_acquisition.md), [historical fit audit](python/field_propogation/docs/historical_fit_audit.md) |
