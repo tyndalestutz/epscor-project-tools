@@ -33,3 +33,11 @@ and excess complexity directly to the scientist. Read-only; never fixes.
 See workflow/roles/adversary.md.
 """
 config_file = "agents/adversary.toml"
+
+[agents.archivist]
+description = """
+Fresh-context close-out agent: proposes a pickup note, a day record or a full
+close-out from the day's runs, notebook, notes and git state. Proposes only.
+See workflow/roles/archivist.md.
+"""
+config_file = "agents/archivist.toml"

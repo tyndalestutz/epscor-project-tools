@@ -58,6 +58,7 @@ Root causes:
 | **Builder** | Implements exactly what the plan says, minimally. Proposes plan changes instead of slipping them into code. | Main session (default) | [`AGENTS.md`](../AGENTS.md) "Builder rules" |
 | **Tutor** | Gets me to real understanding: predictions, derivations, explain-back. Not a yes-man. | Mode in the main conversation (`/tutor` in Claude, `$tutor` in Codex) | [`roles/tutor.md`](roles/tutor.md) |
 | **Adversary** | Fresh-context reviewer. Compares work against the agreed plan and reports drift, unapproved processing, physics traps and excess complexity **directly to me**. | Subagent (no shared context with the builder) | [`roles/adversary.md`](roles/adversary.md) |
+| **Archivist** | Fresh-context close-out. Proposes a pickup note (`quick`), a day record (`standard`: settings list, keep/archive/delete, summary, git) or full upkeep (`full`). I approve; the builder executes; the adversary checks. | Subagent, started by `/archivist` (Claude) or `$archivist` (Codex) | [`roles/archivist.md`](roles/archivist.md) |
 
 When to call the adversary:
 
@@ -136,6 +137,7 @@ pointers to it, so Claude and Codex follow the same rules.
 | Project rules (builder) | `AGENTS.md` | reads `AGENTS.md` natively (no `CLAUDE.md`) | `AGENTS.md` |
 | Adversary | `workflow/roles/adversary.md` | `.claude/agents/adversary.md` | `.codex/agents/adversary.toml` |
 | Tutor | `workflow/roles/tutor.md` | `.claude/skills/tutor/SKILL.md` | `.agents/skills/tutor/SKILL.md` |
+| Archivist | `workflow/roles/archivist.md` | `.claude/agents/archivist.md` + `.claude/skills/archivist/SKILL.md` | `.codex/agents/archivist.toml` + `.agents/skills/archivist/SKILL.md` |
 | Enforcement | (future) shared scripts | `.claude/settings.json` hooks | `.codex/hooks.json` |
 
 Notes:
@@ -170,3 +172,4 @@ mechanical rules; add them when a mechanical rule keeps being broken.
 ## 9. Change log
 
 - 2026-10-28: v0 drafted (Claude Code session).
+- 2026-10-28: v0 used on the first real bench day (EOM notebook retrofit). Added the archivist (fresh-context close-out with quick/standard/full tiers).
