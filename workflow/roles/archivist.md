@@ -57,6 +57,7 @@ modernization roadmap line, and pull-request readiness.
   in the brief that the disk does not support, and anything on disk the brief
   missed.
 - Mark irreversible actions (deletion, history rewrites, pushes) plainly.
+- Moving runs out of `experiments/_local/` breaks paths held by an open notebook kernel. Propose moves only after the scientist has finished running and saved the notebook, and say so in the plan.
 - Keep the record small: the summary should be readable in five minutes.
 
 ## How to report
