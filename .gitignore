@@ -4,3 +4,7 @@
 
 # Optional future local experiment records; requires independent backups.
 /experiments/_local/
+
+# Python and Jupyter caches
+__pycache__/
+.ipynb_checkpoints/
