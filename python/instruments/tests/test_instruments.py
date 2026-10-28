@@ -122,6 +122,7 @@ def test_rp_attach_readback_close_and_repeat(rp_driver):
     rp.close()
     assert rp_driver.client.writes.call_count == 6
     rp_driver.client.close.assert_called_once()
+    rp_driver.client.socket.close.assert_called_once()
     rp_driver.ssh.close.assert_called_once()
     rp.close()
     rp_driver.client.close.assert_called_once()
@@ -172,7 +173,42 @@ def test_rp_monitor_launch_failure_does_not_take_over_existing_port(rp_driver):
     stderr.read.return_value = b"port in use"
     rp_driver.ssh.exec_command.side_effect = [(None, marker, Mock()), (None, failure, stderr)]
     with pytest.raises(RuntimeError, match="port in use"):
+        RedPitaya("example.invalid", monitor_port=2223).attach_monitor()
+    rp_driver.monitor_factory.assert_not_called()
+    rp_driver.ssh.close.assert_called_once()
+
+
+def test_default_monitor_uses_its_own_port_when_2223_is_occupied(rp_driver, monkeypatch):
+    marker, busy, ready = Mock(), Mock(), Mock()
+    marker.read.return_value = b"pyrpl\n"
+    busy.channel.exit_status_ready.return_value = True
+    ready.channel.exit_status_ready.return_value = False
+    error = Mock()
+    error.read.return_value = b"ERROR on binding: Address already in use"
+    rp_driver.ssh.exec_command.side_effect = [(None, marker, Mock()), (None, busy, error), (None, ready, Mock())]
+    monkeypatch.setattr(rp_module.secrets, "randbelow", lambda maximum: 123)
+    rp = RedPitaya("example.invalid").attach_monitor()
+    assert rp.read_status()["monitor_port"] == 20123
+    assert rp.read_status()["preferred_monitor_port"] == 2223
+    rp_driver.monitor_factory.assert_called_once()
+    assert rp_driver.monitor_factory.call_args.args == ("example.invalid", 20123)
+    commands = [call.args[0] for call in rp_driver.ssh.exec_command.call_args_list]
+    assert commands == ["cat /tmp/loaded_fpga.inf", "/opt/pyrpl/monitor_server 2223", "/opt/pyrpl/monitor_server 20123"]
+    rp.close()
+
+
+def test_monitor_port_fallback_is_bounded_and_does_not_repeat_candidates(rp_driver, monkeypatch):
+    marker, busy = Mock(), Mock()
+    marker.read.return_value = b"pyrpl\n"
+    busy.channel.exit_status_ready.return_value = True
+    error = Mock()
+    error.read.return_value = b"Address already in use"
+    rp_driver.ssh.exec_command.side_effect = [(None, marker, Mock())] + [(None, busy, error)] * 4
+    monkeypatch.setattr(rp_module.secrets, "randbelow", lambda maximum: 123)
+    with pytest.raises(RuntimeError, match="Address already in use"):
         RedPitaya("example.invalid").attach_monitor()
+    ports = [call.args[0].split()[-1] for call in rp_driver.ssh.exec_command.call_args_list[1:]]
+    assert ports == ["2223", "20123", "20124", "20125"]
     rp_driver.monitor_factory.assert_not_called()
     rp_driver.ssh.close.assert_called_once()
 

@@ -2,6 +2,142 @@
 
 ## A. Campaign status and purpose
 
+**First notebook drive/capture (2026-10-27, draft ready for operator review):** the user authorized
+editing the EOM characterization notebook, its global settings/smoke tests and
+the shared wrapper. The confirmed path is OUT1 → preamp → 3211 → EOM, with
+PD/IN1/LV and drive-monitor/IN2/HV; OUT2 remains unused. Scope is one bounded sine
+and one raw paired buffer, configuration/preflight, minimal retention/inspection,
+and an additive active context manager. Existing suites and standalone raw tool
+remain intact; their pure voltage-envelope/sample-coverage/retention checks are
+reused in the notebook. Unknown physical bounds stay unset and block execution.
+The caller explicitly approves the downstream model and protection; command and
+register settings are not measured HV. No automated sweep, fitting or reports.
+
+The user also reported `Address already in use` on passive-monitor port 2223.
+Default notebook attachment now tries distinct owned ports on that specific bind
+failure; it does not attach to or kill the unknown listener. Explicit ports and
+legacy-controller port behavior stay strict. The installed monitor client's
+suppressed-close-error path is handled by explicitly closing its socket. The
+traceback does not establish the listener's owner. Bench checks must cover passive
+reconnection, active startup/cleanup, waveform transitions, frozen paired buffers,
+actual voltage/timing and the assumed engineering monitor conversion. No agent
+hardware access is authorized or used for this increment.
+Software evidence: `scripts/test-offline.sh` passed 602 checks in a clean tracked
+export with these draft changes overlaid (75 instrument, 362 locking, 100
+high-speed, 57 field-model, 8 boundary). The unchanged standalone EOM tool's two
+mock storage/interruption tests also passed. The actual saved notebook code was
+compiled/schema-validated and executed with fake backends for environment/global
+settings, RP and owned-PAX smoke tests, successful acquisition/inspection, clipping
+retention and partial-read retention; incomplete bench settings were confirmed to
+stop before connection. These checks do not establish real instrument operation.
+Changes remain local and uncommitted for the experimentalist's review; physical
+bounds, conversion evidence and bench qualification are outstanding.
+
+Notebook follow-up: the operator confirmed zero OUT1 bias, an absolute RP command
+ceiling of 0.9 V, nominal 3211 gain ×40, monitor conversion ×30 and the existing
+±5 V amplifier-input / ±200 V electrode / ±6 V monitor windows. These are entered;
+remaining nominal offsets, polarity and engineering margins reuse the raw-tool
+recipe and stay explicitly subject to physical confirmation. The requested
+0.3 V-peak, 0.5 Hz sine previews as 0.4656612873 Hz and four cycles in one buffer.
+Preflight checks the requested waveform and zero cleanup against downstream bounds
+rather than requiring unused RP ceiling endpoints to fit them. Missing fields and
+physical declarations are reported together, impossible timing is rejected before
+connection, and acquisition displays frequency readback and capture timing. Pure
+checks cover the present command, downstream-bound rejection and impossible cycle
+counts; fake-backend notebook acquisition/retention/cleanup checks pass. No new
+bench evidence is claimed; operator physical declarations remain unchecked.
+
+**Authorized command-to-monitor bench characterization (2026-10-27):** the operator
+subsequently set the notebook declarations and explicitly authorized agent RP
+operation. One bounded session retained 17 DC and four sine paired captures in
+`experiments/_local/command_monitor_calibration_20261027T201314Z_b468db58`
+(`raw.npz` and `metadata.json`, 843,774 bytes total). Command extrema were limited
+to ±0.3 V; sine readback was 0.4656612873 Hz. A least-squares fit to all 17 DC
+capture means gives IN2 = 9.6442074113 × OUT1-command − 0.0681210879 V, using
+the declared IN2 HV scaling. Maximum absolute DC mean residual was 4.155 mV;
+matched increasing/decreasing steps differed by at most 1.419 mV. Sine gains were
+9.6421–9.6581 V/V for 0.1–0.3 V requested peaks. All captures passed existing
+checks; cleanup read both ASGs DC zero with routes off. This is combined bench
+command-to-monitor evidence, not independent OUT1 connector, electrode-voltage,
+continuous-hysteresis, wideband or optical-stability qualification. The nominal
+monitor-to-electrode conversion is unchanged. The notebook now snapshots these
+empirical command-to-monitor coefficients, tested range/frequency and source run
+with each acquisition. Inspection reports a sine-fit comparison within that scope
+and skips prediction outside it; raw traces and engineering limits are preserved.
+
+**Hysteresis check before Vπ measurement (2026-10-27):** the operator requested a
+simple forward/reverse DC acquisition, then explicitly requested longer captures.
+The notebook now exposes ±0.3 V, 31 points per direction, a requested 0.5 s bias
+ramp, 2 s settling and 2.147483648 s paired capture per point (decimation 16384).
+An additive `set_dc_offset()` preserves the enabled DC route between points;
+the original waveform setter and existing suites retain their behavior. DC
+preflight reuses the bench declarations/model without depending on sine settings.
+One two-file run bundle retains all raw buffers, commands, settings, calibration,
+source and failure/partial-read evidence. By operator clarification, a separate
+inspection cell plots PD capture means against saved OUT1 command readbacks, with
+within-capture PD standard deviations; IN2 remains a recorded drive monitor. The
+±0.3 V window is an interim guard rail, not the Vπ search range. A dedicated Vπ
+measurement will be designed after reviewing hysteresis; the operator's approximate
+0.8 V expectation is unverified. No automatic
+Vπ/hysteresis fit or absolute electrode calibration is claimed. All 79 instrument
+software tests passed, including DC route continuity and interruption checks.
+Fake-backend notebook checks cover successful scans/plots, clipping, partial reads,
+interruptions, post-read failure retention and rejection before connection. This
+operator-interrupted first stepped run retained 27 complete increasing-bias
+captures and zero/off cleanup readbacks. IN2 followed the previous calibration
+within 3.72 mV, while PD means spanned 28.7 mV; the reverse branch was not reached.
+Physical settling, optical drift and any branch differences remain bench questions.
+
+The subsequent complete 62-capture run
+`vpi_scan_20261027T205108Z_b6bf2a6e` retained unclipped paired data and zero/off
+cleanup readbacks. Matching OUT1 settings showed PD branch differences up to
+3.420 mV versus monitor differences up to 1.895 mV; sampled PD minima were near
+−0.18 V increasing and −0.22 V decreasing. This is branch dependence, not evidence
+isolating intrinsic hysteresis from drift/settling. Broader fringe discovery is
+now drafted, with the operator explicitly retaining the 3211's 10 Vpp input limit.
+The existing preamp gain/margins permit about ±0.506 V RP; the chosen discovery
+settings are ±0.5 V, 51 points per direction with unchanged longer timing.
+The notebook shares one visible DC acquisition/plot implementation between the
+two scans, retains interrupted-run inspection and per-run code/config provenance,
+and adds a manual read-off estimate from adjacent interior extrema on one branch.
+Unresolved endpoints are rejected; no phase target or Vπ value is assumed.
+An excursion of π then back differs from 2π coverage in each direction, which
+requires 2Vπ of voltage span. The ±0.3 V command-to-monitor calibration remains
+limited to its tested range; discovery does not extend its calibration claim.
+Fake-backend checks pass for both scan widths, saved plots, boundary rejection,
+fault/interrupt retention and a known synthetic read-off interval. The wider
+discovery scan has not been run on hardware; no independent electrode calibration
+or intrinsic hysteresis conclusion is claimed.
+
+**Cycling Vπ convergence (2026-10-27, supersedes the notebook's active DC steps):**
+the operator requested an adaptive near-1 Hz sine calibration instead of the slow
+stepped discovery. Existing saved DC runs and device APIs remain intact. The
+notebook now grows a sine from 0.1 V peak inside a combined bias/peak ±0.5 V RP
+window, uses actual frequency readback (nominally 1.0477378964 Hz), and captures
+8.589934592 s per trial after 2 s settling. Resolved adjacent interior extrema on
+both directions trigger recentering and 20% overshoot. Convergence requires three
+consecutive usable per-direction estimates spanning at most 0.01 V; directions
+remain separate. Limits, poor visibility, distortion or insufficient repeatability
+do not become a converged result. A missing/weak IN2 response stops the experiment.
+
+Analysis explicitly fits the IN2 sine phase, constructs an RP-equivalent voltage
+coordinate from ASG amplitude (assuming positive linear quasi-static transfer),
+averages PD into 64 voltage bins per direction and locally interpolates extrema
+with quadratics. A sinusoidal-fringe residual check gates usable spacings. This
+is a model-dependent operational estimate, not measured instantaneous OUT1,
+independent electrode calibration or absolute phase accuracy. PD is not shifted
+to force branch agreement. Trial settings, processing/code, raw signed buffers,
+inferred curves and failure/partial-read evidence are retained in one run bundle.
+The old DC notebook execution blocks are replaced to avoid both protocols running
+on Run All. No device-wrapper or suite behavior changes accompany this increment.
+
+Ten fake-backend scenarios passed: known convergence, distinct stable branches,
+flat PD, unresolved range, drift, missing monitor, clipping, partial read,
+interruption and rejection before connection. Known synthetic half-wave intervals
+were recovered; branch differences were preserved. Schema/compilation checks pass;
+the saved real 0.3 V sine was inspected with the estimator without acquiring new
+data. No cycling-calibration hardware run or convergence result is claimed yet.
+
 **Owned PAX notebook sessions (2026-10-27):** following notebook connection tests,
 the user requested that PAX startup and shutdown happen entirely within the
 notebook and not leave a daemon/motor running between operations. The bounded

@@ -46,7 +46,7 @@ in returned status.
 
 **Attachment side effects:** sets `QT_QPA_PLATFORM=offscreen` if unset, opens SSH,
 requires `/tmp/loaded_fpga.inf` to identify an already-running Pyrpl FPGA, starts a
-separate monitor server (default port 2223), snapshots six registers and constructs
+separate monitor server (preferring port 2223), snapshots six registers and constructs
 a Pyrpl Scope. Scope construction/configuration can change shared scope state.
 There is no full Pyrpl initialization, FPGA reload, persisted module setup or
 output-routing/voltage command. Existing outputs can remain active.
@@ -66,10 +66,98 @@ reuse still needs bench verification. No process search or forced takeover occur
 Coordinate scope access: another session's changes could be overwritten by
 restoration. Repeated attach without closing raises an error.
 
-This interface intentionally provides no active output initialization or drive
-methods yet. Existing suite controllers retain those functions and their voltage
-bounds and cleanup. A notebook drive API needs a separately bounded change with
-explicit command limits, routing, initialization and safe-output behavior.
+With the default `monitor_port=None`, an `Address already in use` launch failure
+triggers up to three attempts on distinct private ports. Each starts a new monitor;
+no existing listener is borrowed or killed. `read_status()` reports the actual and
+preferred ports. An explicit `monitor_port=2223` is strict and fails if occupied.
+This follows an observed notebook bind failure; the error alone does not establish
+whether its cause was another client or recently closed transport state. Monitor
+cleanup also explicitly closes the underlying socket because the installed
+Pyrpl `MonitorClient.close()` can suppress a send error before closing its socket.
+Legacy scope-only controllers retain their explicit configured-port behavior.
+
+## Red Pitaya: explicit active drive and paired capture
+
+`RedPitaya.drive_session(...)` is an additional context-manager API. The monitor
+smoke test remains separate. An active session needs exclusive RP access and
+independent downstream protection. Unlike attachment, initial full Pyrpl startup
+can initialize the FPGA and primary monitor and disrupt existing RP sessions.
+Validate the amplifier/EOM wiring, engineering model, physical bounds and approved
+command envelope before entry; RP command bounds do not establish downstream HV.
+
+```python
+drive = RedPitaya.drive_session(
+    rp_hostname, profile=rp_config, ssh_host_key_sha256=ssh_host_key_sha256,
+    command_limits_v={"out1": approved_command_bounds_v},
+    frequency_limits_hz=approved_frequency_bounds_hz,
+    max_peak_v=approved_peak_command_v,
+)
+with drive:
+    command = drive.set_waveform("out1", offset_v=bias_command_v,
+                                 peak_v=peak_command_v, frequency_hz=test_frequency_hz)
+    capture = drive.capture(decimation=decimation,
+                            full_scale_v={"in1": 1.0, "in2": 20.0})
+```
+
+This example needs actual approved values; it is not a ready-to-run voltage
+recipe. Entry verifies the configured SSH fingerprint before active initialization,
+uses connection-only settings in RAM, clears competing routes and sets both ASGs
+to DC zero/off. It does not load the profile's module settings. Automatic monitor
+restart is disabled after initialization; a lost transport must not silently reset
+the FPGA during a drive. The currently supported waveforms are `sin` and `dc`.
+
+An output must have finite approved command bounds within +/-1 V including zero.
+Frequency and peak limits are explicit. The command ramps the bias through bounded
+DAC steps, then configures the waveform with its route off, checks register
+readbacks, and enables the selected route. Offset and peak are quantized within
+the approved bounds; requests, quantized setpoints and actual readbacks are retained
+separately in `last_command`. These are not measured terminal voltages. Waveform
+switching/route enabling and cleanup are not promises of a physically smooth HV
+transition; host timing and driver settling assumptions remain explicit.
+
+For a stepped DC scan, first enable DC with `set_waveform(..., waveform="dc",
+peak_v=0, frequency_hz=0)`, then use
+`drive.set_dc_offset("out1", offset_v=command_v, ramp_s=0.5)` at each point.
+This ramps only the offset register while preserving the enabled DC route;
+calling the waveform setter at every point would reconfigure the ASG and briefly
+disconnect the output. The bias-only method requires an already enabled DC
+waveform, retains bounded DAC quantization/readbacks and attempts zero/off cleanup
+on a write/readback failure or interruption. The existing waveform API is unchanged.
+
+`capture()` uses the existing 16384-sample, 14-bit Pyrpl format. Both inputs share
+one immediate-trigger, zero-delay, non-averaged frozen buffer. The returned mapping
+contains signed `raw_counts` in `[IN1, IN2]` order, `input_volts` derived by
+`counts / 8192 * declared_full_scale`, and `time_s` relative to the first stored
+sample. Jumper ranges are operator declarations, not sensed settings or calibration.
+Ring reordering is recorded explicitly; samples are not filtered or clipped.
+Time uses the configured clock-correction model, with the nominal scope-reported
+sample interval retained separately; it is not an independent clock measurement.
+Capture is not phase-trigger synchronized to the ASG command.
+
+The metadata retains pointer/freeze checks, scope settings before/after, ASG
+readbacks and host/available device timing. Clipping, moving buffers, changed
+settings and invalid data remain flagged in `metadata["issues"]`; returned data
+are retained rather than removed. A transport failure leaves available partial
+channels in `last_capture`. Callers must save raw data before scientific checks
+and avoid presenting a flagged capture as valid. Installed scope/ASG source is
+retained with connection evidence because this path uses version-sensitive APIs.
+
+Context exit attempts timer cancellation, route disabling and zero settings on
+both ASGs, verifies register readbacks, stops the scope, and releases the monitor
+socket and SSH resources. Cleanup avoids `Pyrpl.end_all()`'s broad remote
+`killall monitor_server`; startup remains subject to the installed driver's own
+behavior and the exclusive-access requirement. Body and cleanup errors are both
+preserved. `cleanup_evidence` survives closure and explicitly does not establish
+measured zero electrode voltage. Existing legacy suites and the standalone raw
+EOM tool are unchanged.
+
+The EOM notebook uses the old tool's pure envelope, sample-coverage and retained
+capture checks around this interface. Its first experiment is one bounded sine,
+with separate settings/preflight, acquisition and inspection cells. It saves
+`raw.npz` and `metadata.json` in a unique local folder, including available partial
+captures and execution/config/source evidence. Unknown limits remain `None` and
+unverified bench preconditions remain false; these intentionally stop preflight.
+No fits, automatic sweeps, smoothing, classification or reports are added.
 
 ## PAX: notebook-managed session
 

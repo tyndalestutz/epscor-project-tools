@@ -6,6 +6,7 @@ still changes shared scope registers; coordinate with other scope users.
 from datetime import datetime, timezone
 from pathlib import Path
 import time
+import secrets
 from types import SimpleNamespace
 
 
@@ -65,6 +66,14 @@ def _close_scope_monitor(p, ssh):
             session.client.client.close()
         except BaseException as error:
             errors.append(("monitor close", error))
+        # Installed MonitorClient.close() suppresses socket errors and can skip
+        # its socket.close() when sending the close header fails.
+        raw_socket = getattr(session.client.client, "socket", None)
+        if raw_socket is not None:
+            try:
+                raw_socket.close()
+            except BaseException as error:
+                errors.append(("monitor socket close", error))
     if ssh is not None:
         try:
             ssh.close()
@@ -78,7 +87,7 @@ def _close_scope_monitor(p, ssh):
         raise failure from errors[0][1]
 
 
-def _open_scope_monitor(host, profile, port):
+def _open_scope_monitor(host, profile, port, *, allow_port_fallback=False):
     """Shared implementation for notebooks and legacy scope-only connections."""
     import os
     import shlex
@@ -113,14 +122,28 @@ def _open_scope_monitor(host, profile, port):
             raise RuntimeError("RP is not marked as running the Pyrpl FPGA; refusing to reload it during passive measurement")
         executable = str(Path(connection.get("serverdirname", "/opt/pyrpl")) /
                          connection.get("monitor_server_name", "monitor_server"))
-        _, stdout, stderr = ssh.exec_command(f"{shlex.quote(executable)} {port}", timeout=5)
-        time.sleep(0.2)
-        if stdout.channel.exit_status_ready():
-            raise RuntimeError(f"Scope monitor did not start: {stderr.read().decode().strip()}")
-        client = MonitorClient(host, port, restartserver=unavailable)
+        selected_port = port
+        tried = {port}
+        attempts = 4 if allow_port_fallback else 1
+        for attempt in range(attempts):
+            _, stdout, stderr = ssh.exec_command(f"{shlex.quote(executable)} {selected_port}", timeout=5)
+            time.sleep(0.2)
+            if not stdout.channel.exit_status_ready():
+                break
+            message = stderr.read().decode().strip()
+            if "address already in use" not in message.lower() or attempt + 1 == attempts:
+                raise RuntimeError(f"Scope monitor did not start on port {selected_port}: {message}")
+            # Launch our own monitor elsewhere. Never connect to or kill the
+            # listener that already owns the requested port.
+            selected_port = 20000 + secrets.randbelow(30000)
+            while selected_port in tried:
+                selected_port = 20000 + (selected_port - 20000 + 1) % 30000
+            tried.add(selected_port)
+        client = MonitorClient(host, selected_port, restartserver=unavailable)
         session = _ScopeSession()
         session.client = _ScopeClient(client)
         session.previous = {}
+        session.monitor_port = selected_port
         p = SimpleNamespace(rp=session)
         # Capture incrementally so a partial failure can restore captured values.
         for address in _SAVED_REGISTERS:
@@ -146,18 +169,38 @@ class RedPitaya:
     it does not establish a zero-output state or undo arbitrary scope writes.
     """
 
-    def __init__(self, host, *, profile="scope_config", monitor_port=2223):
+    def __init__(self, host, *, profile="scope_config", monitor_port=None):
         if not host or not profile:
             raise ValueError("Specify an RP host and a Pyrpl profile")
-        if type(monitor_port) is not int or not 1 <= monitor_port <= 65535:
+        if monitor_port is not None and (type(monitor_port) is not int or not 1 <= monitor_port <= 65535):
             raise ValueError("monitor_port must be an integer in 1..65535")
-        self.host, self.profile, self.monitor_port = host, profile, monitor_port
+        self.host, self.profile = host, profile
+        self._auto_monitor_port = monitor_port is None
+        self._preferred_monitor_port = 2223 if monitor_port is None else monitor_port
+        self.monitor_port = self._preferred_monitor_port
         self._p = self._ssh = None
+
+    @staticmethod
+    def drive_session(host, *, profile="scope_config", ssh_host_key_sha256,
+                      command_limits_v, frequency_limits_hz, max_peak_v,
+                      frequency_correction=1.0):
+        """Explicit active session: initializes outputs at zero/off, then owns them.
+
+        The returned context manager supports set_waveform() and capture(). Exit
+        attempts zero/off on both outputs and releases its transports. This can
+        initialize the FPGA/primary Pyrpl monitor; exclusive RP access is required.
+        The caller must independently validate the downstream amplifier/EOM chain.
+        """
+        from ._rp_drive import RPDrive
+        return RPDrive(host, profile, ssh_host_key_sha256, command_limits_v,
+                       frequency_limits_hz, max_peak_v, frequency_correction)
 
     def attach_monitor(self):
         if self._p is not None:
             raise RuntimeError("RP monitor already attached; close it before attaching again")
-        self._p, self._ssh = _open_scope_monitor(self.host, self.profile, self.monitor_port)
+        self._p, self._ssh = _open_scope_monitor(self.host, self.profile, self._preferred_monitor_port,
+                                               allow_port_fallback=self._auto_monitor_port)
+        self.monitor_port = self._p.rp.monitor_port
         return self
 
     @property
@@ -175,6 +218,7 @@ class RedPitaya:
         registers = {f"{address:#010x}": int(self._p.rp.client.reads(address, 1)[0])
                      for address in _SAVED_REGISTERS}
         return {"host": self.host, "mode": "monitor_only", "monitor_port": self.monitor_port,
+                "preferred_monitor_port": self._preferred_monitor_port,
                 "scope_registers": registers,
                 "requested_monotonic_s": requested, "received_monotonic_s": time.monotonic(),
                 "received_utc": datetime.now(timezone.utc).isoformat()}
