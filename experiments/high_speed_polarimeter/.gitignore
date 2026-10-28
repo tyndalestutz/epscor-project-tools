@@ -1,2 +1,7 @@
 *
 !.gitignore
+# Track only each day's summary and its figures; runs, archives and notes stay local.
+!*/
+!*/SUMMARY.md
+!*/figures/
+!*/figures/*.png
