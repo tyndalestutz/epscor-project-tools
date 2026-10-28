@@ -142,8 +142,8 @@ class RPDrive:
         return {output: self.readback(output) for output in _OUTPUTS}
 
     def _validate(self, output, waveform, offset, peak, frequency):
-        if output not in self.limits or waveform not in {"dc", "sin"}:
-            raise ValueError("Select an output with approved limits and waveform 'dc' or 'sin'")
+        if output not in self.limits or waveform not in {"dc", "sin", "square"}:
+            raise ValueError("Select an output with approved limits and waveform 'dc', 'sin' or 'square'")
         offset, peak, frequency = (_finite(v, name) for v, name in
                                    ((offset, "offset_v"), (peak, "peak_v"), (frequency, "frequency_hz")))
         lo, hi = self.limits[output]
@@ -151,9 +151,9 @@ class RPDrive:
             raise ValueError("Waveform extrema exceed approved RP command limits")
         if waveform == "dc" and peak != 0:
             raise ValueError("DC requires peak_v=0")
-        if waveform == "sin" and (not 0 < peak <= self.max_peak or
+        if waveform != "dc" and (not 0 < peak <= self.max_peak or
                                   not self.frequency_limits[0] <= frequency <= self.frequency_limits[1]):
-            raise ValueError("Sine peak/frequency exceeds approved limits")
+            raise ValueError("AC peak/frequency exceeds approved limits")
         return offset, peak, frequency
 
     def set_waveform(self, output, *, waveform="sin", offset_v, peak_v, frequency_hz, ramp_s=.2):
@@ -170,7 +170,7 @@ class RPDrive:
         lo, hi = self.limits[output]
         min_code, max_code = max(-8192, math.ceil(lo*8192)), min(8191, math.floor(hi*8192))
         offset_command = min(max(round(offset*8192), min_code), max_code) / 8192
-        peak_command = math.floor(min(peak, offset_command-lo, hi-offset_command)*8192) / 8192 if waveform == "sin" else 0.
+        peak_command = math.floor(min(peak, offset_command-lo, hi-offset_command)*8192) / 8192 if waveform != "dc" else 0.
         self._validate(output, waveform, offset_command, peak_command, frequency)
         asg = getattr(self.p.rp, _OUTPUTS[output])
         started = time.monotonic()
@@ -191,7 +191,7 @@ class RPDrive:
             asg.output_direct = "off"
             # Round AC peak down, as in the raw tool. Do not increase the request.
             asg.setup(waveform=waveform, offset=offset_command, amplitude=peak_command,
-                      frequency=frequency if waveform == "sin" else 1.,
+                      frequency=frequency if waveform != "dc" else 1.,
                       start_phase=0., cycles_per_burst=0, trigger_source="immediately")
             actual = self.readback(output)
             if actual["cycles_per_burst"] != 0 or actual["random_phase"] or actual["start_phase_deg"] != 0:
@@ -199,7 +199,7 @@ class RPDrive:
             self._validate(output, actual["waveform"], actual["offset_v"], actual["amplitude_v"], actual["frequency_hz"])
             if abs(actual["offset_v"] - offset_command) > 1/8192 or abs(actual["amplitude_v"] - peak_command) > 1/8192:
                 raise RuntimeError("ASG amplitude/offset readback disagrees with request")
-            if waveform == "sin" and abs(actual["frequency_hz"] - frequency) > 125e6*self.correction/2**30:
+            if waveform != "dc" and abs(actual["frequency_hz"] - frequency) > 125e6*self.correction/2**30:
                 raise RuntimeError("ASG frequency readback disagrees with request")
             asg.output_direct = output
             self.last_command = {"requested": requested, "actual": self.readback(output),
@@ -253,6 +253,76 @@ class RPDrive:
             except BaseException as cleanup_error:
                 raise error from cleanup_error
             raise
+
+    def set_frequency(self, output, *, frequency_hz):
+        """Change an enabled AC waveform's frequency without interrupting its route or bias."""
+        previous = self.readback(output)
+        if previous["waveform"] == "dc" or previous["output_direct"] != output:
+            raise RuntimeError("Enable an AC waveform on this output before changing its frequency")
+        _, _, frequency = self._validate(output, previous["waveform"], previous["offset_v"],
+                                         previous["amplitude_v"], frequency_hz)
+        asg = getattr(self.p.rp, _OUTPUTS[output])
+        started = time.monotonic()
+        try:
+            asg.frequency = frequency
+            actual = self.readback(output)
+            if (abs(actual["frequency_hz"] - frequency) > 125e6*self.correction/2**30 or
+                    {k: v for k, v in actual.items() if k != "frequency_hz"} !=
+                    {k: v for k, v in previous.items() if k != "frequency_hz"}):
+                raise RuntimeError("ASG frequency/route readback disagrees with request")
+            self.last_command = {"requested": dict(output=output, frequency_hz=frequency), "actual": actual,
+                                 "requested_monotonic_s": started, "received_monotonic_s": time.monotonic(),
+                                 "meaning": "Frequency update with route and bias held; not measured delivered voltage"}
+            return self.last_command
+        except BaseException as error:
+            try:
+                self.close()
+            except BaseException as cleanup_error:
+                raise error from cleanup_error
+            raise
+
+    def network_sweep(self, output, *, input, frequencies_hz, amplitude_v, q=10., max_rbw_hz=1e4, acbandwidth_hz=5.):
+        """FPGA network analyzer (Pyrpl iq0, the same register steps as Iq.na_trace) on top of an enabled DC bias.
+
+        For each frequency the iq module drives `output` with a sine and demodulates `input` over a
+        resolution bandwidth rbw = min(f/q, max_rbw_hz). Returns actual frequencies, the complex
+        response (input volts per output volt, Pyrpl's normalization) and the rbw actually used.
+        """
+        previous = self.readback(output)
+        if previous["waveform"] != "dc" or previous["output_direct"] != output:
+            raise RuntimeError("Enable a DC bias on this output before a network sweep")
+        frequencies = [self._validate(output, "sin", previous["offset_v"], amplitude_v, f)[2] for f in frequencies_hz]
+        if not frequencies or min(_finite(v, "setting") for v in (q, max_rbw_hz, acbandwidth_hz)) <= 0:
+            raise ValueError("Give frequencies and positive q, max_rbw_hz and acbandwidth_hz")
+        iq = self.p.rp.iq0
+        iq.setup(frequency=frequencies[0], bandwidth=[max_rbw_hz, max_rbw_hz], gain=0, phase=0,
+                 acbandwidth=acbandwidth_hz, amplitude=0, input=input, output_direct=output,
+                 output_signal="output_direct")
+        rescale = 2.0**(-iq._LPFBITS) * 4.0  # Pyrpl's NA scaling ("4 is artefact of fpga code")
+        result = {"frequency_hz": [], "response": [], "rbw_hz": [], "input": input, "amplitude_v": amplitude_v,
+                  "acbandwidth_hz": iq.acbandwidth, "settle_and_average_rbw_periods": [.5, 1.]}
+        try:
+            iq.amplitude = amplitude_v
+            for index, f in enumerate(frequencies):
+                iq.bandwidth = [min(max(f / q, 1.186), max_rbw_hz)] * 2  # Pyrpl NA floor; options are 2x steps
+                rbw = iq.bandwidth[0]
+                iq._na_sleepcycles, iq._na_averages = round(125e6 * .5 / rbw), round(125e6 / rbw)
+                iq.frequency = f  # starts this point's settle + average
+                time.sleep((3 if index == 0 else 1) * 1.5 / rbw)  # Pyrpl's NA also waits 3x for the first point
+                result["frequency_hz"].append(float(iq.frequency))
+                result["response"].append(complex(iq._nadata * rescale / iq.amplitude))
+                result["rbw_hz"].append(float(rbw))
+        except BaseException as error:
+            try:
+                self.close()
+            except BaseException as cleanup_error:
+                raise error from cleanup_error
+            raise
+        finally:
+            if self.p is not None:
+                iq.amplitude = 0
+                iq.output_direct = "off"
+        return result
 
     def _scope_settings(self):
         scope = self.scope

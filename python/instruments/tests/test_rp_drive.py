@@ -319,3 +319,54 @@ def test_unapproved_limits_fail_without_driver_construction(board, limits):
     with pytest.raises(ValueError):
         session(board, command_limits_v=limits)
     assert not hasattr(board, "settings")
+
+
+def test_square_wave_uses_the_sine_bounds_and_readbacks(board):
+    with session(board) as drive:
+        command = drive.set_waveform("out1", waveform="square", offset_v=.1, peak_v=.005, frequency_hz=100.)
+        assert command["actual"]["waveform"] == "square" and command["actual"]["output_direct"] == "out1"
+        with pytest.raises(ValueError):
+            drive.set_waveform("out1", waveform="square", offset_v=.1, peak_v=0., frequency_hz=100.)
+        with pytest.raises(ValueError):
+            drive.set_waveform("out1", waveform="square", offset_v=.1, peak_v=.005, frequency_hz=1e9)
+    assert_zero_closed(board)
+
+
+def test_frequency_change_holds_route_and_bias_and_respects_limits(board):
+    with session(board) as drive:
+        with pytest.raises(RuntimeError, match="Enable an AC waveform"):
+            drive.set_frequency("out1", frequency_hz=100.)
+        drive.set_waveform("out1", offset_v=.1, peak_v=.005, frequency_hz=100.)
+        asg, before = board.rp.asg0, drive.readback("out1")
+        calls = len(asg.calls)
+        command = drive.set_frequency("out1", frequency_hz=200.)
+        assert len(asg.calls) == calls  # no ASG reconfiguration, route never switched off
+        assert command["actual"]["output_direct"] == "out1" and command["actual"]["offset_v"] == before["offset_v"]
+        assert abs(command["actual"]["frequency_hz"] - 200.) < 1
+        with pytest.raises(ValueError):
+            drive.set_frequency("out1", frequency_hz=1e9)
+    assert_zero_closed(board)
+
+
+def test_network_sweep_needs_dc_bias_respects_limits_and_turns_iq_off(board):
+    class IQ:
+        _LPFBITS, output_direct, amplitude, frequency, acbandwidth = 24, "off", 0., 0., 5.
+        bandwidth = [1e4, 1e4]
+        def setup(self, **values):
+            for key, value in values.items():
+                setattr(self, key, value)
+        @property
+        def _nadata(self):
+            return self.amplitude * 2**24 / 4 * (0.5 + 0.5j)
+    board.rp.iq0 = IQ()
+    with session(board) as drive:
+        with pytest.raises(RuntimeError, match="Enable a DC bias"):
+            drive.network_sweep("out1", input="in1", frequencies_hz=[100.], amplitude_v=.01)
+        drive.set_waveform("out1", waveform="dc", offset_v=.1, peak_v=0., frequency_hz=0.)
+        for bad in (dict(frequencies_hz=[1e9], amplitude_v=.01), dict(frequencies_hz=[100.], amplitude_v=.1)):
+            with pytest.raises(ValueError):
+                drive.network_sweep("out1", input="in1", **bad)
+        result = drive.network_sweep("out1", input="in1", frequencies_hz=[10., 1000.], amplitude_v=.01)
+        assert result["response"] == [0.5 + 0.5j] * 2 and result["rbw_hz"] == [1.186, 100.]  # 1.186 Hz floor
+        assert board.rp.iq0.amplitude == 0 and board.rp.iq0.output_direct == "off"
+        assert drive.readback("out1")["output_direct"] == "out1"  # bias untouched
