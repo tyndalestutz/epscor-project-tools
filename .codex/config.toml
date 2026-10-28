@@ -24,3 +24,12 @@ Do not substitute this role for the primary agent on difficult experimental
 physics or hardware-debugging questions.
 """
 config_file = "agents/reviewer.toml"
+
+[agents.adversary]
+description = """
+Fresh-context reviewer that checks work against the agreed measurement plan
+and Decisions table, and reports drift, unapproved processing, physics traps
+and excess complexity directly to the scientist. Read-only; never fixes.
+See workflow/roles/adversary.md.
+"""
+config_file = "agents/adversary.toml"
