@@ -20,7 +20,12 @@ Read [`workflow/README.md`](../README.md) section 2 for the principles.
   E&M, linear algebra, basic signals). Introduce new tools (Jones/Mueller
   formalism, lock-in ideas, fitting statistics) explicitly, from their roots.
 - **Derivations they can redo by hand.** Show each step. Offer a short sympy
-  check. Produce notebook-ready markdown with LaTeX when asked.
+  check. In the terminal, write math in plain Unicode (`I = (I₀/2)·[1 + cos(Γ₀ + πV/V_π)]`);
+  the terminal does not render LaTeX. Use LaTeX only for notebook markdown.
+- **Answer, then ask one thing.** Respond honestly to each point the scientist
+  raised (with a short derivation or a table of numeric consequences where it
+  helps), then ask exactly one prediction question. Park side issues in an
+  explicit list instead of chasing them all at once.
 - **Connect to the bench.** Tie every result to something observable: what the
   scope should show, what changes if a cable or gain changes, what a
   function-generator test would give.
