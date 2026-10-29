@@ -17,7 +17,7 @@ history: [roadmap before distillation](https://github.com/tyndalestutz/epscor-pr
 | 2 | Hygiene, retention policy, onboarding | Merged | [#4](https://github.com/tyndalestutz/epscor-project-tools/pull/4) — [inventory](data-inventory.md), [retention](data-retention.md) |
 | 3 | Scientific regression fixtures | Merged | [#5](https://github.com/tyndalestutz/epscor-project-tools/pull/5) — [fixtures](scientific-regression.md), [bench checklist](bench-regression-checklist.md) |
 | 4 | Read-only run reader | 4A, 4B merged; 4C audit merged; **completion decision pending** | [#7](https://github.com/tyndalestutz/epscor-project-tools/pull/7), [#8](https://github.com/tyndalestutz/epscor-project-tools/pull/8), [#9](https://github.com/tyndalestutz/epscor-project-tools/pull/9) — [reader coverage](experiment-reader.md) |
-| — | Notebook instrument wrappers (exception, below) | Merged | [#12](https://github.com/tyndalestutz/epscor-project-tools/pull/12) |
+| — | Notebook instrument wrappers (added early, below) | Merged | [#12](https://github.com/tyndalestutz/epscor-project-tools/pull/12) |
 | 5 | Portable configuration / bench profiles | Not started | |
 | 6 | Instrument lifecycle and ownership | Not started | |
 | 7 | Decompose large routine modules | Not started | |
@@ -25,17 +25,20 @@ history: [roadmap before distillation](https://github.com/tyndalestutz/epscor-pr
 
 - Offline suite: 618 passed (8 boundary, 82 instruments, 371 locking, 100
   high-speed, 57 field) on this branch, 2026-10-29. Software evidence only.
-- **Phase 4 decision for the scientist:** accept 4C's "boundary A" (native
-  metadata/text access plus the two existing consumers; deferrals listed in
-  [reader coverage](experiment-reader.md)) and close Phase 4, or name a gap.
+- **Phase 4 decision for the scientist:** the reader opens metadata, CSV and
+  JSONL from any run folder; it does not decode binary buffers (`.npz`) or
+  interpret each experiment's meaning. Either call that enough and close
+  Phase 4 ("boundary A" in [reader coverage](experiment-reader.md)), or name
+  what is missing.
 - Closed without merging: [#10](https://github.com/tyndalestutz/epscor-project-tools/pull/10)
   (automated EOM qualification/adaptive Vπ), superseded by the notebook approach.
 
-### Notebook-first exception
+### Notebook instruments (added early)
 
-By the scientist's request, `python/instruments` was added ahead of phases 5–6
-so notebooks can drive and read the Red Pitaya and PAX directly. It does not
-authorize a suite migration. See the [instrument README](../../python/instruments/README.md).
+The plan put instrument changes in phase 6. By the scientist's request,
+`python/instruments` was added now so notebooks can drive and read the Red Pitaya
+and PAX directly. It is a new path beside the existing suites, which are
+unchanged and not migrated to it. See the [instrument README](../../python/instruments/README.md).
 
 - Adds RP attach/readback/waveforms (sine, square, DC, frequency-only update,
   FPGA network sweep), owned PAX sessions (`PAX.local_session()`) and a standalone
