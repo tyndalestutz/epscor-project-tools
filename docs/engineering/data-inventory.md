@@ -41,10 +41,10 @@ No files were moved, deleted, untracked or rewritten.
 - **External literature:** `papers/` contains one proposal PDF. Retain existing
   records in this PR; future publication needs ownership/distribution review.
   Prefer citations/authorized links for new third-party literature.
-- **Caches/local state:** two tracked bytecode files and a 12585492-byte daemon
-  log exist under `python/PAX1000/`. Experiments also contain TeX auxiliary/log
-  products. These are candidates for later ownership review, not automatic
-  deletion: acquisition console logs can be essential provenance. Package-local
+- **Caches/local state:** the tracked PAX bytecode, legacy 12.6 MB daemon log and
+  Jupyter checkpoint copies were removed on 2026-10-29 (still in Git history).
+  Experiments also contain TeX auxiliary/log products. These are not automatic
+  deletions: acquisition console logs can be essential provenance. Package-local
   settings and caches already have subsystem ignore rules; settings are not
   portable bench profiles and must not contain credentials in public examples.
 

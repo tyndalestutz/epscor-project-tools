@@ -5,6 +5,8 @@ numpy==2.2.5
 matplotlib==3.10.9
 QtPy==2.4.3
 PyQt5==5.15.11
+# Serialize temporary owned-daemon configs; matches the existing bench dependency.
+tomli-w==1.2.0
 
 # Resolved transitive dependencies for the Python 3.10 software-only environment.
 contourpy==1.3.2

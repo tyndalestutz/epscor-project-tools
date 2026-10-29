@@ -1,5 +1,6 @@
 """Session ownership and reproducibility without instrument access."""
 import json
+from pathlib import Path
 from subprocess import CalledProcessError
 from unittest.mock import Mock
 
@@ -119,7 +120,8 @@ def test_provenance_records_revision_dirty_state_and_versions(monkeypatch):
     assert result["git_commit"] == "abc123"
     assert result["suite_dirty"] is True
     assert result["packages"]["pyrpl"] == "1.2.3"
-    assert git.call_args_list[1].args[0][-2:] == ["--", "."]
+    assert git.call_args_list[1].args[0][-3:] == ["--", ".", "../instruments"]
+    assert any(Path(root).name == "instruments" for root in result["source_roots"])
     json.dumps(result, allow_nan=False)
 
 

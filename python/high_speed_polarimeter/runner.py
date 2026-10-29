@@ -73,6 +73,7 @@ def execute(recipe, *, session_factory=None, acquire=None, mode="mock",
             if mode == "hardware":
                 from .config import LEGACY_ROOT
                 roots.append(LEGACY_ROOT)
+                roots.append(LEGACY_ROOT.parent / "instruments")
                 daemon_config = Path(recipe.config["pax_daemon_config_path"]).expanduser().resolve()
                 for path in (daemon_config, daemon_config.with_name("pax1000_daemon.py"), Path(recipe.config["rp_config"]).expanduser()):
                     if path.is_file():

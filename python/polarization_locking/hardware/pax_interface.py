@@ -5,8 +5,6 @@ import subprocess
 import sys
 import os
 import signal
-import math
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
@@ -16,29 +14,8 @@ except ImportError:  # pragma: no cover - import may be unavailable in some envi
     yaqc = None
 
 
-@dataclass
-class PAXReading:
-    timestamp: float
-    theta: float
-    eta: float
-    s1: float
-    s2: float
-    s3: float
-    dop: float
-    # Total optical power reported by the PAX at its own input port. Older
-    # daemon versions may omit it, in which case it is NaN.
-    ptotal: float = float("nan")
-    # Diagnostic telemetry passed through directly from YAQD's primary record.
-    # These are useful for identifying a bad acquisition/ADC condition without
-    # assigning any physical meaning in the lock controller.
-    revisions: float = float("nan")
-    adc_min: float = float("nan")
-    adc_max: float = float("nan")
-    rev_time: float = float("nan")
-
-
-class PAXNotReady(RuntimeError):
-    """No valid advancing record within the shared freshness timeout."""
+# Compatibility exports: existing suites keep their imports and reading schema.
+from instruments.pax import PAXReading, PAXNotReady, _parse_reading, _valid_reading
 
 
 class PAXController:
@@ -252,26 +229,7 @@ class PAXController:
         assert data is not None  # protected by the retry loop above
         self.last_raw_record = dict(data)
 
-        timestamp = float(data["timestamp"])
-        theta = float(data["theta"])
-        eta = float(data["eta"])
-        dop = float(data["dop"])
-        ptotal = float(data.get("ptotal", float("nan")))
-        revisions = float(data.get("revisions", float("nan")))
-        adc_min = float(data.get("adc_min", float("nan")))
-        adc_max = float(data.get("adc_max", float("nan")))
-        rev_time = float(data.get("rev_time", float("nan")))
-
-        # The notebook exposes theta and eta directly; the Stokes parameters are
-        # derived from these angles for the lock-loop model.
-        s1 = float(__import__("math").cos(2 * eta) * __import__("math").cos(2 * theta))
-        s2 = float(__import__("math").cos(2 * eta) * __import__("math").sin(2 * theta))
-        s3 = float(__import__("math").sin(2 * eta))
-
-        return PAXReading(
-            timestamp=timestamp, theta=theta, eta=eta, s1=s1, s2=s2, s3=s3, dop=dop, ptotal=ptotal,
-            revisions=revisions, adc_min=adc_min, adc_max=adc_max, rev_time=rev_time,
-        )
+        return _parse_reading(data)
 
     def read_fresh_polarization(self) -> PAXReading:
         """Return an initialized, advancing record or fail within a bounded wait.
@@ -290,13 +248,7 @@ class PAXController:
                 # completed measurement; non-finite angles also cannot form Stokes.
                 time.sleep(0.01)
                 continue
-            values = (reading.timestamp, reading.revisions, reading.theta, reading.eta,
-                      reading.dop, reading.ptotal, reading.adc_min, reading.adc_max, reading.rev_time)
-            valid = (all(math.isfinite(value) and abs(value) < 1e30 for value in values)
-                     and reading.timestamp > 0 and reading.revisions > 0 and reading.rev_time > 0
-                     and 0 <= reading.adc_min < reading.adc_max < 65520
-                     and abs(reading.theta) <= math.pi / 2 and abs(reading.eta) <= math.pi / 4
-                     and reading.dop >= 0 and reading.ptotal > 0)
+            valid = _valid_reading(reading)
             if valid:
                 current = (reading.timestamp, reading.revisions)
                 if previous is not None and all(now > before for now, before in zip(current, previous)):

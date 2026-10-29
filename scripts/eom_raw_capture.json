@@ -1,0 +1,104 @@
+{
+  "output_directory": "experiments/_local",
+  "rp_hostname": "192.168.1.98",
+  "rp_config": "scope_config",
+  "rp_output": "out1",
+  "frequency_correction": 1.0,
+  "hardware": {
+    "board": "STEMlab 125-14",
+    "eom": "repaired New Focus 4004",
+    "amplifier": "New Focus 3211 with preamp",
+    "wavelength_nm": 830.0,
+    "tec_conditions": "RECORD CURRENT CONDITIONS",
+    "notes": "Fixed input and effective analyzer at 45 degrees to EOM axes; PBS/PD retained"
+  },
+  "confirmed": {
+    "wiring_and_optics": false,
+    "adc_jumpers": false,
+    "chain_model_and_limits": false,
+    "independent_hardware_protection": false,
+    "zero_startup_profile": false,
+    "exclusive_rp_access": false
+  },
+  "adc_full_scale_v": [
+    1.0,
+    20.0
+  ],
+  "limits": {
+    "command_v": [
+      0.0,
+      0.45
+    ],
+    "amplifier_input_v": [
+      -5.0,
+      5.0
+    ],
+    "electrode_v": [
+      -200.0,
+      200.0
+    ],
+    "monitor_adc_v": [
+      -6.0,
+      6.0
+    ],
+    "frequency_hz": [
+      3.0,
+      10000.0
+    ],
+    "ac_peak_command_max_v": 0.005
+  },
+  "chain": {
+    "preamp_gain": 8.89,
+    "preamp_offset_v": 0.0,
+    "amplifier_input_margin_v": 0.5,
+    "electrode_gain_per_command_v": 355.6,
+    "electrode_offset_v": 0.0,
+    "electrode_margin_v": 20.0,
+    "monitor_scale_v_per_v": 30.0,
+    "monitor_zero_v": 0.0,
+    "monitor_polarity": 1,
+    "monitor_conversion_calibrated": false,
+    "monitor_conversion_evidence": "Nominal only; not an absolute electrode calibration",
+    "monitor_disagreement_electrode_v": 50.0
+  },
+  "dc": {
+    "low_v": 0.0,
+    "high_v": 0.45,
+    "points": 41,
+    "cycles": 2,
+    "buffers_per_point": 1,
+    "decimation": 1024
+  },
+  "dynamic": {
+    "bias_v": 0.05,
+    "bias_confirmed": false,
+    "bias_evidence": "Select after DC scan, or explicitly record operator override",
+    "peak_amplitudes_v": [
+      0.005
+    ],
+    "frequency_low_hz": 3.0,
+    "frequency_high_hz": 10000.0,
+    "log_points": 50,
+    "extra_frequencies_hz": [
+      4500.0,
+      4750.0,
+      4900.0,
+      5000.0,
+      5100.0,
+      5250.0,
+      5500.0
+    ],
+    "passes": [
+      "ascending",
+      "descending"
+    ],
+    "buffers_per_frequency": 2,
+    "min_cycles": 5.0,
+    "min_samples_per_cycle": 32,
+    "triangle_frequencies_hz": []
+  },
+  "settle_s": 0.5,
+  "ramp_s": 0.2,
+  "capture_timeout_s": 15.0,
+  "ssh_host_key_sha256": "W5g8Qcvu7r+8mMQZInHzNLpvOpYsvnCvo5hwYkWJCRY"
+}
