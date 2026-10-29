@@ -412,24 +412,27 @@ are assigned. High-risk phases should split further; evidence can revise orderin
 
 This refinement preserves the phase sequence above. The checkpoint inspected
 main `72590f5`; it is a plan, not authorization for later implementation.
-Phases 0–3 and Phase 4 increment 1 are merged. CI/setup and root navigation now
-exist; corresponding entries in section E describe the original baseline.
-The latest reviewed PR #7 CI passed 508 software tests; physical qualification
-and archive provisioning remain outstanding.
+Phases 0–3 and Phase 4 increments 1/4B are merged (#7/#8); current audit base
+is `bc305a7`. CI/setup and root navigation exist; section E records the original
+baseline. PR #8 review CI passed 527 tests on its generated merge ref, not a
+separate post-merge run. Physical qualification and archive provisioning remain open.
 
 | Next checkpoint | Bounded work and simplification | Exit evidence |
 | --- | --- | --- |
-| **4B — Second reader consumer (in progress)** | Adopt existing CSV ingestion in `reports/plot_continuous_cross_sweep.py`; keep its typed projection, numerical/report behavior and standalone CSV inputs. Remove replaced ingestion/import only; no reader API expansion. | Compare two saved schema variants and synthetic edge cases before/after; distinguish parsing rejection from existing missing-value handling; verify report failure propagation, source immutability and offline CI. |
-| **4C — Coverage and completion decision** | Reconcile the existing format inventory with actually tested support and remaining consumers. Two locking consumers do not establish cross-application semantic support. Prioritize any necessary metadata/status/partial-run cases before new decoders. | Each family has evidence, support level and an explicit retained/deferred decision. Agree the finite Phase 4 boundary; no silent exclusion or automatic promise to implement every decoder. |
+| **4B — Second reader consumer (merged #8)** | Adopt existing CSV ingestion in `reports/plot_continuous_cross_sweep.py`; keep its typed projection, numerical/report behavior and standalone CSV inputs. Remove replaced ingestion/import only; no reader API expansion. | Compare two saved schema variants and synthetic edge cases before/after; distinguish parsing rejection from existing missing-value handling; verify report failure propagation, source immutability and offline CI. |
+| **4C — Coverage and completion decision (in progress)** | Reconcile the existing format inventory with actually tested support and remaining consumers. Two locking consumers do not establish cross-application semantic support. Prioritize any necessary metadata/status/partial-run cases before new decoders. | Each family has evidence, support level and an explicit retained/deferred decision. Agree the finite Phase 4 boundary; no silent exclusion or automatic promise to implement every decoder. |
 | **5A / 5B — Characterize, then separate configuration** | Map defaults and precedence across CLI, saved recipes, local settings and bench inputs; then migrate one bounded group using existing recipe machinery. Avoid a parallel configuration framework. | Old recipes resolve to the same effective values; units, calibration/reference ownership and overrides explicit. Physical changes need separate bench checks. |
 | **6A / 6B — Characterize, then harden ownership** | Trace shared RP/PAX startup, partial connection, passive/active modes, interruption, daemon ownership and cleanup; fix one demonstrated gap at a time. | Mock fault/repetition coverage plus an approved, executed bench protocol for physical claims. Preserve distinct runner statuses until a compatibility contract justifies change. |
 | **7 — Decompose characterized families** | Extract one cohesive family or calculation; migrate its callers and remove replaced private code when proven redundant. Preserve supported entry points and scientific algorithms. Review provenance coverage of shared source outside package roots. | Behavioral equivalence, relevant physical checks and demonstrably fewer responsibilities/duplicate paths; small helpers need a real consumer. |
 | **8 and later design work** | Validate colleague onboarding and operational workflow; then scope experiment, side-tool, processing and report templates around stabilized contracts. User-facing redesign, report content/LaTeX standards and pipeline reorganization require their own design decisions. | Demonstrated workflow and explicit user agreement; templates reuse established services rather than copy complete implementations. |
 
-Phase 4B adopts native CSV ingestion in the existing continuous report loader;
-its typed projection and report failure boundaries remain in place. Saved-record
-equivalence, parser-boundary and temporary-report checks accompany this change;
-review/merge remain pending. Phase 4C is not started.
+Phase 4B merged as [#8](https://github.com/tyndalestutz/epscor-project-tools/pull/8),
+`bc305a7`, preserving typed projection and report failure boundaries. Phase 4C
+[reconciles every inventoried family](experiment-reader.md) and recommends boundary
+A: native metadata/text access, documented structural recognition and the two
+qualified consumers are sufficient after explicit review accepts all listed
+deferrals. No blocking production follow-up is identified for that boundary.
+Phase 4 stays in progress pending the completion decision; Phase 5A is not started.
 
 Simplicity checks apply to every increment: name the existing consumer, identify
 what duplicated responsibility is removed, justify every new abstraction and
@@ -520,7 +523,7 @@ Candidate directions above are not approved designs.
 | Decision | Evidence needed | Likely phase |
 | --- | --- | --- |
 | Archival datasets versus transient generated files | [Inventory](data-inventory.md) and [retention policy](data-retention.md) define future Git/archive handling and optional `experiments/_local/`; existing records/defaults stay intact. Archive ownership/location, replication, recovery and migration authorization remain open. | Policy in PR 2; migration separate |
-| Shared run-reader model/version compatibility | Representative legacy/EOM/PAX-only schemas, consumer needs and failure cases | PR 4 |
+| Shared run-reader model/version compatibility | Native metadata/text boundary and per-family retained/deferred evidence in [reader coverage](experiment-reader.md); completion boundary A awaits review. Full semantic/binary adapters need an actual consumer and integrity contract. | PR 4C decision pending |
 | Bench-profile format/calibration-record ownership | Historical recipes, effective-default comparisons, units and calibration provenance | PR 5 |
 | Cross-application instrument locking | Actual access paths, exclusive-use requirements and fault/recovery behavior | PR 6 |
 | PAX daemon lifecycle/recovery policy | Local/remote startup, replacement, teardown and interrupted-session characterization | PR 6 |
@@ -538,7 +541,7 @@ Blank links mean no actual GitHub PR is recorded. Planned entries are unimplemen
 | PR 1 | Offline regression infrastructure | Merged | [#3](https://github.com/tyndalestutz/epscor-project-tools/pull/3) | Merge `5827091`; [offline testing guide](offline-testing.md), 445 software checks and failure-propagation evidence |
 | PR 2 | Hygiene and onboarding | Merged | [#4](https://github.com/tyndalestutz/epscor-project-tools/pull/4) | Merge `42e8d61`; retention policy and optional local workspace; no historical migration |
 | PR 3 | Characterization/fixtures | Merged | [#5](https://github.com/tyndalestutz/epscor-project-tools/pull/5) | Merge `0a6f70a`; [coverage/fixtures](scientific-regression.md) and [bench requirements](bench-regression-checklist.md); synthetic software evidence, not bench validation |
-| PR 4 | Read-only run interfaces | In progress | [Increment 1: #7](https://github.com/tyndalestutz/epscor-project-tools/pull/7) | Increment 1 merged as `d037a04`: bounded metadata inspection, lazy native CSV/JSONL and timing-audit ingestion; 508 offline CI tests passed. [Coverage/limits](experiment-reader.md). Second-consumer adoption proposed in [handoff #6](https://github.com/tyndalestutz/epscor-project-tools/issues/6#issuecomment-6205951225), not implemented. Bulk decoding and full family semantics deferred; phase not complete |
+| PR 4 | Read-only run interfaces | In progress / completion decision pending | [#7](https://github.com/tyndalestutz/epscor-project-tools/pull/7), [#8](https://github.com/tyndalestutz/epscor-project-tools/pull/8) | Increment 1 merged `d037a04`; 4B merged `bc305a7`. [Coverage and proposed boundary A](experiment-reader.md): review explicit deferrals before closing Phase 4; no new decoder/consumer required by this proposal |
 | PR 5 | Portable configuration | Planned | | Preserve effective recipe behavior |
 | PR 6 | Lifecycle/ownership | Planned | | Bench access and approved protocol required |
 | PR 7 | Routine decomposition | Planned | | Per-family regression gates |

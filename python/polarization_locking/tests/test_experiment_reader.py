@@ -292,3 +292,121 @@ def test_runner_recognition_rejects_unsupported_schema_without_borrowing(tmp_pat
     assert run.family == 'unknown'
     assert run.metadata['run.json']['schema_version'] == version
     assert any(d.code == 'unsupported' and d.path.name == 'run.json' for d in run.diagnostics)
+
+
+@pytest.mark.parametrize('failure,cleanup_failure,execution', [
+    (None, False, 'COMPLETED'), ('read', False, 'FAILED'),
+    ('interrupt', False, 'INTERRUPTED'), (None, True, 'COMPLETED'),
+])
+def test_reader_keeps_real_mock_runner_outcomes_independent(tmp_path, failure, cleanup_failure, execution):
+    """Actual producer schema, synthetic lifecycle only; reports can outlive failure."""
+    from high_speed_polarimeter.config import Recipe
+    from high_speed_polarimeter.experiments.mock_lifecycle import acquire
+    from high_speed_polarimeter.hardware import MockSession
+    from high_speed_polarimeter.runner import execute
+
+    class Session(MockSession):
+        def disconnect(self):
+            if cleanup_failure:
+                raise RuntimeError('synthetic cleanup failure')
+            super().disconnect()
+
+    def collect(session, recipe, directory):
+        acquire(session, recipe, directory)
+        if failure == 'read':
+            raise RuntimeError('synthetic acquisition failure')
+        if failure == 'interrupt':
+            raise KeyboardInterrupt('synthetic interruption')
+
+    state = execute(Recipe(config={'results_directory': str(tmp_path)}),
+                    session_factory=Session, acquire=collect)
+    directory = Path(state['directory'])
+    before = snapshot(directory)
+    run = inspect_run(directory)
+    assert run.family == 'high_speed_polarimeter'
+    assert run.outcomes == dict(execution=execution,
+        cleanup='FAILED' if cleanup_failure else 'COMPLETED',
+        quality_evaluation='COMPLETED', scientific_verdict='UNKNOWN', reporting='COMPLETED')
+    assert read_metadata(run, 'run.json') == state
+    assert list(iter_records(run, 'mock_events.jsonl')) == [
+        {'kind': 'synthetic_lifecycle_event', 'index': i} for i in range(3)]
+    assert snapshot(directory) == before
+
+
+@pytest.mark.parametrize('experiment', ['single_eom_characterization',
+                                       'dual_eom_characterization', 'eom_vpi_hysteresis'])
+def test_native_acquisition_reads_do_not_run_postprocessing_or_decode_pd(tmp_path, monkeypatch, experiment):
+    """Producer-backed mock bundles, not measured calibration/timing evidence."""
+    import csv
+    from high_speed_polarimeter.config import Recipe
+    from high_speed_polarimeter.runner import execute
+
+    config = dict(results_directory=str(tmp_path), points=2, settle_s=0.,
+                  pd_duration_s=.001, pax_samples_per_point=1)
+    if experiment == 'eom_vpi_hysteresis':
+        config = dict(results_directory=str(tmp_path), points=7, pax_samples_per_point=2,
+                      undriven_baseline_s=.2, stage_settle_s=.01, vpi_fit_max_command_v=.45)
+    state = execute(Recipe(experiment=experiment, config=config))
+    directory = Path(state['directory'])
+    assert state['status'] == 'COMPLETED'
+    before = snapshot(directory)
+
+    # Import before patching: this report binds an analysis alias at import time.
+    # Otherwise an alias of a temporary test stub could leak into the next case.
+    from high_speed_polarimeter.reports import vpi as vpi_report
+
+    def forbid(*args, **kwargs):
+        pytest.fail('Native reading executed postprocessing')
+
+    monkeypatch.setattr('high_speed_polarimeter.quality.reevaluate', forbid)
+    monkeypatch.setattr('high_speed_polarimeter.quality_vpi.evaluate', forbid)
+    monkeypatch.setattr('high_speed_polarimeter.analysis.vpi.analyze', forbid)
+    monkeypatch.setattr(vpi_report, 'create_report', forbid)
+    original_open = Path.open
+
+    def no_pd_open(path, *args, **kwargs):
+        assert path.name != 'pd_raw.npy', 'Reader must not decode concatenated arrays'
+        return original_open(path, *args, **kwargs)
+
+    with monkeypatch.context() as guard:
+        guard.setattr(Path, 'open', no_pd_open)
+        run = inspect_run(directory)
+        assert run.family == 'high_speed_polarimeter'
+        assert run.metadata['run.json'] == state
+        assert read_metadata(run, 'acquisition.json')['schema_version'] == 1
+        events = list(iter_records(run, 'events.jsonl'))
+        assert events[-1]['kind'] == 'acquisition_completed'
+        if experiment == 'eom_vpi_hysteresis':
+            assert 'pd_raw.npy' not in run.artifacts
+            with (directory/'data.csv').open(newline='') as stream:
+                expected = list(csv.DictReader(stream))
+            assert list(iter_records(run, 'data.csv')) == expected
+        else:
+            assert 'pd_raw.npy' in run.artifacts
+            assert any(e['kind'] == 'command_requested' for e in events)
+            assert all(e['units'] == 'V' for e in events if e['kind'] == 'pd_capture')
+    assert snapshot(directory) == before
+
+
+@pytest.mark.parametrize('name,status', [('195031_raw-phi1_repeatability-1s', 'completed'),
+                                        ('200242_raw-phi1_fine-brackets-3s', 'interrupted')])
+def test_retained_raw_calibration_preserves_native_status_and_unknowns(name, status):
+    import csv
+    from itertools import islice
+    directory = Path(__file__).resolve().parents[3]/'experiments/polarization_locking/2026-09-18'/name
+    selected = [directory/'run.json', directory/'data.csv']
+    before = [(p.stat().st_mtime_ns, hashlib.sha256(p.read_bytes()).digest()) for p in selected]
+    expected_metadata = json.loads(selected[0].read_text())
+    with selected[1].open(newline='') as stream:
+        expected_rows = list(islice(csv.DictReader(stream), 3))
+    run = inspect_run(directory)
+    assert run.family == 'raw_calibration'
+    assert read_metadata(run, 'run.json') == expected_metadata
+    assert run.outcomes == dict(execution=status, cleanup=None, quality_evaluation=None,
+                                scientific_verdict=None, reporting=None)
+    iterator = iter_records(run, 'data.csv')
+    try:
+        assert list(islice(iterator, 3)) == expected_rows
+    finally:
+        iterator.close()
+    assert before == [(p.stat().st_mtime_ns, hashlib.sha256(p.read_bytes()).digest()) for p in selected]
