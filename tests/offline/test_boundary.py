@@ -57,8 +57,6 @@ else:
 
 @pytest.mark.parametrize('script', [
     "from polarization_locking.cli import main; assert main(['--list']) == 0",
-    "from high_speed_polarimeter.__main__ import main; assert main(['--dry-run', '--profile', 'python/high_speed_polarimeter/profiles/vpi-hysteresis-example.json']) == 0",
-    "from high_speed_polarimeter.__main__ import main; assert main(['--dry-run', '--tool', 'pax-live']) == 0",
 ])
 def test_preflight_does_not_import_session_or_drivers(script):
     child(script + "; import sys; assert not ({'numpy','pyrpl','yaqc','polarization_locking.app'} & set(sys.modules))")

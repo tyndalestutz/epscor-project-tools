@@ -8,7 +8,7 @@ bounded objective each. This roadmap is strategy and status. Agent rules are in
 Earlier versions of this file kept increment-by-increment notes. Read them in
 history: [roadmap before distillation](https://github.com/tyndalestutz/epscor-project-tools/blob/8e2c24d/docs/engineering/refactor-roadmap.md).
 
-## Status (2026-10-29)
+## Status (2026-11-04)
 
 | Phase | Objective | Status | PRs |
 | --- | --- | --- | --- |
@@ -23,11 +23,16 @@ history: [roadmap before distillation](https://github.com/tyndalestutz/epscor-pr
 | 7 | Decompose large routine modules | Not started | |
 | 8 | Colleague onboarding and handoff | Not started | |
 
-- Offline suite: 549 passed (8 boundary, 82 instruments, 302 locking, 100
-  high-speed, 57 field), 2026-10-29. Software evidence only.
+- Offline suite: 447 passed (6 boundary, 82 instruments, 302 locking, 57
+  field), 2026-11-04, after removing the EOM suite. Software evidence only.
 - Phase 4 dropped by the scientist: reading run folders is simple enough to do
   directly (or with an agent) and can be templated later. The cross-sweep timing
   audit and continuous report read their files as they did before #7/#8.
+- EOM characterization suite removed by the scientist (2026-11-04, #14):
+  `python/high_speed_polarimeter` and `scripts/eom_raw_capture*`. EOM work is
+  notebook-based on `python/instruments`; day records stay in
+  `experiments/high_speed_polarimeter/`. Field propagation is planned to move to
+  one to three clean notebooks.
 - Closed without merging: [#10](https://github.com/tyndalestutz/epscor-project-tools/pull/10)
   (automated EOM qualification/adaptive Vπ), superseded by the notebook approach.
 
@@ -69,11 +74,8 @@ Full policy is in [AGENTS.md](../../AGENTS.md). For refactoring specifically:
 ```text
 polarization_locking    catalog -> runner -> app session -> routines
   (mature bench app)          |                    |
-                              +--- RP / PAX controllers <---+
-                              -> CSV, metadata, reports      |
-high_speed_polarimeter  catalog -> runner -> mock/hardware   |
-                              legacy adapter ----------------+
-                              -> events, raw buffers, quality, reports
+                              +--- RP / PAX controllers
+                              -> CSV, metadata, reports
 instruments             notebook RP/PAX wrappers (shares RP transport, PAX parsing)
 field_propogation       Jones/Stokes models: raw inputs -> freeze -> predict -> held-out compare
 ```
@@ -82,10 +84,8 @@ field_propogation       Jones/Stokes models: raw inputs -> freeze -> predict -> 
   recipes, provenance, interruption retention and cleanup. See its
   [README](../../python/polarization_locking/README.md) and
   [maintenance guide](../../python/polarization_locking/docs/maintaining.md).
-- **high_speed_polarimeter:** EOM characterization with full signed PD buffers,
-  command events and host timing; reuses the locking app's RP/PAX controllers,
-  so those controllers are a **shared regression surface**.
-  [README](../../python/high_speed_polarimeter/README.md).
+- **EOM work:** notebooks on `python/instruments` (the former
+  `high_speed_polarimeter` suite was removed in #14).
 - **field_propogation:** independent of live control. Keep it that way, and keep
   the import spelling. [README](../../python/field_propogation/README.md).
 - The two runners use different run schemas and status conventions (lowercase vs

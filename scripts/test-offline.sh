@@ -7,11 +7,11 @@ cd -- "$repo_root"
 python_bin=${PYTHON:-python}
 suites=("$@")
 if (( ${#suites[@]} == 0 )); then
-    suites=(instruments polarization_locking high_speed_polarimeter field_propogation)
+    suites=(instruments polarization_locking field_propogation)
 fi
 for suite in "${suites[@]}"; do
     case "$suite" in
-        instruments|polarization_locking|high_speed_polarimeter|field_propogation) ;;
+        instruments|polarization_locking|field_propogation) ;;
         *) echo "Unknown suite: $suite" >&2; exit 2 ;;
     esac
 done

@@ -1,3 +1,0 @@
-numpy
-matplotlib
-# Bench mode additionally uses existing polarization_locking hardware dependencies.

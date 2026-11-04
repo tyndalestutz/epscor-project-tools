@@ -1,9 +1,0 @@
-__pycache__/
-*.py[cod]
-.pytest_cache/
-results/
-*.log
-*.tmp
-local-config*.json
-.local-settings.json*
-.local-pax-settings.json*
