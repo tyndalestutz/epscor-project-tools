@@ -1,5 +1,7 @@
 # Scientific regression coverage and limits
 
+> Historical inventory (PR 3). Rows mentioning the high-speed / EOM suite refer to `python/high_speed_polarimeter`, removed in #14 (2026-11-04); its `eom` fixture was removed with it.
+
 PR 3 starts at integrated `42e8d61c7d5d4b8198510cc34eb3df5fb33187b6`.
 The existing 445 tests remain intact: 8 offline boundary, 302 locking,
 97 high-speed and 38 field. See [offline setup](offline-testing.md) and

@@ -12,17 +12,12 @@ than an instrument-provided timestamp.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-
-if not __package__:
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
-from experiment_reader import RunInfo, iter_records, read_metadata
 
 
 def _unit(values: np.ndarray) -> np.ndarray:
@@ -297,9 +292,9 @@ def _combined_summary(
 
 
 def analyze(run_directory: Path, maximum_lag_s: float, step_s: float) -> dict[str, Any]:
-    run = RunInfo(Path(run_directory).resolve())
-    acquisition = read_metadata(run, "acquisition.json", max_bytes=None)
-    rows = list(iter_records(run, "data.csv"))
+    acquisition = json.loads((run_directory / "acquisition.json").read_text())
+    with (run_directory / "data.csv").open(newline="") as handle:
+        rows = list(csv.DictReader(handle))
     required = {"pax_transaction_midpoint_s", "segment_id", "phase", "s1", "s2",
                 "s3", "dop", "pax_ptotal"}
     missing = required - set(rows[0]) if rows else required

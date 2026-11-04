@@ -8,7 +8,7 @@ bounded objective each. This roadmap is strategy and status. Agent rules are in
 Earlier versions of this file kept increment-by-increment notes. Read them in
 history: [roadmap before distillation](https://github.com/tyndalestutz/epscor-project-tools/blob/8e2c24d/docs/engineering/refactor-roadmap.md).
 
-## Status (2026-10-29)
+## Status (2026-11-04)
 
 | Phase | Objective | Status | PRs |
 | --- | --- | --- | --- |
@@ -16,20 +16,23 @@ history: [roadmap before distillation](https://github.com/tyndalestutz/epscor-pr
 | 1 | Hardware-free regression tests + CI | Merged | [#3](https://github.com/tyndalestutz/epscor-project-tools/pull/3) — [offline testing](offline-testing.md) |
 | 2 | Hygiene, retention policy, onboarding | Merged | [#4](https://github.com/tyndalestutz/epscor-project-tools/pull/4) — [inventory](data-inventory.md), [retention](data-retention.md) |
 | 3 | Scientific regression fixtures | Merged | [#5](https://github.com/tyndalestutz/epscor-project-tools/pull/5) — [fixtures](scientific-regression.md), [bench checklist](bench-regression-checklist.md) |
-| 4 | Read-only run reader | 4A, 4B merged; 4C audit merged; **completion decision pending** | [#7](https://github.com/tyndalestutz/epscor-project-tools/pull/7), [#8](https://github.com/tyndalestutz/epscor-project-tools/pull/8), [#9](https://github.com/tyndalestutz/epscor-project-tools/pull/9) — [reader coverage](experiment-reader.md) |
+| 4 | Read-only run reader | **Dropped** 2026-10-29: reader removed, its two consumers restored | [#7](https://github.com/tyndalestutz/epscor-project-tools/pull/7), [#8](https://github.com/tyndalestutz/epscor-project-tools/pull/8), [#9](https://github.com/tyndalestutz/epscor-project-tools/pull/9) (reverted) |
 | — | Notebook instrument wrappers (added early, below) | Merged | [#12](https://github.com/tyndalestutz/epscor-project-tools/pull/12) |
-| 5 | Portable configuration / bench profiles | Not started | |
+| 5 | Portable configuration / bench profiles | **Next: 5A** | |
 | 6 | Instrument lifecycle and ownership | Not started | |
 | 7 | Decompose large routine modules | Not started | |
 | 8 | Colleague onboarding and handoff | Not started | |
 
-- Offline suite: 618 passed (8 boundary, 82 instruments, 371 locking, 100
-  high-speed, 57 field) on this branch, 2026-10-29. Software evidence only.
-- **Phase 4 decision for the scientist:** the reader opens metadata, CSV and
-  JSONL from any run folder; it does not decode binary buffers (`.npz`) or
-  interpret each experiment's meaning. Either call that enough and close
-  Phase 4 ("boundary A" in [reader coverage](experiment-reader.md)), or name
-  what is missing.
+- Offline suite: 447 passed (6 boundary, 82 instruments, 302 locking, 57
+  field), 2026-11-04, after removing the EOM suite. Software evidence only.
+- Phase 4 dropped by the scientist: reading run folders is simple enough to do
+  directly (or with an agent) and can be templated later. The cross-sweep timing
+  audit and continuous report read their files as they did before #7/#8.
+- EOM characterization suite removed by the scientist (2026-11-04, #14):
+  `python/high_speed_polarimeter` and `scripts/eom_raw_capture*`. EOM work is
+  notebook-based on `python/instruments`; day records stay in
+  `experiments/high_speed_polarimeter/`. Field propagation is planned to move to
+  one to three clean notebooks.
 - Closed without merging: [#10](https://github.com/tyndalestutz/epscor-project-tools/pull/10)
   (automated EOM qualification/adaptive Vπ), superseded by the notebook approach.
 
@@ -71,13 +74,9 @@ Full policy is in [AGENTS.md](../../AGENTS.md). For refactoring specifically:
 ```text
 polarization_locking    catalog -> runner -> app session -> routines
   (mature bench app)          |                    |
-                              +--- RP / PAX controllers <---+
-                              -> CSV, metadata, reports      |
-high_speed_polarimeter  catalog -> runner -> mock/hardware   |
-                              legacy adapter ----------------+
-                              -> events, raw buffers, quality, reports
+                              +--- RP / PAX controllers
+                              -> CSV, metadata, reports
 instruments             notebook RP/PAX wrappers (shares RP transport, PAX parsing)
-experiment_reader.py    read-only run inspection (Phase 4)
 field_propogation       Jones/Stokes models: raw inputs -> freeze -> predict -> held-out compare
 ```
 
@@ -85,10 +84,8 @@ field_propogation       Jones/Stokes models: raw inputs -> freeze -> predict -> 
   recipes, provenance, interruption retention and cleanup. See its
   [README](../../python/polarization_locking/README.md) and
   [maintenance guide](../../python/polarization_locking/docs/maintaining.md).
-- **high_speed_polarimeter:** EOM characterization with full signed PD buffers,
-  command events and host timing; reuses the locking app's RP/PAX controllers,
-  so those controllers are a **shared regression surface**.
-  [README](../../python/high_speed_polarimeter/README.md).
+- **EOM work:** notebooks on `python/instruments` (the former
+  `high_speed_polarimeter` suite was removed in #14).
 - **field_propogation:** independent of live control. Keep it that way, and keep
   the import spelling. [README](../../python/field_propogation/README.md).
 - The two runners use different run schemas and status conventions (lowercase vs
@@ -113,8 +110,11 @@ separation in the physics models.
 
 ## Next phases
 
-- **5 — Configuration.** First map defaults and precedence (CLI, recipes, local
-  settings, bench inputs). Then migrate one group using existing recipe machinery.
+- **5A — Map configuration (next).** Read-only: list where each setting comes
+  from (code defaults, CLI, saved recipes, local settings, notebook settings
+  cells) and which bench facts (RP address, wavelength, gains, channel map) are
+  hard-coded. No code changes. Exit: one short table the scientist agrees with.
+- **5B — Configuration.** Migrate one group using existing recipe machinery.
   Exit: old recipes resolve to the same effective values.
 - **6 — Lifecycle.** Trace RP/PAX startup, partial connection, interruption, daemon
   ownership and cleanup. Exit: mock fault tests plus an approved, executed bench
@@ -159,7 +159,6 @@ and an agreed bench-verification plan first.
 
 | Decision | Needs | Phase |
 | --- | --- | --- |
-| Phase 4 completion (boundary A) | Scientist review of listed deferrals | 4 |
 | Archive location/ownership for large data | Backups, restore test, migration approval | open |
 | Bench-profile format and calibration-record ownership | Recipe/default comparison, units, provenance | 5 |
 | Cross-application instrument locking | Real access paths, fault/recovery behavior | 6 |

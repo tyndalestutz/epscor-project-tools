@@ -48,11 +48,11 @@ Other missing TeX packages cause a visible report-test failure.
 | --- | --- | ---: |
 | `instruments` | Driver-free imports, fake RP monitor/readback/restoration/failures, PAX client ownership/raw records/freshness and shared-source provenance | New increment; see actual run results |
 | `polarization_locking` | Catalog/recipes, menu persistence, numerical/control helpers, mocked controller/lifecycle behavior, interruption, logging, real offscreen Qt, analysis and PDFs | 302 |
-| `high_speed_polarimeter` | Mock lifecycle/EOM acquisition, retained buffers/events, mappings, quality/reporting, rough Vπ guards, shared tools and CLI subprocesses | 97 |
+| ~~`high_speed_polarimeter`~~ (removed in #14) | Mock lifecycle/EOM acquisition, retained buffers/events, mappings, quality/reporting, rough Vπ guards, shared tools and CLI subprocesses | 97 |
 | `field_propogation` | Jones/Stokes propagation, physical conventions, measured-input/freeze/held-out workflows, spatial models, selected archived comparisons and TeX/PDF regeneration | 38 |
 
 Counts are evidence from the reviewed baseline, not required totals. No existing
-tests are removed or excluded. Eight additional checks in
+tests are removed or excluded. Six additional checks in
 [tests/offline](../../tests/offline) verify the offline boundary and driver-free
 preflight in fresh Python children. All application suites run in separate pytest
 processes using their existing configurations; field tests retain their unittest
@@ -64,7 +64,6 @@ To run an individual suite with the same isolation and boundary checks:
 ```bash
 bash scripts/test-offline.sh polarization_locking
 bash scripts/test-offline.sh instruments
-bash scripts/test-offline.sh high_speed_polarimeter
 bash scripts/test-offline.sh field_propogation
 # Select an interpreter without activating it:
 PYTHON=/tmp/epscor-offline-venv/bin/python bash scripts/test-offline.sh

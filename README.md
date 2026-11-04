@@ -10,7 +10,7 @@ physical measurement validity requires a recorded, verified bench setup.
 | --- | --- |
 | [Shared instruments](python/instruments/README.md) | Explicit notebook device access: monitor-only RP attachment/readback and PAX attachment/raw/fresh reads; existing suites remain supported |
 | [Polarization locking](python/polarization_locking/README.md) | Bench diagnostics, feedback, PAX monitoring and reusable recipes; [operating procedure](python/polarization_locking/docs/operating-procedure.md), [profiles](python/polarization_locking/profiles), [offline analysis](python/polarization_locking/analysis/README.md) |
-| [High-speed polarimeter](python/high_speed_polarimeter/README.md) | Mock and hardware EOM acquisition, retained raw buffers/events and rough PAX-only Vπ characterization; [profiles](python/high_speed_polarimeter/profiles). Full instrument calibration and Stokes reconstruction remain future work. |
+| [Notebooks](notebooks) | EOM characterization and alignment are done in notebooks on the shared instruments (e.g. `Tutorial-EOM_performance_characterization.ipynb`); day records in `experiments/<project>/YYYY-MM-DD/` |
 | [Jones-field models](python/field_propogation/README.md) | Independent propagation/detector models and measured-input workflows; [measurement protocol](python/field_propogation/docs/measurement_acquisition.md), [historical fit audit](python/field_propogation/docs/historical_fit_audit.md) |
 | [Polarization visualization](python/polarization_visualization/README.md) | Visualization and associated experiment tools |
 
@@ -39,7 +39,6 @@ interfaces, which inspect configuration without acquisition:
 
 ```bash
 python python/polarization_locking/test-suite.py --list
-PYTHONPATH=python python -m high_speed_polarimeter --dry-run --profile python/high_speed_polarimeter/profiles/vpi-hysteresis-example.json
 ```
 
 Mocks, numerical analysis and offline reports use software inputs and supported
