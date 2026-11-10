@@ -21,7 +21,7 @@
 | Run | Readings in step order |
 |---|---|
 | 1 (`232611`) | 0 → 1.37; 0.02 → 8.47; 0.05 → 19.09; 0.10 → 36.6; 0 → 1.25; −0.02 → −5.79; −0.05 → −16.25; −0.058 → −18.89; −0.06 → −19.28; −0.07 → −19.29; −0.10 → −19.27; 0 → 1.51 |
-| 2 (`233133`) | 0 → 1.37; 0.05 → 19.09; 0.10 → 36.67; 0.15 → 54.33; 0.20 → 71.8; 0.25 → 89.3; 0.30 → 106.9; 0.35 → 124.3; 0.40 → 141.8; 0 → 0.7, then 1.01, 1.1, 1.3, 1.33, 1.35 over ≈ 1 min |
+| 2 (`233133`) | 0 → 1.37; 0.05 → 19.09; 0.10 → 36.67; 0.15 → 54.33; 0.20 → 71.8; 0.25 → 89.3; 0.30 → 106.9; 0.35 → 124.3; 0.40 → 141.8; 0 → 0.6 instantly, 0.7, then 1.01, 1.1, 1.3, 1.33, 1.35 over ≈ 1 min |
 | 3 (`234027`) | 0.40 → 142.1; 0.45 → 159.5; 0.50 → 177.1; 0.55 → 194.6; 0.60 → 212.0; 0.65 → 229.5; 0.70 → 246.9; 0 → −0.4 |
 | 4 (`234404`) | 0.70 → 247.7; 0.75 → 265.0; 0.80 → 281.8; 0.85 → 299.3; 0.90 → 316.9; 0.95 → 334.3; 1.00 → 351.4; 0 → −1.7, "on its way to positive" |
 
@@ -39,7 +39,7 @@ Repeatability: 0.05 V 19.09/19.09; 0.10 V 36.6/36.67; 0.40 V 141.8/142.1; 0.70 V
 |---|---|
 | 302 DC transfer (redrawn): line through the Decision 15 points (−0.05 V, +1.00 V) = 350.1 V/V; bottom: departure from that line (pinned points and post-step undershoot visible) | ![](figures/1b_dmm_transfer_350p1.png) |
 | Original tag-team figure: its line is the two-point gain through +0.05 V and +1.00 V (349.8 V/V) on the 1.38 V settled zero, **not** Decision 15 | ![](figures/1a_dmm_transfer_original_349p8.png) |
-| Agent DC maps with the EOM connected: PD vs command (per-capture mean ± sd): flat below ≈ −0.059 V in the three fine maps (215239, 220023, 220710) although level and slope differ; not clear in the operator's 21:34 run or in 221356 (drift within the run) | ![](figures/2_pd_knee_maps.png) |
+| Agent DC maps with the EOM connected: PD vs command (per-capture mean ± sd): flat below ≈ −0.059 V in 214935 (kept in `runs/`) and the three fine maps (215239, 220023, 220710) although level and slope differ; not clear in the operator's 21:34 run or in 221356 (drift within the run) | ![](figures/2_pd_knee_maps.png) |
 | PD over the campaign, outputs off (black) and driven: wander and jumps without drive (per-capture means) | ![](figures/3_undriven_pd_timeline.png) |
 
 ## Open items

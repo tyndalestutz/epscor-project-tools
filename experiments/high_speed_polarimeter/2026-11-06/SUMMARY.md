@@ -16,7 +16,7 @@ first frequency response.
 | 1 | 302 DC gain (EOM disconnected) | **350.1 V/V** (−0.05 V → −16.25 V; +1.00 V → +351.4 V); per step 358 → 350 V/V | raw DMM, two-point (Decision 15) | 11-05 tag team 1–4 |
 | 2 | 302 output range | linear to **+351.4 V** at +1.00 V (RP maximum); **pins at −19.3 V** for ≤ −0.06 V | raw DMM | 11-05 tag team 1–4 |
 | 3 | 302 zero and recovery | settled +1.25 … +1.51 V; right after returning from 142 / 247 / 351 V: +0.6 / −0.4 / −1.7 V, recovering over tens of seconds | raw DMM, timing approximate | 11-05 tag team 2–4 |
-| 4 | Preamp in front of the 302 (rejected) | preamp gain ≈ 10.1–10.2× (label 8.89); with the 302 connected the preamp→302 node stops at **0.247 V**, so the 302 output tops out ≈ 60 V above its zero | raw DMM | `175858`, `190115`, `191013` |
+| 4 | Preamp in front of the 302 (rejected) | preamp gain ≈ 10.1–10.5× (label 8.89); with the 302 connected the preamp→302 node stops at **0.247 V**, so the 302 output tops out ≈ 60 V above its zero | raw DMM | `175858`, `190115`, `191013` |
 | 5 | Tee, RP direct | 0.9752 × command + 1.8 mV (worst miss 1.7 mV) | raw, two-point (Decision 1) | `192127_drive-check` |
 | 6 | Fringe | PD 173.6 mV peak, −2.6 … −3.2 mV lowest sample (dark not subtracted); peak and trough both turn over inside the sweep | raw | `192222_vpi` |
 | 7 | **Vπ (retardance), command** | **0.84 ± 0.02 V** (peak 0.08 → trough 0.90 V at the tee, read by eye; ÷ tee gain) | raw read (Decision 17, proposed) ÷ tee gain (Decision 4, pending) | `192222_vpi`, `192127_drive-check` |
@@ -32,8 +32,8 @@ Error bars on rows 7–8 are the spread of independent readings (agent and adver
 
 1. **11-05: first connection.** An autonomous agent campaign (gate ±0.10 V) found that the PD stops responding below about −0.059 V command. A tag team (agent holds a voltage, operator types the DMM reading across the 302 outputs, EOM disconnected) then mapped the 302 to the RP maximum: 350.1 V/V, linear to +351 V, pinned at −19.3 V. That pin is the PD knee.
 2. **11-06, preamp (17:55–19:13).** To reach ≈ 420 V the preamp was put in front of the 302. The 302 output flattened at ≈ 77 V (≈ 60 V after re-zeroing the bias). Unloaded, the preamp stayed linear to 0.366 V (×10.2). Loaded by the 302, its output stopped at 0.247 V, while the 302 kept following its input (320 V/V incremental). The preamp was removed: **RP direct (−19 … +351 V) is the usable drive.**
-3. **11-06, notebook (19:21–19:28).** Sine on a DC offset (0.47 ± 0.52 V command ≈ −18 … +347 V, about 1.2–1.4 Vπ). The halfway-crossing method needs ≈ 1.5 Vπ, so Vπ was read as peak → trough on the raw XY. Bias at the midpoint (+0.5006 V command, quadrature). Then step, stepped sine and network analyzer at ±0.02 V.
-4. **Review.** Adversary A (code only, predicting failure modes), adversary B (independent data analysis) and the agent agreed. Ruled out by the data: IN2 clipping (8029 of 8191 counts at +1 V), the −19 V pin flattening the low end, pickup spikes at the step edge, bias drift during the sweep (mean PD 85.4–85.5 mV), and the PD setting the knee.
+3. **11-06, notebook (19:21–19:28).** Sine on a DC offset (0.47 ± 0.52 V command ≈ −16 … +348 V from the DMM table, about 1.2–1.4 Vπ). The halfway-crossing method needs ≈ 1.5 Vπ, so Vπ was read as peak → trough on the raw XY. Bias at the midpoint (+0.5006 V command, quadrature). Then step, stepped sine and network analyzer at ±0.02 V.
+4. **Review.** Adversary A (code only, predicting failure modes), adversary B (independent data analysis) and the agent agreed. Ruled out by the data: IN2 clipping (8029 of 8191 counts at +1 V), the −19 V pin flattening the low end, pickup spikes at the step edge, and bias drift large enough to matter (mean PD 83.5–85.9 mV over the whole sweep). The PD setting the knee is unlikely (recalled spec, below) but not tested.
 
 ## Physics used
 
@@ -43,7 +43,7 @@ A peak and the next trough differ in phase by π, so their x-distance is $V_\pi$
 
 ## Small-signal bandwidth vs large-signal slew rate (LV vs HV)
 
-**Small signal (what was measured).** While the driver is linear, output and input are related by a transfer function, $V_\text{out}(f) = H(f)\,V_\text{in}(f)$, and the −3 dB point is where $|H| = 1/\sqrt 2$. Linearity means $H$ does not depend on amplitude: a ±7 V test and a ±0.7 V test give the same knee. Today's 0.6–0.75 MHz is this number, for the whole chain, at ±0.02 V command (±7 V at the 302, about 2.4 % of Vπ peak to peak).
+**Small signal (what was measured).** While the driver is linear, output and input are related by a transfer function, $V_\text{out}(f) = H(f)\,V_\text{in}(f)$, and the −3 dB point is where $|H| = 1/\sqrt 2$. Linearity means $H$ does not depend on amplitude: a ±7 V test and a ±0.7 V test give the same knee. Today's 0.6–0.75 MHz is this number, for the whole chain, at ±0.02 V command (±7 V at the 302: ±2.4 % of Vπ, 4.8 % peak to peak).
 
 **Large signal (what was not measured).** An HV amplifier has a maximum output current $I_\text{max}$, and the EOM plus cable is a capacitor $C$. Since $I = C\,dV/dt$, the output cannot change faster than the slew rate
 $$SR = \left|\frac{dV}{dt}\right|_\text{max} \;\le\; \frac{I_\text{max}}{C}\quad(\text{or less, from internal stages}).$$
@@ -53,7 +53,7 @@ Unlike the small-signal knee, $f_\text{FP}$ **falls as the amplitude grows**. Ab
 
 **Which limit binds.** The two are equal at $V_p^* = SR / (2\pi f_{-3\,\text{dB}})$. For $V_p < V_p^*$ the small-signal knee sets the bandwidth; above $V_p^*$ the slew rate does. So "the 302 + EOM have 670 kHz of bandwidth" is true only for small swings. A polarimeter that drives the EOM through a large fraction of Vπ needs $f_\text{FP}$ at that amplitude.
 
-**What today's data allow (inferred, a lower bound).** At 632 kHz and ±0.02 V command (7.0 V commanded at the 302; perhaps ≈ 5 V delivered, since the chain is −2.9 dB there) the PD stayed sinusoidal (figure 5): 3rd harmonic 0.34 %, at the noise floor, not ≈ 11 %. Then
+**What today's data allow (inferred, a lower bound).** At 632 kHz and ±0.02 V command (7.0 V commanded at the 302; perhaps ≈ 5 V delivered, since the chain is −2.7 to −2.9 dB there (stepped sine / network analyzer)) the PD stayed sinusoidal (figure 5): 3rd harmonic 0.34 % (neighbouring frequencies 0.06–0.14 %), far below ≈ 11 %. Then
 $$SR \gtrsim 2\pi \times 632\ \text{kHz} \times (5\text{–}7\ \text{V}) \approx 20\text{–}28\ \text{V/µs},$$
 and for a full-Vπ swing ($V_p ≈ 147$ V)
 $$f_\text{FP} \gtrsim \frac{20\text{–}28\ \text{V/µs}}{2\pi \times 147\ \text{V}} \approx 21\text{–}30\ \text{kHz}.$$
@@ -75,7 +75,7 @@ This is loose: the chain attenuates the 1.9 MHz harmonic itself, so a little dis
 
 ## Findings (calibrated)
 
-1. **The Vπ is real.** Peak and trough turn over inside the window in all 5 buffers and in up and down sweeps (agree within ≈ 5 mV). The fringe slid ≈ 8 mV in 45 s but the peak-to-trough spacing did not change. The DMM table read directly at the two commands gives 294.6 V, and the small-signal slope matches $\pi B/V_\pi$ within 1–2 %.
+1. **The Vπ is real.** Peak and trough turn over inside the window in all 5 buffers and in up and down sweeps (agree within ≈ 5 mV). The fringe slid ≈ 8 mV in 45 s but the peak-to-trough spacing did not change. Reading the DMM table directly at the two commands gives 294.6 V (arithmetic on the same 11-05 data as the gain, not an independent check), and the small-signal slope matches $\pi B/V_\pi$ within 1–2 %.
 2. **The ≈ 0.6–0.75 MHz knee is real, and belongs to the whole chain, not the EOM.** Two independent methods agree. The PDA100A2 at 0 dB is ≈ 11 MHz (recalled from the Thorlabs table, not checked), so it is unlikely to set the knee; the 302 driving the EOM capacitance (perhaps with the adapter wiring) is the likely limit, inferred, with no HV-side measurement.
 3. **The roll-off is not a single pole**, so the step's 865 kHz is a symptom of that shape, not a cross-check of the swept result. The bump near 1.0 MHz is repeatable and unexplained (a resonance, e.g. acoustic in the crystal, or the adapter wiring are guesses).
 4. **The preamp cannot drive the 302** above 0.247 V; whether that is a current limit, clamping or a low 302 input impedance is not separated.
