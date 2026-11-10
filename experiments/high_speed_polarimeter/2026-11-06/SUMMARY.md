@@ -6,7 +6,9 @@ first connected on 2026-11-05 (DC transfer by DMM, see `../2026-11-05/SUMMARY.md
 first frequency response.
 
 **Notebook:** `notebooks/Tutorial-EOM_performance_characterization.ipynb` (acquisition and analysis, executed 19:21–19:28 UTC; the drift stage was not run).
+
 **Kept runs:** `runs/`. Everything from the 11-05/06 agent campaign and tag team is in `../2026-11-05/agent_302_campaign_2026-11-05-06.tar.xz` (verified by `diff -r`). Operator corrections to logged bench facts are in each run's `operator_corrections.md` (`metadata.json` untouched). Working notes, agent and adversary reviews: `agent_notes_2026-11-06.md`; scripts in `sources/`.
+
 **Bench:** 830 nm; RP OUT1 → BNC tee (→ IN2, LV) → **Conoptics 302** (bias needle ≈ 225 V, re-set by the operator after the preamp tests) → push-pull outputs → enclosed 16 AWG adapter (centre of one output → SMA centre, centre of the other → SMA ground) → Thorlabs EO-PM-NR-C1 (insulating box, TEC 11.70 set / 11.63 read) → input HWP 300°, QWP 130°, analyzer HWP 230° → PBS → PDA100A2 at 0 dB → IN1 (LV). BNC shells of the push-pull connections at the EOM enclosure grounded to chassis (see note).
 
 ## Findings
@@ -19,7 +21,7 @@ first frequency response.
 | 4 | Preamp in front of the 302 (rejected) | preamp gain ≈ 10.1–10.5× (label 8.89); with the 302 connected the preamp→302 node stops at **0.247 V**, so the 302 output tops out ≈ 60 V above its zero | raw DMM | `175858`, `190115`, `191013` |
 | 5 | Tee, RP direct | 0.9752 × command + 1.8 mV (worst miss 1.7 mV) | raw, two-point (Decision 1) | `192127_drive-check` |
 | 6 | Fringe | PD 173.6 mV peak, −2.6 … −3.2 mV lowest sample (dark not subtracted); peak and trough both turn over inside the sweep | raw | `192222_vpi` |
-| 7 | **Vπ (retardance), command** | **0.84 ± 0.02 V** (peak 0.08 → trough 0.90 V at the tee, read by eye; ÷ tee gain) | raw read (Decision 17, proposed) ÷ tee gain (Decision 4, pending) | `192222_vpi`, `192127_drive-check` |
+| 7 | **Vπ (retardance), command** | **0.84 ± 0.02 V** (peak 0.08 → trough 0.90 V at the tee, read by eye; ÷ tee gain) | raw read (Decision 17) ÷ tee gain (Decision 4, pending) | `192222_vpi`, `192127_drive-check` |
 | 8 | **Vπ at the EOM** | **≈ 294 ± 8 V** (11-04 prediction 272–318 V) | **inferred**: 302 gain measured with the EOM disconnected at the 11-05 needle setting | + row 1 |
 | 9 | **Small-signal −3 dB, whole chain** (302 + adapter + EOM + PD), ±7 V at the 302 | **≈ 0.6–0.75 MHz**: 668.6 kHz stepped sine, 671.0 kHz network analyzer; phase −92° there | processed (Decisions 8–12; phase unwrap pending) | `192600_sweep`, `192720_network` |
 | 10 | Shape of the roll-off | not a single pole: ≈ 0.19 µs delay, steeper than 20 dB/decade above the knee, repeatable bump near 1.0 MHz in both methods | processed / inferred | same |
@@ -87,7 +89,7 @@ Without grounding the push-pull BNC connections at the EOM enclosure, a static 6
 
 ## Decisions status
 
-Approved: 1, 5–9, 11, 10 and 12 (reference band only), 15 (two-point HV gain), 16 (offset sine); bias by hand from the raw XY; settle 30 s; `hv_limit_v` 420 V (operator confirmed the EOM and chain handle it). **Pending:** 4 (÷ tee gain), 10 (phase unwrap part), 17 (Vπ = |peak − trough| read by eye), the edge warning. Retired for this window: halfway crossings (Decisions 2–3; need ≥ 1.5 Vπ).
+Approved: 1, 5–9, 11, 10 and 12 (reference band only), 15 (two-point HV gain), 16 (offset sine); bias by hand from the raw XY; settle 30 s; `hv_limit_v` 420 V (operator confirmed the EOM and chain handle it). 17 (Vπ = |peak − trough| read by eye; approved 2026-11-10, operator's own reading: peak 0.08–0.09 V, trough 0.90 V at the tee). **Pending:** 4 (÷ tee gain), 10 (phase unwrap part), the edge warning. Retired for this window: halfway crossings (Decisions 2–3; need ≥ 1.5 Vπ).
 
 ## Open items (ranked)
 
