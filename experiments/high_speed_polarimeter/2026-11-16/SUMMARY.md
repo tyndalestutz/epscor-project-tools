@@ -16,6 +16,21 @@ driver off for undriven captures. EO-PM-NR-C1: RP OUT1 → tee (IN1) → Conopti
 11.63, 302 left on at 0 V command for undriven captures (≈ +1.3 V from the 302). RP loopback check 11-16 (drivers off):
 OUT1 → IN1 0.97 V/V (zero −5.4 mV), OUT2 → IN2 1.02 V/V, crosstalk < 0.3 mV.
 
+## EOM fact sheet (quick-look, check-only)
+
+| | Newport 4004 (repaired) | Thorlabs EO-PM-NR-C1 |
+|---|---|---|
+| Drive this week | RP OUT2 → preamp → 3211; 0 ± 0.283 V cmd (no DC part) | RP OUT1 → 302; 0.47 ± 0.46 V cmd (≈ +165 V DC part) |
+| Axis (PAX frame) | ≈ S₂, 45° · raw | ≈ S₁, 0° · raw |
+| Vπ (command) | 0.508–0.509 V · processed (10-28 on OUT1: 0.514) | 0.840 V · processed (11-06 on OUT1: 0.84 ± 0.02) |
+| Transmission m₀₀ | 0.86 · processed, DoP-free (power ratio B/A) | ≈ 0.97 (B/A power at 0 V) · raw |
+| Diattenuation / polarizance | ≤ 0.01 · processed | not computed |
+| Γ₀ over the session | −122° → −125° (≈ 1 h 20 min) · processed | −6° → −50°, history-dependent · processed |
+| Off-axis DoP at B, rested | 0.68–0.72 · **PAX DoP, caveat** | 0.97–0.98 (down to 0.31 after driving) · **PAX DoP, caveat** |
+| On-axis DoP at B | 1.00–1.02 · PAX DoP | ≈ 1.01 · PAX DoP |
+| A→B blank difference | 0.6° (H input) | 0.2° (D input) |
+| Valid for | this mounting (floating roll), 0 ± 0.28 V cmd, ≤ 0.23 Hz | 0.01–0.93 V cmd, ≤ 1.9 Hz; Γ₀ depends on drive history |
+
 ## Findings (quick-look, check-only)
 
 | # | Quantity | Value | Category | Source |
@@ -32,7 +47,7 @@ OUT1 → IN1 0.97 V/V (zero −5.4 mV), OUT2 → IN2 1.02 V/V, crosstalk < 0.3 m
 | 10 | Thorlabs stress run | pre −48.5°; first reading after HV off −59.5° (first 10 s mean −58.2°); 5 min later −51.1° | processed (mean direction) | stress_watch |
 | 11 | Thorlabs DoP after driving | 05_A post 0.31 (0.26–0.38); 01_D post 0.81; stress post (first 10 s) 0.79 → 0.90; rested 0.97–0.98 | raw (means) | blocks, stress_watch |
 | 12 | Unplug test (Thorlabs, at rest) | no step at shield taps; ≈ 0.35° settle after unplugging (−48.25 → −48.6°); drift −0.04°/min before and after | processed (mean direction, linear slope as a check) | relax_watch |
-| 13 | Seat roll A→B | 4004 session 0.6° (1.24° on sphere); Thorlabs session 0.2° (0.38°) | raw | 08_H, 07_y |
+| 13 | A→B difference from the blank ("seat roll") | 4004 session 0.6° (1.24° on sphere, H input); Thorlabs session 0.2° (0.38°, D input). The two differ; with one input per blank, seat re-seating at B, state-dependent PAX error and beam-angle changes after realignment cannot be separated (next time: H, D, L in one blank) | processed (mean direction) | 08_H, 07_y |
 | 14 | RP sine frequency step | 125 MHz / 2³⁰ = 0.1164 Hz; periods 8.590 s, 4.295 s | RP readback | all sweeps |
 
 ## How we got there
@@ -61,6 +76,10 @@ With a sine drive $\Gamma(t)=\Gamma_0+A\sin\omega t$, odd harmonics carry $\sin\
 |---|---|
 | Thorlabs stress run: angle about S₁ (raw, from θ, η), undriven zoom, DoP; HV window shaded | ![](figures/stress_run.png) |
 | Thorlabs 0 V state through the session (off-axis inputs; drive periods shaded; rotation includes seat roll) | ![](figures/session_history.png) |
+| Sweep arcs on the Poincaré sphere, one sphere per EOM: circles about S₂ (4004) and S₁ (Thorlabs); raw directions, no DoP | ![](figures/poincare_sweeps.png) |
+| Vπ per off-axis block (processed; no DoP); reference values measured on OUT1 | ![](figures/vpi_by_block.png) |
+| Bracket quality: power and direction change between the seat-A captures of each block (raw; no DoP) | ![](figures/bracket_quality.png) |
+| 4004 Mueller matrix at 0 V ÷ m₀₀ — **PROCESSED and DoP-DEPENDENT**: the 0.71 rotation block rests on the PAX DoP | ![](figures/m0_4004_dop_dependent.png) |
 
 ## Findings (calibrated)
 
@@ -70,12 +89,13 @@ With a sine drive $\Gamma(t)=\Gamma_0+A\sin\omega t$, odd harmonics carry $\sin\
 3. The 4004 depolarizes off-axis inputs at zero field. Consistent with tilt × beam divergence through a long
    birefringent crystal (alignment); untested. The 4004 mount has a floating roll DOF, so its axis angle holds for
    this mounting only.
-4. PAX DoP reads 1.00–1.02 on clean states (≈ 2 % scale offset).
+4. PAX DoP reads 1.00–1.02 on clean states (≈ 2 % scale offset). Every DoP-dependent number here (rows 3, 5, 11, the 0.71 block) inherits the PAX DoP's sensitivity to sampling, state changes within a revolution, beam angle and calibration; treat them as diagnostics, not properties.
 
 ## Decisions status (notebook)
 
-Approved: 1 (30 s captures), 3 (span 1.1 Vπ), 4 (return to A). **Pending:** 2 (display mean of full Stokes),
-3a (periods/cycles), 5 (redo rule), 6 (no lag correction/exclusion stored). Analysis Decisions (Δt, Γ₀ per block,
+All approved: 1 (30 s captures), 3 (span 1.1 Vπ), 4 (return to A); 2 (display both a DoP-free mean direction and a
+DoP-dependent full-Stokes mean, labelled; DoP never folded in silently), 3a (whole-RP-step periods, 20 cycles, two-rate
+first sweep), 5 (redo rule: operational faults only), 6 (raw only) — 2, 3a, 5, 6 by TS 2026-11-17. Analysis Decisions (Δt, Γ₀ per block,
 seat transform, Jones extraction) belong to the analysis notebook.
 
 ## Open items (ranked)
@@ -86,7 +106,7 @@ seat transform, Jones extraction) belong to the analysis notebook.
 4. Fixed 4004 mount; realign by maximizing off-axis DoP; re-measure one off-axis and one on-axis block.
 5. Thorlabs drift tests: DC hold vs sweep; zero-mean drive via the bipolar 3211.
 6. QWP handedness check (sign of S₃); blank L for both EOMs.
-7. Approve Decisions 2, 3a, 5, 6; wire `eom_jones` tests into `scripts/test-offline.sh`.
+7. Wire `eom_jones` tests into `scripts/test-offline.sh`.
 
 ## Provenance
 
