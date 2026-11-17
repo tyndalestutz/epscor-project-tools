@@ -8,6 +8,7 @@ import signal
 import sys
 import time
 import subprocess
+import atexit
 from pathlib import Path
 
 # =========================
@@ -33,6 +34,24 @@ daemon = subprocess.Popen(
     stdout=subprocess.DEVNULL,
     stderr=subprocess.DEVNULL,
 )
+
+
+
+def stop_daemon():
+    """Stop the daemon started above: SIGTERM runs its close() (motor off, USB closed)."""
+    if daemon.poll() is not None:
+        return
+    daemon.terminate()
+    try:
+        daemon.wait(timeout=10)
+        print("PAX daemon stopped.")
+    except subprocess.TimeoutExpired:
+        daemon.kill()
+        daemon.wait()
+        print("PAX daemon did not stop in 10 s and was killed: motor stop NOT confirmed.")
+
+
+atexit.register(stop_daemon)
 
 # Give it time to initialize
 time.sleep(3)
@@ -72,6 +91,10 @@ c = yaqc.Client(
 
 print(c)
 print(c.get_channel_names())
+
+WAVELENGTH_NM = 830.0
+c.set_wavelength(WAVELENGTH_NM)
+print(f"PAX wavelength set to {c.get_wavelength():.1f} nm (read back)")
 
 
 # =========================
@@ -559,4 +582,7 @@ plotter.add_key_event(
 
 # keep python alive forever
 
-plotter.app.exec()
+try:
+    plotter.app.exec()
+finally:
+    stop_daemon()
